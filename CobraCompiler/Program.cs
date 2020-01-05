@@ -1,21 +1,48 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Assemble;
+using CobraCompiler.ErrorLogging;
+using CobraCompiler.Parse;
+using CobraCompiler.Parse.Expressions;
+using CobraCompiler.Parse.PrettyPrint;
+using CobraCompiler.Parse.Scopes;
+using CobraCompiler.Parse.Statements;
+using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Scanning;
 
 namespace CobraCompiler
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {
-            // The code provided will print ‘Hello World’ to the console.
-            // Press Ctrl+F5 (or go to Debug > Start Without Debugging) to run your app.
-            Console.WriteLine("Hello World!");
-            Console.ReadKey();
+            CompilationOptions options;
 
-            // Go to http://aka.ms/dotnet-get-started-console to continue learning how to build a console app! 
+            try
+            {
+                options = ArgsReader.ReadArgs(args);
+            }
+            catch (ArgumentException)
+            {
+                return;
+            }
+
+            ErrorLogger errorLogger = new ErrorLogger();
+
+            Compiler compiler = new Compiler(options, errorLogger);
+
+            compiler.Run();
+
+            if (!options.Flags.HasFlag(CompilerFlags.HideErrors))
+                errorLogger.DisplayErrors();
+            
+            Console.ReadKey();
         }
     }
 }

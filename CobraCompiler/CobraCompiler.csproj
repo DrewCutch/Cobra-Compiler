@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -30,10 +31,16 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -42,11 +49,91 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArgsReader.cs" />
+    <Compile Include="Assemble\Assembler.cs" />
+    <Compile Include="Assemble\ExpressionAssemblyContexts\ExpressionAssemblyContext.cs" />
+    <Compile Include="Assemble\ExpressionAssemblyContexts\MethodBuilderExpressionAssemblyContext.cs" />
+    <Compile Include="Assemble\ExpressionILGenerator.cs" />
+    <Compile Include="Assemble\FuncAssembler.cs" />
+    <Compile Include="Assemble\FuncAssemblerFactory.cs" />
+    <Compile Include="Assemble\LocalManager.cs" />
+    <Compile Include="Assemble\ExpressionAssemblyContexts\MethodExpressionAssemblyContext.cs" />
+    <Compile Include="Assemble\MethodStore.cs" />
+    <Compile Include="Assemble\ScopeCrawler.cs" />
+    <Compile Include="Assemble\TypeStore.cs" />
+    <Compile Include="Class1.cs" />
+    <Compile Include="CompilationOptions.cs" />
+    <Compile Include="Compiler.cs" />
+    <Compile Include="CompilerFlags.cs" />
+    <Compile Include="ErrorLogging\CompilingException.cs" />
+    <Compile Include="ErrorLogging\ErrorLogger.cs" />
+    <Compile Include="ErrorLogging\ParsingException.cs" />
+    <Compile Include="ErrorLogging\ScanningException.cs" />
+    <Compile Include="Parse\Expressions\CallExpression.cs" />
+    <Compile Include="Parse\Expressions\GetExpression.cs" />
+    <Compile Include="Parse\Expressions\TypeInitExpression.cs" />
+    <Compile Include="Parse\PrettyPrint\IExpressionTraverser.cs" />
+    <Compile Include="Parse\Scopes\GlobalScope.cs" />
+    <Compile Include="Parse\Scopes\IScopeVisitor.cs" />
+    <Compile Include="Parse\Scopes\ModuleScope.cs" />
+    <Compile Include="Parse\Statements\ParamDeclarationStatement.cs" />
+    <Compile Include="Parse\Statements\BlockStatement.cs" />
+    <Compile Include="Parse\Statements\FuncDeclarationStatement.cs" />
+    <Compile Include="Parse\Statements\ReturnStatement.cs" />
+    <Compile Include="Parse\PrettyPrint\TreePrinter.cs" />
+    <Compile Include="Parse\TypeCheck\InvalidReturnTypeException.cs" />
+    <Compile Include="Parse\TypeCheck\OperatorNotDefinedException.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\BinaryOperator.cs" />
+    <Compile Include="Parse\TypeCheck\DotNetCobraType.cs" />
+    <Compile Include="Parse\TypeCheck\CobraGeneric.cs" />
+    <Compile Include="Parse\TypeCheck\CobraGenericInstance.cs" />
+    <Compile Include="Parse\TypeCheck\CobraType.cs" />
+    <Compile Include="Parse\Expressions\AssignExpression.cs" />
+    <Compile Include="Parse\PrettyPrint\AstPrinter.cs" />
+    <Compile Include="Parse\Expressions\BinaryExpression.cs" />
+    <Compile Include="Parse\Scopes\Scope.cs" />
+    <Compile Include="Parse\Statements\VarDeclarationStatement.cs" />
+    <Compile Include="Parse\Expressions\DeclareVarExpression.cs" />
+    <Compile Include="Parse\Statements\ExpressionStatement.cs" />
+    <Compile Include="Parse\Expressions\GroupingExpression.cs" />
+    <Compile Include="Parse\ListNibbler.cs" />
+    <Compile Include="Parse\Expressions\Expression.cs" />
+    <Compile Include="Parse\Expressions\ExpressionVisitor.cs" />
+    <Compile Include="Parse\Expressions\LiteralExpression.cs" />
+    <Compile Include="Parse\Parser.cs" />
+    <Compile Include="Parse\Statements\Statement.cs" />
+    <Compile Include="Parse\Expressions\UnaryExpression.cs" />
+    <Compile Include="Parse\Expressions\VarExpression.cs" />
+    <Compile Include="Parse\Scopes\FuncScope.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\DotNetBinaryOperator.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\IDotNetOperator.cs" />
+    <Compile Include="Parse\TypeCheck\InvalidAssignmentException.cs" />
+    <Compile Include="Parse\TypeCheck\InvalidOperationException.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\Operator.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\UnaryOperator.cs" />
+    <Compile Include="Parse\TypeCheck\TypeChecker.cs" />
+    <Compile Include="Parse\TypeCheck\TypeNotDefinedException.cs" />
+    <Compile Include="Parse\TypeCheck\TypingException.cs" />
+    <Compile Include="Parse\TypeCheck\VarAlreadyDeclaredException.cs" />
+    <Compile Include="Parse\TypeCheck\VarNotDefinedException.cs" />
+    <Compile Include="Scanning\FileReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Scanning\Scanner.cs" />
+    <Compile Include="Scanning\StringNibbler.cs" />
+    <Compile Include="Scanning\Token.cs" />
+    <Compile Include="SymbolTables\Symbol.cs" />
+    <Compile Include="SymbolTables\SymbolFlag.cs" />
+    <Compile Include="SymbolTables\SymbolTable.cs" />
+    <Compile Include="TokenType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="supportedcode.txt" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

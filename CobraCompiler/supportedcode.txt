@@ -1,0 +1,24 @@
+﻿func add(a: int, b: int): int{
+	var c: int = a + b
+	return c
+}
+
+func sqrDist(x: int, y: int): int{
+	var dist: int = x * x + y * y
+	return dist
+}
+
+func main(): int{
+	var a: int = (4 - 3) * (10 / 3)
+	a = a + 1
+	var b: int = 5
+	var sum: int = add(a, b)
+
+	printInt(sum)
+
+	printInt(sqrDist(3, 3))
+
+	printStr("Hello world!")
+
+	return 0
+}
