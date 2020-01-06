@@ -118,6 +118,11 @@ namespace CobraCompiler.Assemble
                 case int intVal:
                     _il.Emit(OpCodes.Ldc_I4, intVal);
                     break;
+                case bool boolVal:
+                    _il.Emit(boolVal ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
         }
     }
