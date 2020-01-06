@@ -14,6 +14,12 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
                 OpCodes.Mul),
             new DotNetBinaryOperator(TokenType.Slash, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
                 OpCodes.Div),
+            new DotNetBinaryOperator(TokenType.Greater, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
+                OpCodes.Cgt),
+            new DotNetBinaryOperator(TokenType.Less, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
+                OpCodes.Cgt),
+            new DotNetBinaryOperator(TokenType.EqualEqual, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
+                OpCodes.Ceq),
         };
 
         public OpCode OpCode { get; }
