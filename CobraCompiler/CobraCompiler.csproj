@@ -82,6 +82,7 @@
     <Compile Include="Parse\Statements\FuncDeclarationStatement.cs" />
     <Compile Include="Parse\Statements\ReturnStatement.cs" />
     <Compile Include="Parse\PrettyPrint\TreePrinter.cs" />
+    <Compile Include="Parse\Statements\WhileStatement.cs" />
     <Compile Include="Parse\TypeCheck\InvalidReturnTypeException.cs" />
     <Compile Include="Parse\TypeCheck\OperatorNotDefinedException.cs" />
     <Compile Include="Parse\TypeCheck\Operators\BinaryOperator.cs" />
