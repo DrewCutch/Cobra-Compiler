@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Statements;
@@ -146,6 +147,9 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.If))
                 return IfStatement();
 
+            if (Match(TokenType.While))
+                return WhileStatement();
+
             return ExpressionStatement();
         }
 
@@ -172,6 +176,26 @@ namespace CobraCompiler.Parse
             return new ReturnStatement(keyword, expr);
         }
 
+        private Statement WhileStatement()
+        {
+            Expect(TokenType.LeftParen, "Expect '(' after 'while'.", ignoreNewline: true);
+            Expression condition = Expression();
+            Expect(TokenType.RightParen, "Expect ')' after 'while' condition.", ignoreNewline: true);
+
+            IgnoreNewlines();
+
+            Statement bodyStatement = Statement();
+            Statement elseStatement = null;
+
+            if (MatchIgnoringNewline(TokenType.Else))
+            {
+                IgnoreNewlines();
+                elseStatement = Statement();
+            }
+
+            return new WhileStatement(condition, bodyStatement, elseStatement);
+        }
+
         private Statement IfStatement()
         {
             Expect(TokenType.LeftParen, "Expect '(' after 'if'.", ignoreNewline:true);
@@ -184,7 +208,10 @@ namespace CobraCompiler.Parse
             Statement elseStatement = null;
 
             if (MatchIgnoringNewline(TokenType.Else))
+            {
+                IgnoreNewlines();
                 elseStatement = Statement();
+            }
 
             return new IfStatement(condition, thenStatement, elseStatement);
         }
