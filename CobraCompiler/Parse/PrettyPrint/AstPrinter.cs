@@ -79,6 +79,25 @@ namespace CobraCompiler.Parse.PrettyPrint
                         varDeclarationStatement.Assignment?.Accept(this, true);
                         _printer.ExitNode();
                         break;
+                    case IfStatement ifStatement:
+                        _printer.AddNode("If", onLast);
+                        _printer.AddNode("Condition", false);
+                        ifStatement.Condition.Accept(this, true);
+                        _printer.ExitNode();
+                        _printer.AddNode("Then", ifStatement.Else == null);
+                        GenerateTree(ifStatement.Then);
+                        _printer.ExitNode();
+
+                        if (ifStatement.Else != null)
+                        {
+                            _printer.AddNode("Else", true);
+                            GenerateTree(ifStatement.Else);
+                            _printer.ExitNode();
+                        }
+                        _printer.ExitNode();
+                        break;
+                    default:
+                        throw new NotImplementedException();
                 }
             }
         }
