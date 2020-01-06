@@ -14,10 +14,14 @@ func main(): int{
 	var b: int = 5
 	var sum: int = add(a, b)
 
-	var val: bool = true
-
-	if(val){
-		printStr("Val is true!")
+	if(sum > a){
+		printStr("The sum is greater than a")
+	}
+	else if(sum < 2){
+		printStr("The sum is less than a")
+	}
+	else{
+		printStr("The sum is less than a")
 	}
 
 	printInt(sum)
