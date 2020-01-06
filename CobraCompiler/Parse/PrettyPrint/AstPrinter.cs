@@ -96,6 +96,23 @@ namespace CobraCompiler.Parse.PrettyPrint
                         }
                         _printer.ExitNode();
                         break;
+                    case WhileStatement whileStatement:
+                        _printer.AddNode("While", onLast);
+                        _printer.AddNode("Condition", false);
+                        whileStatement.Condition.Accept(this, true);
+                        _printer.ExitNode();
+                        _printer.AddNode("Body", whileStatement.Else == null);
+                        GenerateTree(whileStatement.Body);
+                        _printer.ExitNode();
+
+                        if (whileStatement.Else != null)
+                        {
+                            _printer.AddNode("Else", true);
+                            GenerateTree(whileStatement.Else);
+                            _printer.ExitNode();
+                        }
+                        _printer.ExitNode();
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
