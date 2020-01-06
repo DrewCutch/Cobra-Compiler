@@ -97,8 +97,24 @@ namespace CobraCompiler.Assemble
                     returnStatement.Value.Accept(this);
                     ReturnStatement();
                     break;
+                case IfStatement ifStatement:
+                    ifStatement.Condition.Accept(this);
+
+                    Label elseLabel = _il.DefineLabel();
+                    Label endElseLabel = _il.DefineLabel();
+
+                    _il.Emit(OpCodes.Brfalse, elseLabel);
+                    AssembleStatement(ifStatement.Then, typeBuilder);
+                    _il.Emit(OpCodes.Br, endElseLabel);
+                    _il.MarkLabel(elseLabel);
+                    if (ifStatement.Else != null)
+                    {
+                        AssembleStatement(ifStatement.Else, typeBuilder);
+                    }
+                    _il.MarkLabel(endElseLabel);
+                    break;
                 default:
-                    return;
+                    throw new NotImplementedException();
             }
         }
 

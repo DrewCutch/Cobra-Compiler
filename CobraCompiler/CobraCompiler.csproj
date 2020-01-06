@@ -76,6 +76,7 @@
     <Compile Include="Parse\Scopes\GlobalScope.cs" />
     <Compile Include="Parse\Scopes\IScopeVisitor.cs" />
     <Compile Include="Parse\Scopes\ModuleScope.cs" />
+    <Compile Include="Parse\Statements\IfStatement.cs" />
     <Compile Include="Parse\Statements\ParamDeclarationStatement.cs" />
     <Compile Include="Parse\Statements\BlockStatement.cs" />
     <Compile Include="Parse\Statements\FuncDeclarationStatement.cs" />
