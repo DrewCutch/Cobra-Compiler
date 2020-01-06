@@ -17,7 +17,7 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
             new DotNetBinaryOperator(TokenType.Greater, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
                 OpCodes.Cgt),
             new DotNetBinaryOperator(TokenType.Less, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
-                OpCodes.Cgt),
+                OpCodes.Clt),
             new DotNetBinaryOperator(TokenType.EqualEqual, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
                 OpCodes.Ceq),
         };
