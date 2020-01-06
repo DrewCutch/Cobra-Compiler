@@ -178,6 +178,8 @@ namespace CobraCompiler.Parse
             Expression condition = Expression();
             Expect(TokenType.RightParen, "Expect ')' after 'if' condition.", ignoreNewline: true);
 
+            IgnoreNewlines();
+
             Statement thenStatement = Statement();
             Statement elseStatement = null;
 
@@ -362,10 +364,7 @@ namespace CobraCompiler.Parse
         private Token Expect(TokenType type, String message, bool ignoreNewline=false)
         {
             if (ignoreNewline)
-            {
-                while (Check(TokenType.NewLine))
-                    _tokens.Pop();
-            }
+                IgnoreNewlines();
 
             if (Check(type))
                 return _tokens.Pop();
@@ -373,10 +372,15 @@ namespace CobraCompiler.Parse
             throw new ParsingException(_tokens.Peek(), message);
         }
 
-        private bool MatchIgnoringNewline(params TokenType[] types)
+        private void IgnoreNewlines()
         {
             while (Check(TokenType.NewLine))
                 _tokens.Pop();
+        }
+
+        private bool MatchIgnoringNewline(params TokenType[] types)
+        {
+            IgnoreNewlines();
 
             return Match(types);
         }
