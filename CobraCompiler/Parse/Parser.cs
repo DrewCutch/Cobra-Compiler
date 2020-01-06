@@ -143,6 +143,9 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.Return))
                 return Return();
 
+            if (Match(TokenType.If))
+                return IfStatement();
+
             return ExpressionStatement();
         }
 
@@ -167,6 +170,21 @@ namespace CobraCompiler.Parse
             Expression expr = Expression();
             Expect(TokenType.NewLine, "Expect newline after return statement");
             return new ReturnStatement(keyword, expr);
+        }
+
+        private Statement IfStatement()
+        {
+            Expect(TokenType.LeftParen, "Expect '(' after 'if'.", ignoreNewline:true);
+            Expression condition = Expression();
+            Expect(TokenType.RightParen, "Expect ')' after 'if' condition.", ignoreNewline: true);
+
+            Statement thenStatement = Statement();
+            Statement elseStatement = null;
+
+            if (Match(TokenType.Else))
+                elseStatement = Statement();
+
+            return new IfStatement(condition, thenStatement, elseStatement);
         }
 
         private Statement ExpressionStatement()
