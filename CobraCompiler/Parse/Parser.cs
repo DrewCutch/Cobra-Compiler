@@ -181,7 +181,7 @@ namespace CobraCompiler.Parse
             Statement thenStatement = Statement();
             Statement elseStatement = null;
 
-            if (Match(TokenType.Else))
+            if (MatchIgnoringNewline(TokenType.Else))
                 elseStatement = Statement();
 
             return new IfStatement(condition, thenStatement, elseStatement);
@@ -371,6 +371,14 @@ namespace CobraCompiler.Parse
                 return _tokens.Pop();
 
             throw new ParsingException(_tokens.Peek(), message);
+        }
+
+        private bool MatchIgnoringNewline(params TokenType[] types)
+        {
+            while (Check(TokenType.NewLine))
+                _tokens.Pop();
+
+            return Match(types);
         }
 
         private bool Match(params TokenType[] types)
