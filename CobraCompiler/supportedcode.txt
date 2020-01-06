@@ -8,6 +8,23 @@ func sqrDist(x: int, y: int): int{
 	return dist
 }
 
+func fib(until: int): int{
+	if(until < 0){
+		printStr("Incorrect input!")
+		return 0
+	}
+	else if(until == 0){
+		return 0
+	}
+	else if(until == 1){
+		return 1
+	}
+	else{
+		var fibNum: int = fib(until - 2) + fib(until - 1)
+		return fibNum
+	}
+}
+
 func main(): int{
 	var a: int = (4 - 3) * (10 / 3)
 	a = a + 1
@@ -22,6 +39,15 @@ func main(): int{
 	}
 	else{
 		printStr("The sum is less than a")
+	}
+
+	var count: int = 0
+	while(count < 100){
+		count = count + 1
+		printInt(count)
+	}
+	else{
+		printStr("I cannot count!")
 	}
 
 	printInt(sum)
