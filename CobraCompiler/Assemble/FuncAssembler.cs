@@ -75,6 +75,7 @@ namespace CobraCompiler.Assemble
             _scopeCrawler.Advance();
 
             AssembleStatement(CurrentScope.Body, _typeBuilder);
+            _il.Emit(OpCodes.Nop);
         }
 
         private void AssembleStatement(Statement statement, TypeBuilder typeBuilder)
@@ -98,6 +99,7 @@ namespace CobraCompiler.Assemble
                     ReturnStatement();
                     break;
                 case IfStatement ifStatement:
+                {
                     ifStatement.Condition.Accept(this);
 
                     Label elseLabel = _il.DefineLabel();
@@ -113,6 +115,32 @@ namespace CobraCompiler.Assemble
                     }
                     _il.MarkLabel(endElseLabel);
                     break;
+                }   
+                case WhileStatement whileStatement:
+                {
+                    Label elseLabel = _il.DefineLabel();
+                    Label endElseLabel = _il.DefineLabel();
+                    Label whileLabel = _il.DefineLabel();
+                    Label bodyLabel = _il.DefineLabel();
+
+                    whileStatement.Condition.Accept(this);
+
+                    _il.Emit(OpCodes.Brfalse, elseLabel); // If condition fails the first time go to else
+                    _il.Emit(OpCodes.Br, bodyLabel); // Else go to body
+                    _il.MarkLabel(whileLabel); // Return here on subsequent loop
+                    whileStatement.Condition.Accept(this);
+                    _il.Emit(OpCodes.Brfalse, endElseLabel);
+                    _il.MarkLabel(bodyLabel); // Beginning of body
+                    AssembleStatement(whileStatement.Body, typeBuilder);
+                    _il.Emit(OpCodes.Br, whileLabel); // Return to condition
+                    _il.MarkLabel(elseLabel);
+                    if (whileStatement.Else != null)
+                    {
+                        AssembleStatement(whileStatement.Else, typeBuilder);
+                    }
+                    _il.MarkLabel(endElseLabel);
+                    break;
+                }
                 default:
                     throw new NotImplementedException();
             }
