@@ -75,7 +75,6 @@ namespace CobraCompiler.Assemble
             _scopeCrawler.Advance();
 
             AssembleStatement(CurrentScope.Body, _typeBuilder);
-            _il.Emit(OpCodes.Nop);
         }
 
         private void AssembleStatement(Statement statement, TypeBuilder typeBuilder)
@@ -114,6 +113,7 @@ namespace CobraCompiler.Assemble
                         AssembleStatement(ifStatement.Else, typeBuilder);
                     }
                     _il.MarkLabel(endElseLabel);
+                    _il.Emit(OpCodes.Nop);
                     break;
                 }   
                 case WhileStatement whileStatement:
@@ -139,6 +139,7 @@ namespace CobraCompiler.Assemble
                         AssembleStatement(whileStatement.Else, typeBuilder);
                     }
                     _il.MarkLabel(endElseLabel);
+                    _il.Emit(OpCodes.Nop);
                     break;
                 }
                 default:
