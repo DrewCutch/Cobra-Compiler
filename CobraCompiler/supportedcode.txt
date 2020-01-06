@@ -14,6 +14,12 @@ func main(): int{
 	var b: int = 5
 	var sum: int = add(a, b)
 
+	var val: bool = true
+
+	if(val){
+		printStr("Val is true!")
+	}
+
 	printInt(sum)
 
 	printInt(sqrDist(3, 3))
