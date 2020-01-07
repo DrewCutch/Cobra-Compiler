@@ -139,6 +139,14 @@ namespace CobraCompiler.Parse.PrettyPrint
             _printer.ExitNode();
         }
 
+        public void Visit(ListLiteralExpression expr, bool onLast)
+        {
+            _printer.AddNode("List", onLast);
+            for (int i = 0; i < expr.Elements.Count; i++)
+                expr.Elements[i].Accept(this, i == expr.Elements.Count - 1);
+            _printer.ExitNode();
+        }
+
         public void Visit(LiteralExpression expr, bool onLast)
         {
             _printer.AddLeaf($"Literal: {expr.Value}", onLast);
