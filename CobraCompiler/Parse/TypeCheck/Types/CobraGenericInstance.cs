@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CobraCompiler.Parse.TypeCheck
+namespace CobraCompiler.Parse.TypeCheck.Types
 {
     class CobraGenericInstance: CobraType
     {
         public readonly IReadOnlyList<CobraType> TypeParams;
+        public readonly CobraGeneric Base;
 
-        public CobraGenericInstance(string identifier, IEnumerable<CobraType> typeParams) : base(identifier)
+        public CobraGenericInstance(string identifier, IEnumerable<CobraType> typeParams, CobraGeneric @base) : base(identifier)
         {
             TypeParams = new List<CobraType>(typeParams);
+            Base = @base;
         }
 
         public override bool Equals(Object other)
