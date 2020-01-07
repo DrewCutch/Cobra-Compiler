@@ -11,39 +11,44 @@ namespace CobraCompiler.Assemble
     class ScopeCrawler
     {
         public readonly Scope Root;
-        public Scope Current => _currentEnumerable.Current;
-        private IEnumerator<Scope> _currentEnumerable;
+       
+        public Scope Current { get; private set; }
+        private Stack<int> _subScope;
+        private int CurrentSubScope => _subScope.Peek();
 
         public ScopeCrawler(Scope root)
         {
             Root = root;
-
             Reset();
         }
 
         public void Reset()
         {
-            _currentEnumerable = Scopes().GetEnumerator();
+            Current = Root;
+            _subScope = new Stack<int>();
+            _subScope.Push(0);
         }
 
-        public bool Advance()
+        public bool EnterScope()
         {
-            return _currentEnumerable.MoveNext();
-        }
-
-        private IEnumerable<Scope> Scopes()
-        {
-            Stack<Scope> scopes = new Stack<Scope>();
-            scopes.Push(Root);
-
-            while (scopes.Count > 0)
+            if (CurrentSubScope >= Current.SubScopes.Count)
             {
-                Scope next = scopes.Pop();
-                yield return next;
-
-                for (int i = next.SubScopes.Count - 1; i >= 0; i--)
-                    scopes.Push(next.SubScopes[i]);
+                return false;
             }
+
+            Current = Current.SubScopes[CurrentSubScope];
+
+            int next = _subScope.Pop() + 1;
+            _subScope.Push(next);
+
+            _subScope.Push(0);
+            return true;
+        }
+
+        public void ExitScope()
+        {
+            Current = Current.Parent;
+            _subScope.Pop();
         }
     }
 }

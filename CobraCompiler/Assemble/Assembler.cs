@@ -12,6 +12,7 @@ using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
 using CobraCompiler.Parse.TypeCheck.Operators;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
 {
@@ -56,6 +57,7 @@ namespace CobraCompiler.Assemble
 
             foreach (DotNetCobraType dotNetCobraType in DotNetCobraType.DotNetCobraTypes)
             {
+                _typeStore.AddType(dotNetCobraType, dotNetCobraType.Type);
                 _typeStore.AddTypeAlias(dotNetCobraType.Identifier, dotNetCobraType.Type);
             }
         }
@@ -84,8 +86,8 @@ namespace CobraCompiler.Assemble
             MethodInfo printStrInfo = typeof(Console).GetMethod("WriteLine", new[] {typeof(string)});
             MethodInfo printIntInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(int) });
 
-            _methodStore.AddMethodInfo("printStr", new CobraGenericInstance("func", new []{DotNetCobraType.Str, DotNetCobraType.Null}), printStrInfo);
-            _methodStore.AddMethodInfo("printInt", new CobraGenericInstance("func", new[]{DotNetCobraType.Int, DotNetCobraType.Null}), printIntInfo);
+            _methodStore.AddMethodInfo("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Str, DotNetCobraType.Null }), printStrInfo);
+            _methodStore.AddMethodInfo("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[]{DotNetCobraType.Int, DotNetCobraType.Null}), printIntInfo);
 
             foreach (FuncAssembler assembler in funcAssemblers)
             {
