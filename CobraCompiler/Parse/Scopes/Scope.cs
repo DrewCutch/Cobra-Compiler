@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
 using CobraCompiler.Parse.TypeCheck.Operators;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
 {
@@ -33,7 +35,18 @@ namespace CobraCompiler.Parse.Scopes
             _subScopes = new List<Scope>();
         }
 
-        public virtual CobraType GetType(string identifier)
+        public virtual CobraType GetType(TypeInitExpression typeInit)
+        {
+            if (!typeInit.IsGenericInstance)
+                return GetType(typeInit.IdentifierStr);
+
+            List<CobraType> paramTypes = typeInit.GenericParams.Select(GetType).ToList();
+            CobraGeneric generic = GetGeneric(typeInit.IdentifierStrWithoutParams);
+
+            return generic.CreateGenericInstance(paramTypes);
+        }
+
+        protected virtual CobraType GetType(string identifier)
         {
             if (identifier == null)
                 return null;
@@ -44,7 +57,22 @@ namespace CobraCompiler.Parse.Scopes
             return Parent?.GetType(identifier);
         }
 
-        public virtual bool IsTypeDefined(string identifier)
+        public virtual bool IsTypeDefined(TypeInitExpression typeInit)
+        {
+            if (!typeInit.IsGenericInstance)
+                return IsTypeDefined(typeInit.IdentifierStr);
+
+            bool allTypesDefined = IsGenericDefined(typeInit.IdentifierStrWithoutParams);
+
+            foreach (TypeInitExpression typeParam in typeInit.GenericParams)
+            {
+                allTypesDefined = allTypesDefined && IsTypeDefined(typeParam);
+            }
+
+            return allTypesDefined;
+        }
+
+        protected virtual bool IsTypeDefined(string identifier)
         {
             return _types.ContainsKey(identifier) || (Parent != null && Parent.IsTypeDefined(identifier));
         }
@@ -57,9 +85,14 @@ namespace CobraCompiler.Parse.Scopes
             return Parent?.GetGeneric(identifier);
         }
 
-        public void DefineGeneric(string identifier, int numberOfParams)
+        public void DefineGeneric(string identifier, CobraGeneric generic)
         {
-            _generics[identifier] = new CobraGeneric(identifier, numberOfParams);
+            _generics[identifier] = generic;
+        }
+
+        protected virtual bool IsGenericDefined(string identifier)
+        {
+            return _generics.ContainsKey(identifier) ||  (Parent?.IsGenericDefined(identifier) ?? false);
         }
 
         public CobraType GetVarType(string identifier)
@@ -75,9 +108,9 @@ namespace CobraCompiler.Parse.Scopes
             _types[identifier] = cobraType;
         }
 
-        public void Declare(string var, string type)
+        public void Declare(string var, TypeInitExpression typeInit)
         {
-            Declare(var, GetType(type));
+            Declare(var, GetType(typeInit));
         }
 
         public void Declare(string var, CobraType type)
