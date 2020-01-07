@@ -30,5 +30,10 @@ namespace CobraCompiler.Parse.Expressions
         {
             expressionTraverser.Visit(this, arg);
         }
+
+        public override T Accept<T, TU>(IExpressionVisitorWithContext<T, TU> expressionVisitor, TU arg)
+        {
+            return expressionVisitor.Visit(this, arg);
+        }
     }
 }

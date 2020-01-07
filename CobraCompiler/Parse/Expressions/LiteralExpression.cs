@@ -1,5 +1,6 @@
 ﻿using CobraCompiler.Parse.PrettyPrint;
 using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Expressions
 {
@@ -22,6 +23,11 @@ namespace CobraCompiler.Parse.Expressions
         public override void Accept<T>(IExpressionTraverser<T> expressionTraverser, T arg)
         {
             expressionTraverser.Visit(this, arg);
+        }
+
+        public override T Accept<T, TU>(IExpressionVisitorWithContext<T, TU> expressionVisitor, TU arg)
+        {
+            return expressionVisitor.Visit(this, arg);
         }
     }
 }
