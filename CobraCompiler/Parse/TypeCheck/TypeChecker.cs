@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms.VisualStyles;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck.Operators;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.TypeCheck
 {
@@ -26,13 +28,13 @@ namespace CobraCompiler.Parse.TypeCheck
             _globalScope = new GlobalScope();
             foreach (DotNetCobraType builtinCobraType in DotNetCobraType.DotNetCobraTypes)
                 _globalScope.DefineType(builtinCobraType.Identifier, builtinCobraType);
-            foreach (CobraGeneric builtinCobraGeneric in CobraGeneric.BuiltInCobraGenerics)
-                _globalScope.DefineGeneric(builtinCobraGeneric.Identifier, builtinCobraGeneric.NumberOfParams);
+            foreach (CobraGeneric builtinCobraGeneric in DotNetCobraGeneric.BuiltInCobraGenerics)
+                _globalScope.DefineGeneric(builtinCobraGeneric.Identifier, builtinCobraGeneric);
             foreach (DotNetBinaryOperator op in DotNetBinaryOperator.BuiltinDotNetBinaryOperators)
                 _globalScope.DefineOperator(op.OperatorToken, op.Lhs, op.Rhs, op);
 
-            _globalScope.Declare("printStr", _globalScope.GetGenericInstance("func", new []{DotNetCobraType.Str, DotNetCobraType.Null}));
-            _globalScope.Declare("printInt", _globalScope.GetGenericInstance("func", new[] { DotNetCobraType.Int, DotNetCobraType.Null }));
+            _globalScope.Declare("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new []{DotNetCobraType.Str, DotNetCobraType.Null}));
+            _globalScope.Declare("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Null }));
         }
 
         public ModuleScope CreateModule(IReadOnlyList<Statement> statements, string moduleName)
@@ -75,30 +77,41 @@ namespace CobraCompiler.Parse.TypeCheck
 
             foreach (Statement statement in statements)
             {
-                if (statement is FuncDeclarationStatement funcDeclaration)
-                {
-                    FuncScope funcScope = new FuncScope(scope, funcDeclaration,
-                        funcDeclaration.Params.Select(param => (param.Name.Lexeme, scope.GetType(param.TypeInit.IdentifierStr))), 
-                        scope.GetType(funcDeclaration.ReturnType?.Lexeme));
+                DefineWithStatement(scope, statement);
+            }
+        }
 
-                    List<CobraType> typeArgs = funcDeclaration.Params.Select(param => scope.GetType(param.TypeInit.IdentifierStr)).ToList();
-                    typeArgs.Add(funcScope.ReturnType);
+        private void DefineWithStatement(Scope scope, Statement statement)
+        {
+            if (statement is FuncDeclarationStatement funcDeclaration)
+            {
+                FuncScope funcScope = new FuncScope(scope, funcDeclaration,
+                    funcDeclaration.Params.Select(param => (param.Name.Lexeme, scope.GetType(param.TypeInit))),
+                    scope.GetType(funcDeclaration.ReturnType));
 
-                    CobraGenericInstance funcType = scope.GetGenericInstance("func", typeArgs);
+                List<CobraType> typeArgs = funcDeclaration.Params.Select(param => scope.GetType(param.TypeInit)).ToList();
+                typeArgs.Add(funcScope.ReturnType);
 
-                    scope.AddSubScope(funcScope);
-                    scope.Declare(funcDeclaration.Name.Lexeme, funcType);
+                CobraGenericInstance funcType = DotNetCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
 
-                    _scopes.Enqueue(funcScope);
-                }
+                scope.AddSubScope(funcScope);
+                scope.Declare(funcDeclaration.Name.Lexeme, funcType);
 
-                if (statement is BlockStatement blockStatement)
-                {
-                    Scope blockScope = new Scope(scope, blockStatement);
+                _scopes.Enqueue(funcScope);
+            }
 
-                    scope.AddSubScope(blockScope);
-                    _scopes.Enqueue(blockScope);
-                }
+            if (statement is BlockStatement blockStatement)
+            {
+                Scope blockScope = new Scope(scope, blockStatement);
+
+                scope.AddSubScope(blockScope);
+                _scopes.Enqueue(blockScope);
+            }
+
+            if (statement is IConditionalExpression conditional)
+            {
+                DefineWithStatement(scope, conditional.Then);
+                DefineWithStatement(scope, conditional.Else);
             }
         }
 
@@ -117,25 +130,25 @@ namespace CobraCompiler.Parse.TypeCheck
             {
                 if (statement is VarDeclarationStatement varDeclaration)
                 {
-                    if (!scope.IsTypeDefined(varDeclaration.TypeInit.IdentifierStr))
+                    if (!scope.IsTypeDefined(varDeclaration.TypeInit))
                         _errorLogger.Log(new TypeNotDefinedException(varDeclaration.TypeInit.Identifier.First()));
 
                     if (scope.IsDeclared(varDeclaration.Name.Lexeme))
                         _errorLogger.Log(new VarAlreadyDeclaredException(varDeclaration.Name));
 
-                    scope.Declare(varDeclaration.Name.Lexeme, varDeclaration.TypeInit.IdentifierStr);
+                    scope.Declare(varDeclaration.Name.Lexeme, varDeclaration.TypeInit);
                     varDeclaration.Assignment?.Accept(this);
                 }
 
                 if (statement is ParamDeclarationStatement paramDeclaration)
                 {
-                    if (!scope.IsTypeDefined(paramDeclaration.TypeInit.IdentifierStr))
+                    if (!scope.IsTypeDefined(paramDeclaration.TypeInit))
                         _errorLogger.Log(new TypeNotDefinedException(paramDeclaration.TypeInit.Identifier.First()));
 
                     if(scope.IsDeclared(paramDeclaration.Name.Lexeme))
                         _errorLogger.Log(new VarAlreadyDeclaredException(paramDeclaration.Name));
 
-                    scope.Declare(paramDeclaration.Name.Lexeme, paramDeclaration.TypeInit.IdentifierStr);
+                    scope.Declare(paramDeclaration.Name.Lexeme, paramDeclaration.TypeInit);
                 }
 
                 if (statement is ExpressionStatement expressionStatement)
@@ -185,7 +198,7 @@ namespace CobraCompiler.Parse.TypeCheck
         public CobraType Visit(CallExpression expr)
         {
             CobraType calleeType = expr.Callee.Accept(this);
-            if (calleeType is CobraGenericInstance generic && generic.Identifier == "func")
+            if (calleeType is CobraGenericInstance generic && generic.Base == DotNetCobraGeneric.FuncType)
                 return generic.TypeParams.Last();
 
             _errorLogger.Log(new InvalidOperationException(expr.Paren.Line));
