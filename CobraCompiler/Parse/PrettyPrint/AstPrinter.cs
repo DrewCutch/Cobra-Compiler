@@ -61,7 +61,7 @@ namespace CobraCompiler.Parse.PrettyPrint
                         _printer.AddNode("Params", false);
                         GenerateTree(funcDeclarationStatement.Params);
                         _printer.ExitNode();
-                        _printer.AddNode("Body", true);
+                        _printer.AddNode("Then", true);
                         GenerateTree(funcDeclarationStatement.Body);
                         _printer.ExitNode();
                         _printer.ExitNode();
@@ -79,44 +79,40 @@ namespace CobraCompiler.Parse.PrettyPrint
                         varDeclarationStatement.Assignment?.Accept(this, true);
                         _printer.ExitNode();
                         break;
-                    case IfStatement ifStatement:
-                        _printer.AddNode("If", onLast);
-                        _printer.AddNode("Condition", false);
-                        ifStatement.Condition.Accept(this, true);
-                        _printer.ExitNode();
-                        _printer.AddNode("Then", ifStatement.Else == null);
-                        GenerateTree(ifStatement.Then);
-                        _printer.ExitNode();
-
-                        if (ifStatement.Else != null)
-                        {
-                            _printer.AddNode("Else", true);
-                            GenerateTree(ifStatement.Else);
-                            _printer.ExitNode();
-                        }
-                        _printer.ExitNode();
-                        break;
-                    case WhileStatement whileStatement:
-                        _printer.AddNode("While", onLast);
-                        _printer.AddNode("Condition", false);
-                        whileStatement.Condition.Accept(this, true);
-                        _printer.ExitNode();
-                        _printer.AddNode("Body", whileStatement.Else == null);
-                        GenerateTree(whileStatement.Body);
-                        _printer.ExitNode();
-
-                        if (whileStatement.Else != null)
-                        {
-                            _printer.AddNode("Else", true);
-                            GenerateTree(whileStatement.Else);
-                            _printer.ExitNode();
-                        }
-                        _printer.ExitNode();
+                    case IConditionalExpression conditional:
+                        PrintConditional(conditional, onLast);
                         break;
                     default:
                         throw new NotImplementedException();
                 }
             }
+        }
+
+        private void PrintConditional(IConditionalExpression conditional, bool onLast)
+        {
+            switch (conditional)
+            {
+                case IfStatement ifStatement:
+                    _printer.AddNode("If", onLast);
+                    break;
+                case WhileStatement whileStatement:
+                    _printer.AddNode("While", onLast);
+                    break;
+            }
+            _printer.AddNode("Condition", false);
+            conditional.Condition.Accept(this, true);
+            _printer.ExitNode();
+            _printer.AddNode("Then", conditional.Else == null);
+            GenerateTree(conditional.Then);
+            _printer.ExitNode();
+
+            if (conditional.Else != null)
+            {
+                _printer.AddNode("Else", true);
+                GenerateTree(conditional.Else);
+                _printer.ExitNode();
+            }
+            _printer.ExitNode();
         }
 
         public void Visit(AssignExpression expr, bool onLast)
