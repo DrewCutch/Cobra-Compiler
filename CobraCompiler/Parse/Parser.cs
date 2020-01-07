@@ -5,6 +5,7 @@ using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Parse.TypeCheck.Types;
 using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Parse
@@ -102,10 +103,10 @@ namespace CobraCompiler.Parse
 
             Expect(TokenType.RightParen, "Expect ')' after parameters.");
 
-            Token? returnType = null;
+            TypeInitExpression returnType = null;
             if (Match(TokenType.Colon))
             {
-                returnType = Expect(TokenType.Identifier, "Expect return type after colon.");
+                returnType = InitType();
             }
 
             Match(TokenType.NewLine);
@@ -125,15 +126,26 @@ namespace CobraCompiler.Parse
         private TypeInitExpression InitType()
         {
             List<Token> typeIdentifier = new List<Token>();
+            List<TypeInitExpression> genericParams = new List<TypeInitExpression>();
 
-            typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier after colon."));
+            typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier."));
 
             while (Match(TokenType.Dot))
             {
                 typeIdentifier.Add(Expect(TokenType.Identifier, "Expect identifier after '.'"));
             }
 
-            return new TypeInitExpression(typeIdentifier);
+            if (Match(TokenType.RightBracket))
+            {
+                do
+                {
+                    genericParams.Add(InitType());
+                } while (Match(TokenType.Comma));
+
+                Expect(TokenType.LeftBracket, "Expect closing ']' after generic parameters");
+            }
+
+            return new TypeInitExpression(typeIdentifier, genericParams);
         }
 
         private Statement Statement()
@@ -176,6 +188,32 @@ namespace CobraCompiler.Parse
             return new ReturnStatement(keyword, expr);
         }
 
+        /*
+        private Statement ForStatement()
+        {
+            Expect(TokenType.LeftParen, "Expect '(' after 'for'.", ignoreNewline: true);
+            Statement init = MatchIgnoringNewline(TokenType.Var) ? VarDeclaration() : ExpressionStatement();
+            // Expect(TokenType.SemiColon, "Expec ';' after init statement in 'for'", ignoreNewline: true);
+            Expression condition = Expression();
+            // Expect(TokenType.SemiColon, "Expec ';' after condition in 'for'", ignoreNewline: true);
+            Statement after = ExpressionStatement();
+            Expect(TokenType.RightParen, "Expect ')' after 'for' condition.", ignoreNewline: true);
+
+            IgnoreNewlines();
+
+            Statement bodyStatement = Statement();
+            // TODO: convert for statement to while statement
+            Statement elseStatement = null;
+
+            if (MatchIgnoringNewline(TokenType.Else))
+            {
+                IgnoreNewlines();
+                elseStatement = Statement();
+            }
+
+            return new WhileStatement(condition, bodyStatement, elseStatement);
+        }
+        */
         private Statement WhileStatement()
         {
             Expect(TokenType.LeftParen, "Expect '(' after 'while'.", ignoreNewline: true);
