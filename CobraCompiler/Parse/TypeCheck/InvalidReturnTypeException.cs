@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Parse.TypeCheck.Types;
 using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Parse.TypeCheck
