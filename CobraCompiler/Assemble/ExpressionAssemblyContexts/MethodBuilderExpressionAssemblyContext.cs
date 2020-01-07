@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble.ExpressionAssemblyContexts
 {
