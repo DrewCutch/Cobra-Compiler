@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Emit;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.TypeCheck.Operators
 {

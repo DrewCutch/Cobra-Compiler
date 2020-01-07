@@ -1,4 +1,6 @@
-﻿namespace CobraCompiler.Parse.TypeCheck.Operators
+﻿using CobraCompiler.Parse.TypeCheck.Types;
+
+namespace CobraCompiler.Parse.TypeCheck.Operators
 {
     internal abstract class BinaryOperator: Operator
     {

@@ -1,4 +1,5 @@
-﻿using CobraCompiler.Scanning;
+﻿using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Parse.TypeCheck.Operators
 {
