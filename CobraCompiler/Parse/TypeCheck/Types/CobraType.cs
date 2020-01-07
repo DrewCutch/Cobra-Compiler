@@ -11,7 +11,7 @@
 
         public virtual bool CanImplicitCast(CobraType other)
         {
-            return this == other;
+            return this.Equals(other);
         }
     }
 }
