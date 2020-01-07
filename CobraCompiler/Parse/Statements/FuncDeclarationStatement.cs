@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Parse.Statements
@@ -11,10 +12,10 @@ namespace CobraCompiler.Parse.Statements
     {
         public readonly Token Name;
         public readonly IReadOnlyList<ParamDeclarationStatement> Params;
-        public readonly Token? ReturnType;
+        public readonly TypeInitExpression ReturnType;
         public readonly Statement Body;
 
-        public FuncDeclarationStatement(Token name, IReadOnlyList<ParamDeclarationStatement> @params, Token? returnType, Statement body)
+        public FuncDeclarationStatement(Token name, IReadOnlyList<ParamDeclarationStatement> @params, TypeInitExpression returnType, Statement body)
         {
             Name = name;
             Params = @params;
