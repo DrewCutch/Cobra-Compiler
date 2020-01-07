@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
 {
@@ -14,12 +15,12 @@ namespace CobraCompiler.Parse.Scopes
         {
         }
 
-        public override bool IsTypeDefined(string identifier)
+        protected override bool IsTypeDefined(string identifier)
         {
             return _types.ContainsKey(identifier) || Type.GetType(identifier) != null;
         }
 
-        public override CobraType GetType(string identifier)
+        protected override CobraType GetType(string identifier)
         {
             if (identifier == null)
                 return null;

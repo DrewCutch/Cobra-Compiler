@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
 {
@@ -21,7 +22,7 @@ namespace CobraCompiler.Parse.Scopes
             List<CobraType> funcTypeArgs = Params.Select(x => x.Item2).ToList();
             funcTypeArgs.Add(returnType);
 
-            FuncType = GetGenericInstance("func", funcTypeArgs);
+            FuncType = DotNetCobraGeneric.FuncType.CreateGenericInstance(funcTypeArgs);
         }
 
         public int GetParamPosition(string paramName)
