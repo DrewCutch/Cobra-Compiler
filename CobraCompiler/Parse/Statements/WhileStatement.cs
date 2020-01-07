@@ -7,16 +7,16 @@ using CobraCompiler.Parse.Expressions;
 
 namespace CobraCompiler.Parse.Statements
 {
-    class WhileStatement: Statement
+    class WhileStatement: Statement, IConditionalExpression
     {
         public readonly Expression Condition;
-        public readonly Statement Body;
-        public readonly Statement Else;
+        public Statement Then { get; }
+        public Statement Else { get; }
 
-        public WhileStatement(Expression condition, Statement body, Statement @else)
+        public WhileStatement(Expression condition, Statement then, Statement @else)
         {
             Condition = condition;
-            Body = body;
+            Then = then;
             Else = @else;
         }
     }

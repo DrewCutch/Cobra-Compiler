@@ -7,11 +7,11 @@ using CobraCompiler.Parse.Expressions;
 
 namespace CobraCompiler.Parse.Statements
 {
-    class IfStatement: Statement
+    class IfStatement: Statement, IConditionalExpression
     {
         public readonly Expression Condition;
-        public readonly Statement Then;
-        public readonly Statement Else;
+        public Statement Then { get; }
+        public Statement Else { get; }
 
         public IfStatement(Expression condition, Statement then, Statement @else)
         {
