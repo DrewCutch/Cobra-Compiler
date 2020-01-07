@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CobraCompiler.Parse.TypeCheck;
 
-namespace CobraCompiler.Parse.TypeCheck
+namespace CobraCompiler.Parse.TypeCheck.Types
 {
-    class DotNetCobraType: CobraType
+    class DotNetCobraType: CobraType, IDotNetType
     {
         public static DotNetCobraType Bool = new DotNetCobraType("bool", typeof(bool));
         public static DotNetCobraType Int = new DotNetCobraType("int", typeof(int));
@@ -20,7 +15,7 @@ namespace CobraCompiler.Parse.TypeCheck
             Bool, Int, Float, Str, Null
         };
 
-        public readonly Type Type;
+        public Type Type { get; }
         public DotNetCobraType(string identifier, Type type) : base(identifier)
         {
             Type = type;
