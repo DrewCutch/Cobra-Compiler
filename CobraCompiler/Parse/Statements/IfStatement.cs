@@ -9,7 +9,7 @@ namespace CobraCompiler.Parse.Statements
 {
     class IfStatement: Statement, IConditionalExpression
     {
-        public readonly Expression Condition;
+        public Expression Condition { get; }
         public Statement Then { get; }
         public Statement Else { get; }
 
