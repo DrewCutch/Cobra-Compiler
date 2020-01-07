@@ -84,15 +84,11 @@ namespace CobraCompiler.Assemble
             if(!_locals.ContainsKey(scope))
                 _locals[scope] = new Dictionary<string, LocalBuilder>();
 
-            var localDict = _locals[scope];
+            if (_locals[scope].ContainsKey(name))
+                return _locals[scope][name];
 
-            for (Scope localScope = scope; localScope != null && !localDict.ContainsKey(name); localScope = localScope.Parent)
-            {
-                localDict = _locals[localScope];
-            }
-
-            if (localDict.ContainsKey(name))
-                return localDict[name];
+            if (scope.Parent != null)
+                return GetLocal(scope.Parent, name);
 
             return null;
         }
