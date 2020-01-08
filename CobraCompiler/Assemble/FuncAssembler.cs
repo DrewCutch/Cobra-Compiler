@@ -88,20 +88,20 @@ namespace CobraCompiler.Assemble
                     _scopeCrawler.ExitScope();
                     break;
                 case ExpressionStatement exprStmt:
-                    exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext(false));
+                    exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext());
                     break;
                 case VarDeclarationStatement varDeclaration:
                     CobraType varType = CurrentScope.GetVarType(varDeclaration.Name.Lexeme);
                     _localManager.DeclareVar(CurrentScope, varDeclaration.Name.Lexeme, _typeStore.GetType(varType));
-                    varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext(false));
+                    varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext());
                     break;
                 case ReturnStatement returnStatement:
-                    returnStatement.Value.Accept(this, new ParentExpressionAssemblyContext(false));
+                    returnStatement.Value.Accept(this, new ParentExpressionAssemblyContext());
                     ReturnStatement();
                     break;
                 case IfStatement ifStatement:
                 {
-                    ifStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(false));
+                    ifStatement.Condition.Accept(this, new ParentExpressionAssemblyContext());
 
                     Label elseLabel = _il.DefineLabel();
                     Label endElseLabel = _il.DefineLabel();
@@ -125,12 +125,12 @@ namespace CobraCompiler.Assemble
                     Label whileLabel = _il.DefineLabel();
                     Label bodyLabel = _il.DefineLabel();
 
-                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(false));
+                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext());
 
                     _il.Emit(OpCodes.Brfalse, elseLabel); // If condition fails the first time go to else
                     _il.Emit(OpCodes.Br, bodyLabel); // Else go to body
                     _il.MarkLabel(whileLabel); // Return here on subsequent loop
-                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(false));
+                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext());
                     _il.Emit(OpCodes.Brfalse, endElseLabel);
                     _il.MarkLabel(bodyLabel); // Beginning of body
                     AssembleStatement(whileStatement.Then, typeBuilder);
@@ -159,7 +159,9 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(AssignExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(false));
+            CobraType expectedType = CurrentScope.GetVarType(expr.Name.Lexeme);
+
+            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(expected:expectedType));
 
             _localManager.StoreVar(_scopeCrawler.Current, expr.Name.Lexeme);
 
@@ -168,8 +170,8 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(BinaryExpression expr, ParentExpressionAssemblyContext context)
         {
-            CobraType leftType = expr.Left.Accept(this, new ParentExpressionAssemblyContext(false)).Type;
-            CobraType rightType = expr.Right.Accept(this, new ParentExpressionAssemblyContext(false)).Type;
+            CobraType leftType = expr.Left.Accept(this, new ParentExpressionAssemblyContext()).Type;
+            CobraType rightType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
 
             Operator op = _funcScope.GetOperator(expr.Op.Type, leftType, rightType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
@@ -185,7 +187,7 @@ namespace CobraCompiler.Assemble
             ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(true));
 
             foreach (Expression arg in expr.Arguments)
-                arg.Accept(this, new ParentExpressionAssemblyContext(false));
+                arg.Accept(this, new ParentExpressionAssemblyContext());
 
             CobraType returnType = null;
 
@@ -207,6 +209,25 @@ namespace CobraCompiler.Assemble
             return new ExpressionAssemblyContext(returnType);
         }
 
+        public ExpressionAssemblyContext Visit(ListLiteralExpression expr, ParentExpressionAssemblyContext context)
+        {
+            CobraType type = context.ExpectedType;
+            Type listType = _typeStore.GetType(type);
+
+            // Create List with initial size of the number of literal elements
+            _localManager.LoadLiteral(expr.Elements.Count);
+            _il.Emit(OpCodes.Newobj, listType.GetConstructor(new Type[]{typeof(int)}) ?? throw new InvalidOperationException());
+
+            foreach (Expression element in expr.Elements)
+            {
+                _il.Emit(OpCodes.Dup);
+                element.Accept(this, new ParentExpressionAssemblyContext());
+                _il.Emit(OpCodes.Callvirt, listType.GetMethod("Add") ?? throw new InvalidOperationException());
+            }
+
+            return new ExpressionAssemblyContext(type);
+        }
+
         public ExpressionAssemblyContext Visit(LiteralExpression expr, ParentExpressionAssemblyContext context)
         {
             _localManager.LoadLiteral(expr.Value);
@@ -221,7 +242,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(UnaryExpression expr, ParentExpressionAssemblyContext context)
         {
-            CobraType operandType = expr.Right.Accept(this, new ParentExpressionAssemblyContext(false)).Type;
+            CobraType operandType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
 
             Operator op = _funcScope.GetOperator(expr.Op.Type, null, operandType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
@@ -234,7 +255,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(GroupingExpression expr, ParentExpressionAssemblyContext context)
         {
-            return expr.Inner.Accept(this, new ParentExpressionAssemblyContext(false));
+            return expr.Inner.Accept(this, new ParentExpressionAssemblyContext());
         }
 
         public ExpressionAssemblyContext Visit(VarExpression expr, ParentExpressionAssemblyContext context)
