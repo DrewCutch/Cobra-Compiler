@@ -1,15 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using CobraCompiler.Parse.Expressions;
+using CobraCompiler.Parse.Scopes;
+using CobraCompiler.Parse.TypeCheck.Operators;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
-    abstract class CobraType
+    abstract class CobraType: CobraTypeBase
     {
-        public readonly string Identifier;
 
-        protected CobraType(string identifier)
+        protected CobraType(string identifier): base(identifier)
         {
-            Identifier = identifier;
+        }
+
+        public void DefineOperator(BinaryOperator op, FuncScope implementation)
+        {
+            if(implementation.Params.Count != 2 || implementation.Params[0].Item2 != op.Lhs || implementation.Params[1].Item2 != op.Rhs)
+                throw new ArgumentException("Implementation does not handler operator");
+
+
+        }
+
+        public void DefineMethod(FuncScope implementation)
+        {
+            if(implementation.Params[0].Item2 != this)
+                throw new ArgumentException($"First param of implementation must be of type {this.Identifier}");
         }
 
         public virtual bool CanImplicitCast(CobraType other)

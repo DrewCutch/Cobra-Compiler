@@ -3,15 +3,13 @@ using System.Collections.Generic;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
-    class CobraGeneric
+    class CobraGeneric: CobraTypeBase
     {
-        public readonly string Identifier;
         public readonly int NumberOfParams;
         public bool HasFixedParamCount => NumberOfParams != -1;
 
-        public CobraGeneric(string identifier, int numberOfParams)
+        public CobraGeneric(string identifier, int numberOfParams): base(identifier)
         {
-            Identifier = identifier;
             NumberOfParams = numberOfParams;
         }
 
