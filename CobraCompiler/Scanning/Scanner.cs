@@ -87,9 +87,9 @@ namespace CobraCompiler.Scanning
                 case "}":
                     return TokenType.RightBrace;
                 case "[":
-                    return TokenType.RightBracket;
-                case "]":
                     return TokenType.LeftBracket;
+                case "]":
+                    return TokenType.RightBracket;
                 case ",":
                     return TokenType.Comma;
                 case ".":

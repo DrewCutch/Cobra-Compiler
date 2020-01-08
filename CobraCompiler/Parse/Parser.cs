@@ -128,7 +128,7 @@ namespace CobraCompiler.Parse
             List<Token> typeIdentifier = new List<Token>();
             List<TypeInitExpression> genericParams = new List<TypeInitExpression>();
 
-            if(Check(TokenType.RightBracket)) // List Type literal special case
+            if(Check(TokenType.LeftBracket)) // List Type literal special case
                 typeIdentifier.Add(new Token(TokenType.Identifier, "list", null, _tokens.Previous().Line));
             else
                 typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier."));
@@ -138,14 +138,14 @@ namespace CobraCompiler.Parse
                 typeIdentifier.Add(Expect(TokenType.Identifier, "Expect identifier after '.'"));
             }
 
-            if (Match(TokenType.RightBracket))
+            if (Match(TokenType.LeftBracket))
             {
                 do
                 {
                     genericParams.Add(InitType());
                 } while (Match(TokenType.Comma));
 
-                Expect(TokenType.LeftBracket, "Expect closing ']' after generic parameters");
+                Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
             }
 
             return new TypeInitExpression(typeIdentifier, genericParams);
@@ -373,6 +373,16 @@ namespace CobraCompiler.Parse
                     Token name = Expect(TokenType.Identifier, "Expect property name after '.'");
                     expr = new GetExpression(expr, name);
                 }
+                else if (Match(TokenType.LeftBracket))
+                {
+                    List<Expression> indicies = new List<Expression>();
+                    do
+                    {
+                        indicies.Add(Expression());
+                    } while (Match(TokenType.Comma));
+                    expr = new IndexExpression(expr, indicies);
+                    Expect(TokenType.RightBracket, "Expect ']' after indices");
+                }
                 else
                 {
                     break;
@@ -391,7 +401,7 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.Integer)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Int);
             if (Match(TokenType.Decimal)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Float);
             if (Match(TokenType.String)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Str);
-            if (Check(TokenType.RightBracket)) return ListLiteral();
+            if (Check(TokenType.LeftBracket)) return ListLiteral();
 
             if (Match(TokenType.Identifier))
             {
@@ -436,13 +446,13 @@ namespace CobraCompiler.Parse
         {
             List<Expression> elements = new List<Expression>();
 
-            Expect(TokenType.RightBracket, "Expect '[' at beginning of list literal");
+            Expect(TokenType.LeftBracket, "Expect '[' at beginning of list literal");
             do
             {
                 elements.Add(Expression());
             } while (Match(TokenType.Comma));
 
-            Expect(TokenType.LeftBracket, "Expect closing ']' at end of list literal");
+            Expect(TokenType.RightBracket, "Expect closing ']' at end of list literal");
 
             return new ListLiteralExpression(elements);
         }
