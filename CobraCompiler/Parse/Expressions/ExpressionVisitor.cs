@@ -5,6 +5,7 @@
         T Visit(AssignExpression expr);
         T Visit(BinaryExpression expr);
         T Visit(CallExpression expr);
+        T Visit(ListLiteralExpression expr);
         T Visit(LiteralExpression expr);
         T Visit(TypeInitExpression expr);
         T Visit(UnaryExpression expr);
