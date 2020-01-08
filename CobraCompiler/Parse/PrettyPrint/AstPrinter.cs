@@ -139,6 +139,19 @@ namespace CobraCompiler.Parse.PrettyPrint
             _printer.ExitNode();
         }
 
+        public void Visit(IndexExpression expr, bool onLast)
+        {
+            _printer.AddNode("Index", onLast);
+            _printer.AddNode("Collection", false);
+            expr.Collection.Accept(this, true);
+            _printer.ExitNode();
+            _printer.AddNode("Indicies", true);
+            for (int i = 0; i < expr.Indicies.Count; i++)
+                expr.Indicies[i].Accept(this, i == expr.Indicies.Count - 1);
+            _printer.ExitNode();
+            _printer.ExitNode();
+        }
+
         public void Visit(ListLiteralExpression expr, bool onLast)
         {
             _printer.AddNode("List", onLast);
