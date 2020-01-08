@@ -73,6 +73,7 @@
     <Compile Include="Parse\Expressions\CallExpression.cs" />
     <Compile Include="Parse\Expressions\GetExpression.cs" />
     <Compile Include="Parse\Expressions\IExpressionVisitorWithContext.cs" />
+    <Compile Include="Parse\Expressions\IndexExpression.cs" />
     <Compile Include="Parse\Expressions\ListLiteralExpression.cs" />
     <Compile Include="Parse\Expressions\TypeInitExpression.cs" />
     <Compile Include="Parse\Expressions\IExpressionTraverser.cs" />
@@ -87,6 +88,8 @@
     <Compile Include="Parse\Statements\ReturnStatement.cs" />
     <Compile Include="Parse\PrettyPrint\TreePrinter.cs" />
     <Compile Include="Parse\Statements\WhileStatement.cs" />
+    <Compile Include="Parse\TypeCheck\GenericOperator.cs" />
+    <Compile Include="Parse\TypeCheck\Types\CobraTypeBase.cs" />
     <Compile Include="Parse\TypeCheck\Types\DotNetCobraGeneric.cs" />
     <Compile Include="Parse\TypeCheck\InvalidReturnTypeException.cs" />
     <Compile Include="Parse\TypeCheck\OperatorNotDefinedException.cs" />
@@ -116,7 +119,7 @@
     <Compile Include="Parse\TypeCheck\Operators\IDotNetOperator.cs" />
     <Compile Include="Parse\TypeCheck\InvalidAssignmentException.cs" />
     <Compile Include="Parse\TypeCheck\InvalidOperationException.cs" />
-    <Compile Include="Parse\TypeCheck\Operators\Operator.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\IOperator.cs" />
     <Compile Include="Parse\TypeCheck\Operators\UnaryOperator.cs" />
     <Compile Include="Parse\TypeCheck\TypeChecker.cs" />
     <Compile Include="Parse\TypeCheck\TypeNotDefinedException.cs" />
