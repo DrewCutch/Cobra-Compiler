@@ -205,6 +205,18 @@ namespace CobraCompiler.Parse.TypeCheck
             return null;
         }
 
+        public CobraType Visit(ListLiteralExpression expr)
+        {
+            CobraType elementsCommonType = expr.Elements[0].Accept(this);
+
+            foreach (Expression element in expr.Elements)
+            {
+                elementsCommonType = element.Accept(this).GetCommonParent(elementsCommonType);
+            }
+
+            return DotNetCobraGeneric.ListType.CreateGenericInstance(new[] {elementsCommonType});
+        }
+
         public CobraType Visit(LiteralExpression expr)
         {
             return expr.LiteralType;
