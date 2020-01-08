@@ -173,11 +173,13 @@ namespace CobraCompiler.Assemble
             CobraType leftType = expr.Left.Accept(this, new ParentExpressionAssemblyContext()).Type;
             CobraType rightType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
 
-            Operator op = _funcScope.GetOperator(expr.Op.Type, leftType, rightType);
+            IOperator op = _funcScope.GetOperator(expr.Op.Type, leftType, rightType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
             {
                 _il.Emit(dotNetBinaryOperator.OpCode);
             }
+
+
 
             return new ExpressionAssemblyContext(op.ResultType);
         }
@@ -207,6 +209,20 @@ namespace CobraCompiler.Assemble
                 returnType = funcInstance.TypeParams.Last();
 
             return new ExpressionAssemblyContext(returnType);
+        }
+
+        public ExpressionAssemblyContext Visit(IndexExpression expr, ParentExpressionAssemblyContext arg)
+        {
+            expr.Collection.Accept(this, new ParentExpressionAssemblyContext());
+
+            foreach (Expression index in expr.Indicies)
+            {
+                index.Accept(this, new ParentExpressionAssemblyContext());
+            }
+            // TODO: make this real
+            _il.Emit(OpCodes.Callvirt, typeof(List<int>).GetMethod("get_Item") ?? throw new InvalidOperationException());
+
+            return new ExpressionAssemblyContext(DotNetCobraType.Int);
         }
 
         public ExpressionAssemblyContext Visit(ListLiteralExpression expr, ParentExpressionAssemblyContext context)
@@ -244,7 +260,7 @@ namespace CobraCompiler.Assemble
         {
             CobraType operandType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
 
-            Operator op = _funcScope.GetOperator(expr.Op.Type, null, operandType);
+            IOperator op = _funcScope.GetOperator(expr.Op.Type, null, operandType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
             {
                 _il.Emit(dotNetBinaryOperator.OpCode);
