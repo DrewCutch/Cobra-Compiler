@@ -73,6 +73,7 @@
     <Compile Include="Parse\Expressions\CallExpression.cs" />
     <Compile Include="Parse\Expressions\GetExpression.cs" />
     <Compile Include="Parse\Expressions\IExpressionVisitorWithContext.cs" />
+    <Compile Include="Parse\Expressions\ListLiteralExpression.cs" />
     <Compile Include="Parse\Expressions\TypeInitExpression.cs" />
     <Compile Include="Parse\Expressions\IExpressionTraverser.cs" />
     <Compile Include="Parse\Scopes\GlobalScope.cs" />
