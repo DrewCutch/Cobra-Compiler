@@ -128,7 +128,10 @@ namespace CobraCompiler.Parse
             List<Token> typeIdentifier = new List<Token>();
             List<TypeInitExpression> genericParams = new List<TypeInitExpression>();
 
-            typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier."));
+            if(Check(TokenType.RightBracket)) // List Type literal special case
+                typeIdentifier.Add(new Token(TokenType.Identifier, "list", null, _tokens.Previous().Line));
+            else
+                typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier."));
 
             while (Match(TokenType.Dot))
             {
@@ -385,9 +388,10 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.True)) return new LiteralExpression(true, DotNetCobraType.Bool);
             if (Match(TokenType.Null)) return new LiteralExpression(null, DotNetCobraType.Null);
 
-            if(Match(TokenType.Integer)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Int);
+            if (Match(TokenType.Integer)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Int);
             if (Match(TokenType.Decimal)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Float);
             if (Match(TokenType.String)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Str);
+            if (Check(TokenType.RightBracket)) return ListLiteral();
 
             if (Match(TokenType.Identifier))
             {
@@ -424,6 +428,23 @@ namespace CobraCompiler.Parse
             Token paren = Expect(TokenType.RightParen, "Expect closing paren after arguments.");
 
             return new CallExpression(callee, paren, arguments);
+        }
+
+
+
+        private ListLiteralExpression ListLiteral()
+        {
+            List<Expression> elements = new List<Expression>();
+
+            Expect(TokenType.RightBracket, "Expect '[' at beginning of list literal");
+            do
+            {
+                elements.Add(Expression());
+            } while (Match(TokenType.Comma));
+
+            Expect(TokenType.LeftBracket, "Expect closing ']' at end of list literal");
+
+            return new ListLiteralExpression(elements);
         }
 
         private Token Expect(TokenType type, String message, bool ignoreNewline=false)
