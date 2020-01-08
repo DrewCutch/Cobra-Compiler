@@ -3,7 +3,7 @@ using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.TypeCheck.Operators
 {
-    class DotNetBinaryOperator: BinaryOperator, IDotNetOperator
+    struct DotNetBinaryOperator: IOperator, IDotNetOperator
     {
         public static DotNetBinaryOperator[] BuiltinDotNetBinaryOperators = new[]
         {
@@ -24,10 +24,14 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
         };
 
         public OpCode OpCode { get; }
+        public BinaryOperator Operator { get; }
+        public TokenType OperatorToken => Operator.OperatorToken;
+        public CobraType ResultType => Operator.ResultType;
 
-        public DotNetBinaryOperator(TokenType operatorToken, CobraType lhs, CobraType rhs, CobraType resultType, OpCode opCode) : base(operatorToken, lhs, rhs, resultType)
+        public DotNetBinaryOperator(TokenType operatorToken, CobraType lhs, CobraType rhs, CobraType resultType, OpCode opCode)
         {
             OpCode = opCode;
+            Operator = new BinaryOperator(operatorToken, lhs, rhs, resultType);
         }
     }
 }

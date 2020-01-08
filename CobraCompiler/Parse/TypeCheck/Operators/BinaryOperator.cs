@@ -2,15 +2,20 @@
 
 namespace CobraCompiler.Parse.TypeCheck.Operators
 {
-    internal abstract class BinaryOperator: Operator
+    struct BinaryOperator: IOperator
     {
+        public TokenType OperatorToken { get; }
+        public CobraType ResultType { get; }
+
         public readonly CobraType Lhs;
         public readonly CobraType Rhs;
 
-        protected BinaryOperator(TokenType operatorToken, CobraType lhs, CobraType rhs, CobraType resultType) : base(operatorToken, resultType)
+        public BinaryOperator(TokenType operatorToken, CobraType lhs, CobraType rhs, CobraType resultType)
         {
+            OperatorToken = operatorToken;
             Lhs = lhs;
             Rhs = rhs;
+            ResultType = resultType;
         }
     }
 }
