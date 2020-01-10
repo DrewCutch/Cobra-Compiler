@@ -13,7 +13,10 @@ namespace CobraCompiler.Parse.Scopes
         protected readonly Dictionary<string, CobraType> _vars;
         protected readonly Dictionary<string, CobraType> _types;
         protected readonly Dictionary<string, CobraGeneric> _generics;
-        protected readonly Dictionary<(TokenType, CobraTypeBase, CobraTypeBase), IOperator> _operators;
+
+        protected readonly Dictionary<(Operation, CobraType, CobraType), IOperator> _operators;
+        protected readonly Dictionary<(Operation, CobraTypeBase, CobraTypeBase), GenericOperator> _genericOperators;
+
         protected readonly List<Scope> _subScopes;
 
         public IReadOnlyList<Scope> SubScopes => _subScopes;
@@ -30,7 +33,8 @@ namespace CobraCompiler.Parse.Scopes
             _types = new Dictionary<string, CobraType>();
 
             _generics = new Dictionary<string, CobraGeneric>();
-            _operators = new Dictionary<(TokenType, CobraTypeBase, CobraTypeBase), IOperator>();
+            _operators = new Dictionary<(Operation, CobraType, CobraType), IOperator>();
+            _genericOperators = new Dictionary<(Operation, CobraTypeBase, CobraTypeBase), GenericOperator>();
 
             _subScopes = new List<Scope>();
         }
@@ -141,12 +145,12 @@ namespace CobraCompiler.Parse.Scopes
             _subScopes.Add(scope);
         }
 
-        public bool IsOperatorDefined(TokenType op, CobraType lhs, CobraType rhs)
+        public bool IsOperatorDefined(Operation op, CobraType lhs, CobraType rhs)
         {
             return GetOperator(op, lhs, rhs) != null;
         }
 
-        public IOperator GetOperator(TokenType op, CobraType lhs, CobraType rhs)
+        public IOperator GetOperator(Operation op, CobraType lhs, CobraType rhs)
         {
             CobraTypeBase lhsBase = lhs;
             if (lhs is CobraGenericInstance lhsGeneric)
@@ -156,15 +160,44 @@ namespace CobraCompiler.Parse.Scopes
             if (rhs is CobraGenericInstance rhsGeneric)
                 rhsBase = rhsGeneric;
 
-            if (_operators.ContainsKey((op, lhsBase, rhsBase)))
-                return _operators[(op, lhsBase, rhsBase)];
+            if (_genericOperators.ContainsKey((op, lhsBase, rhsBase)))
+                return _genericOperators[(op, lhsBase, rhsBase)].GetOperatorInstance(lhs, rhs);
+
+            if (_operators.ContainsKey((op, lhs, rhs)))
+                return _operators[(op, lhs, rhs)];
 
             return Parent?.GetOperator(op, lhs, rhs);
         }
 
-        public void DefineOperator(TokenType opToken, CobraTypeBase lhs, CobraTypeBase rhs, IOperator op)
+        public BinaryOperator? GetGenericBinaryOperator(Operation op, CobraType lhs, CobraType rhs)
         {
-            _operators[(opToken, lhs, rhs)] = op;
+            CobraTypeBase lhsBase = lhs;
+            if (lhs is CobraGenericInstance lhsGeneric)
+                lhsBase = lhsGeneric.Base;
+
+            CobraTypeBase rhsBase = rhs;
+            if (rhs is CobraGenericInstance rhsGeneric)
+                rhsBase = rhsGeneric;
+
+            if (_genericOperators.ContainsKey((op, lhsBase, rhsBase)))
+                return _genericOperators[(op, lhsBase, rhsBase)].GetGenericBinaryOperator();
+
+            return Parent?.GetGenericBinaryOperator(op, lhs, rhs);
+        }
+
+        public void DefineOperator(GenericOperator op)
+        {
+            _genericOperators[(op.Operation, op.Lhs, op.Rhs)] = op;
+        }
+
+        public void DefineOperator(BinaryOperator op)
+        {
+            DefineOperator(op.Operation, op.Lhs, op.Rhs, op);
+        }
+
+        public void DefineOperator(Operation operation, CobraType lhs, CobraType rhs, IOperator op)
+        {
+            _operators[(operation, lhs, rhs)] = op;
         }
 
         public virtual CobraType GetReturnType()
