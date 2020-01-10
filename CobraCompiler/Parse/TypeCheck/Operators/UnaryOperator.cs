@@ -5,14 +5,14 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
 {
     class UnaryOperator: IOperator
     {
-        public TokenType OperatorToken { get; }
+        public Operation Operation { get; }
         public CobraType ResultType { get; }
 
         public readonly CobraType OperandType;
 
-        public UnaryOperator(TokenType operatorToken, CobraType operandType, CobraType resultType)
+        public UnaryOperator(Operation operation, CobraType operandType, CobraType resultType)
         {
-            OperatorToken = operatorToken;
+            Operation = operation;
             ResultType = resultType;
             OperandType = operandType;
         }

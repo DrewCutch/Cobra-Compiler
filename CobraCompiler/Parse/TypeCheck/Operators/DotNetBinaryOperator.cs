@@ -5,33 +5,34 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
 {
     struct DotNetBinaryOperator: IOperator, IDotNetOperator
     {
-        public static DotNetBinaryOperator[] BuiltinDotNetBinaryOperators = new[]
+        public static DotNetBinaryOperator[] OpCodeDotNetBinaryOperators = new[]
         {
-            new DotNetBinaryOperator(TokenType.Plus, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
+            new DotNetBinaryOperator(Operation.Add, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
                 OpCodes.Add),
-            new DotNetBinaryOperator(TokenType.Minus, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
+            new DotNetBinaryOperator(Operation.Subtract, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
                 OpCodes.Sub),
-            new DotNetBinaryOperator(TokenType.Star, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
+            new DotNetBinaryOperator(Operation.Multiply, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
                 OpCodes.Mul),
-            new DotNetBinaryOperator(TokenType.Slash, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
+            new DotNetBinaryOperator(Operation.Devide, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Int,
                 OpCodes.Div),
-            new DotNetBinaryOperator(TokenType.Greater, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
+            new DotNetBinaryOperator(Operation.CompareGreater, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
                 OpCodes.Cgt),
-            new DotNetBinaryOperator(TokenType.Less, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
+            new DotNetBinaryOperator(Operation.CompareLess, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
                 OpCodes.Clt),
-            new DotNetBinaryOperator(TokenType.EqualEqual, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
+            new DotNetBinaryOperator(Operation.CompareEqual, DotNetCobraType.Int, DotNetCobraType.Int, DotNetCobraType.Bool,
                 OpCodes.Ceq),
         };
 
+
         public OpCode OpCode { get; }
         public BinaryOperator Operator { get; }
-        public TokenType OperatorToken => Operator.OperatorToken;
+        public Operation Operation => Operator.Operation;
         public CobraType ResultType => Operator.ResultType;
 
-        public DotNetBinaryOperator(TokenType operatorToken, CobraType lhs, CobraType rhs, CobraType resultType, OpCode opCode)
+        public DotNetBinaryOperator(Operation operation, CobraType lhs, CobraType rhs, CobraType resultType, OpCode opCode)
         {
             OpCode = opCode;
-            Operator = new BinaryOperator(operatorToken, lhs, rhs, resultType);
+            Operator = new BinaryOperator(operation, lhs, rhs, resultType);
         }
     }
 }

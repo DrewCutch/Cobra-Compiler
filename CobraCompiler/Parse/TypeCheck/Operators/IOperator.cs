@@ -5,7 +5,7 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
 {
     interface IOperator
     { 
-        TokenType OperatorToken { get; }
+        Operation Operation{ get; }
         CobraType ResultType { get; }
     }
 }

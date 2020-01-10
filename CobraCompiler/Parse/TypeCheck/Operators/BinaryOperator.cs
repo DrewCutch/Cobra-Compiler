@@ -4,18 +4,23 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
 {
     struct BinaryOperator: IOperator
     {
-        public TokenType OperatorToken { get; }
+        public Operation Operation { get; }
         public CobraType ResultType { get; }
 
         public readonly CobraType Lhs;
         public readonly CobraType Rhs;
 
-        public BinaryOperator(TokenType operatorToken, CobraType lhs, CobraType rhs, CobraType resultType)
+        public BinaryOperator(Operation operation, CobraType lhs, CobraType rhs, CobraType resultType)
         {
-            OperatorToken = operatorToken;
+            Operation = operation;
             Lhs = lhs;
             Rhs = rhs;
             ResultType = resultType;
+        }
+
+        public CobraType GetFuncType()
+        {
+            return DotNetCobraGeneric.FuncType.CreatGenericInstance(Lhs, Rhs, ResultType);
         }
     }
 }
