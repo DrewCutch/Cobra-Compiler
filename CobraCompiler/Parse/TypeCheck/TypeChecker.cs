@@ -30,8 +30,10 @@ namespace CobraCompiler.Parse.TypeCheck
                 _globalScope.DefineType(builtinCobraType.Identifier, builtinCobraType);
             foreach (CobraGeneric builtinCobraGeneric in DotNetCobraGeneric.BuiltInCobraGenerics)
                 _globalScope.DefineGeneric(builtinCobraGeneric.Identifier, builtinCobraGeneric);
-            foreach (DotNetBinaryOperator op in DotNetBinaryOperator.BuiltinDotNetBinaryOperators)
-                _globalScope.DefineOperator(op.OperatorToken, op.Lhs, op.Rhs, op);
+            foreach (DotNetBinaryOperator op in DotNetBinaryOperator.OpCodeDotNetBinaryOperators)
+                _globalScope.DefineOperator(op.Operator.Operation, op.Operator.Lhs, op.Operator.Rhs, op);
+            foreach (GenericOperator genericOperator in GenericOperator.DotNetGenericOperators)
+                _globalScope.DefineOperator(genericOperator);
 
             _globalScope.Declare("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new []{DotNetCobraType.Str, DotNetCobraType.Null}));
             _globalScope.Declare("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Null }));
@@ -184,13 +186,13 @@ namespace CobraCompiler.Parse.TypeCheck
             CobraType leftType = expr.Left.Accept(this);
             CobraType rightType = expr.Right.Accept(this);
 
-            if (!CurrentScope.IsOperatorDefined(expr.Op.Type, leftType, rightType))
+            if (!CurrentScope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), leftType, rightType))
             {
                 _errorLogger.Log(new OperatorNotDefinedException(expr.Op, leftType, rightType));
                 return null;
             }
 
-            Operator op = CurrentScope.GetOperator(expr.Op.Type, leftType, rightType);
+            IOperator op = CurrentScope.GetOperator(Operator.GetOperation(expr.Op.Type), leftType, rightType);
 
             return op.ResultType;
         }
@@ -203,6 +205,20 @@ namespace CobraCompiler.Parse.TypeCheck
 
             _errorLogger.Log(new InvalidOperationException(expr.Paren.Line));
             return null;
+        }
+
+        public CobraType Visit(IndexExpression expr)
+        {
+            CobraType collectionType = expr.Collection.Accept(this);
+
+            foreach (Expression index in expr.Indicies)
+            {
+                index.Accept(this);
+            }
+
+            IOperator getOperator = CurrentScope.GetOperator(Operation.Get, collectionType, DotNetCobraType.Int);
+            
+            return getOperator.ResultType;
         }
 
         public CobraType Visit(ListLiteralExpression expr)
@@ -231,10 +247,10 @@ namespace CobraCompiler.Parse.TypeCheck
         {
             CobraType operand = expr.Right.Accept(this);
 
-            if (!CurrentScope.IsOperatorDefined(expr.Op.Type, null, operand))
+            if (!CurrentScope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), null, operand))
                 _errorLogger.Log(new OperatorNotDefinedException(expr.Op, operand));
 
-            Operator op = CurrentScope.GetOperator(expr.Op.Type, null, operand);
+            IOperator op = CurrentScope.GetOperator(Operator.GetOperation(expr.Op.Type), null, operand);
 
             return op.ResultType;
         }
