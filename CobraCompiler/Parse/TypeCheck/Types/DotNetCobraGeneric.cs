@@ -28,13 +28,5 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         {
             return InstanceGenerator(typeArgs);
         }
-
-        public override CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
-        {
-            if (HasFixedParamCount && typeParams.Count > NumberOfParams)
-                throw new ArgumentException("Invalid number of parameters");
-
-            return new CobraGenericInstance($"{Identifier}[{string.Join(",", typeParams.Select(param => param.Identifier))}]", typeParams, this);
-        }
     }
 }

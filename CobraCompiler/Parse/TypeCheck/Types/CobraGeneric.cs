@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
@@ -13,12 +14,17 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             NumberOfParams = numberOfParams;
         }
 
+        public CobraGenericInstance CreatGenericInstance(params CobraType[] typeParams)
+        {
+            return CreateGenericInstance(typeParams);
+        }
+
         public virtual CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
         {
             if (HasFixedParamCount && typeParams.Count > NumberOfParams)
                 throw new ArgumentException("Invalid number of parameters");
 
-            return new CobraGenericInstance(Identifier, typeParams, this);
+            return new CobraGenericInstance($"{Identifier}[{string.Join(",", typeParams.Select(param => param.Identifier))}]", typeParams, this);
         }
     }
 }
