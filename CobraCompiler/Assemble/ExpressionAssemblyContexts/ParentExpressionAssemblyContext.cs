@@ -11,11 +11,13 @@ namespace CobraCompiler.Assemble.ExpressionAssemblyContexts
     {
         public readonly bool ImmediatelyCalling;
         public readonly CobraType ExpectedType;
+        public readonly bool Assigning;
 
-        public ParentExpressionAssemblyContext(bool calling=false, CobraType expected=null)
+        public ParentExpressionAssemblyContext(bool calling=false, CobraType expected=null, bool assigning=false)
         {
             ImmediatelyCalling = calling;
             ExpectedType = expected;
+            Assigning = assigning;
         }
     }
 }
