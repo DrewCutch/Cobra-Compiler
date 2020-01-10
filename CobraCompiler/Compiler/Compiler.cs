@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CobraCompiler.Assemble;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse;
@@ -12,7 +9,7 @@ using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
 using CobraCompiler.Scanning;
 
-namespace CobraCompiler
+namespace CobraCompiler.Compiler
 {
     class Compiler
     {

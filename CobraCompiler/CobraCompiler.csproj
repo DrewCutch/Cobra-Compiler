@@ -49,7 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArgsReader.cs" />
+    <Compile Include="Compiler\ArgsReader.cs" />
     <Compile Include="Assemble\Assembler.cs" />
     <Compile Include="Assemble\ExpressionAssemblyContexts\ExpressionAssemblyContext.cs" />
     <Compile Include="Assemble\ExpressionAssemblyContexts\MethodBuilderExpressionAssemblyContext.cs" />
@@ -63,9 +63,9 @@
     <Compile Include="Assemble\ScopeCrawler.cs" />
     <Compile Include="Assemble\TypeStore.cs" />
     <Compile Include="Class1.cs" />
-    <Compile Include="CompilationOptions.cs" />
-    <Compile Include="Compiler.cs" />
-    <Compile Include="CompilerFlags.cs" />
+    <Compile Include="Compiler\CompilationOptions.cs" />
+    <Compile Include="Compiler\Compiler.cs" />
+    <Compile Include="Compiler\CompilerFlags.cs" />
     <Compile Include="ErrorLogging\CompilingException.cs" />
     <Compile Include="ErrorLogging\ErrorLogger.cs" />
     <Compile Include="ErrorLogging\ParsingException.cs" />
@@ -144,9 +144,12 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="SupportedProject\ListTools.cobra" />
+    <None Include="SupportedProject\SupportedProject.cobraproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="supportedcode.txt" />
+    <None Include="SupportedProject\SupportedCode.cobra" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

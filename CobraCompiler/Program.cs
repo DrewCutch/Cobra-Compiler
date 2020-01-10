@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Assemble;
+using CobraCompiler.Compiler;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse;
 using CobraCompiler.Parse.Expressions;
@@ -35,7 +36,7 @@ namespace CobraCompiler
 
             ErrorLogger errorLogger = new ErrorLogger();
 
-            Compiler compiler = new Compiler(options, errorLogger);
+            Compiler.Compiler compiler = new Compiler.Compiler(options, errorLogger);
 
             compiler.Run();
 
