@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Assemble.ExpressionAssemblyContexts;
 using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Parse.TypeCheck.Operators;
 using CobraCompiler.Parse.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
@@ -17,7 +18,6 @@ namespace CobraCompiler.Assemble
         private readonly AssemblyBuilder _assemblyBuilder;
         private readonly Dictionary<(string, CobraType), MethodInfo> _methodAlias;
         private readonly Dictionary<string, Dictionary<CobraType, MethodInfo>> _methodBuilders;
-        
 
         public MethodStore(AssemblyBuilder assemblyBuilder)
         {
@@ -38,6 +38,14 @@ namespace CobraCompiler.Assemble
                 _methodBuilders[identifier] = new Dictionary<CobraType, MethodInfo>();
 
             _methodBuilders[identifier][funcType] = info;
+        }
+
+        public MethodInfo GetMethodInfo(BinaryOperator op)
+        {
+            string methodName = Operator.GetOverloadSpecialName(op.Operation);
+            CobraType methodType = op.GetFuncType();
+
+            return _methodBuilders[methodName][methodType];
         }
 
         public MethodInfo GetMethodInfo(MethodExpressionAssemblyContext context)

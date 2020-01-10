@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace CobraCompiler
 {
@@ -30,6 +31,11 @@ namespace CobraCompiler
         public static int Magnitude(int x, int y)
         {
             return (int) Math.Sqrt(x * x + y * y);
+        }
+
+        public int DoThing()
+        {
+            return 5;
         }
     }
 
@@ -63,13 +69,24 @@ namespace CobraCompiler
 
             Point z = p + i;
 
+            z.DoThing();
+
             int mag = z.Calculate(Point.Magnitude);
 
+            Func<int, int, int> func = Point.Magnitude;
+
+            Func<int> func2 = z.DoThing;
+            int num = func(2, 4);
             string str = "hello";
 
             b = str.Length;
 
-            Console.WriteLine("Hello");
+            List<int> scores = new List<int>(){1, 2, 3};
+
+            int score = scores[2];
+
+            Console.WriteLine($"I love string interpolation {z}, {a}, {parameter}. Dont you?");
+            
             return a;
         }
     }

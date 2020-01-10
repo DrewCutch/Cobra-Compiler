@@ -88,7 +88,9 @@
     <Compile Include="Parse\Statements\ReturnStatement.cs" />
     <Compile Include="Parse\PrettyPrint\TreePrinter.cs" />
     <Compile Include="Parse\Statements\WhileStatement.cs" />
-    <Compile Include="Parse\TypeCheck\GenericOperator.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\GenericOperator.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\Operation.cs" />
+    <Compile Include="Parse\TypeCheck\Operators\Operator.cs" />
     <Compile Include="Parse\TypeCheck\Types\CobraTypeBase.cs" />
     <Compile Include="Parse\TypeCheck\Types\DotNetCobraGeneric.cs" />
     <Compile Include="Parse\TypeCheck\InvalidReturnTypeException.cs" />
@@ -123,6 +125,7 @@
     <Compile Include="Parse\TypeCheck\Operators\UnaryOperator.cs" />
     <Compile Include="Parse\TypeCheck\TypeChecker.cs" />
     <Compile Include="Parse\TypeCheck\TypeNotDefinedException.cs" />
+    <Compile Include="Parse\TypeCheck\Types\GenericTypeParamPlaceholder.cs" />
     <Compile Include="Parse\TypeCheck\Types\IDotNetType.cs" />
     <Compile Include="Parse\TypeCheck\TypingException.cs" />
     <Compile Include="Parse\TypeCheck\VarAlreadyDeclaredException.cs" />

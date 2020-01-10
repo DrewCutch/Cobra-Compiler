@@ -173,13 +173,11 @@ namespace CobraCompiler.Assemble
             CobraType leftType = expr.Left.Accept(this, new ParentExpressionAssemblyContext()).Type;
             CobraType rightType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
 
-            IOperator op = _funcScope.GetOperator(expr.Op.Type, leftType, rightType);
+            IOperator op = _funcScope.GetOperator(Operator.GetOperation(expr.Op.Type), leftType, rightType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
             {
                 _il.Emit(dotNetBinaryOperator.OpCode);
             }
-
-
 
             return new ExpressionAssemblyContext(op.ResultType);
         }
@@ -213,14 +211,25 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(IndexExpression expr, ParentExpressionAssemblyContext arg)
         {
-            expr.Collection.Accept(this, new ParentExpressionAssemblyContext());
+            ExpressionAssemblyContext collectionContext = expr.Collection.Accept(this, new ParentExpressionAssemblyContext());
+            List<CobraType> indexTypes = new List<CobraType>();
 
             foreach (Expression index in expr.Indicies)
             {
-                index.Accept(this, new ParentExpressionAssemblyContext());
+                indexTypes.Add(index.Accept(this, new ParentExpressionAssemblyContext()).Type);
             }
-            // TODO: make this real
-            _il.Emit(OpCodes.Callvirt, typeof(List<int>).GetMethod("get_Item") ?? throw new InvalidOperationException());
+
+            BinaryOperator getOp = CurrentScope.GetGenericBinaryOperator(Operation.Get, collectionContext.Type, DotNetCobraType.Int) ?? throw new NotImplementedException();
+
+            MethodInfo get = _methodStore.GetMethodInfo(getOp);
+
+            if (collectionContext.Type is CobraGenericInstance genericCollection)
+            {
+                get = get.DeclaringType.MakeGenericType(genericCollection.TypeParams.Select(_typeStore.GetType).ToArray()).GetMethod(get.Name,
+                    get.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+            }
+
+            _il.Emit(OpCodes.Callvirt, get);
 
             return new ExpressionAssemblyContext(DotNetCobraType.Int);
         }
@@ -260,7 +269,7 @@ namespace CobraCompiler.Assemble
         {
             CobraType operandType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
 
-            IOperator op = _funcScope.GetOperator(expr.Op.Type, null, operandType);
+            IOperator op = _funcScope.GetOperator(Operator.GetOperation(expr.Op.Type), null, operandType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
             {
                 _il.Emit(dotNetBinaryOperator.OpCode);
