@@ -231,7 +231,9 @@ namespace CobraCompiler.Assemble
 
             _il.Emit(OpCodes.Callvirt, get);
 
-            return new ExpressionAssemblyContext(DotNetCobraType.Int);
+            CobraType returnType = CurrentScope.GetOperator(Operation.Get, collectionContext.Type, DotNetCobraType.Int).ResultType;
+
+            return new ExpressionAssemblyContext(returnType);
         }
 
         public ExpressionAssemblyContext Visit(ListLiteralExpression expr, ParentExpressionAssemblyContext context)
