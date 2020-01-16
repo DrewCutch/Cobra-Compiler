@@ -239,6 +239,8 @@ namespace CobraCompiler.Assemble
             CobraType type = context.ExpectedType;
             Type listType = _typeStore.GetType(type);
 
+            CobraType elementType = (type as CobraGenericInstance).TypeParams[0];
+
             // Create List with initial size of the number of literal elements
             _localManager.LoadLiteral(expr.Elements.Count);
             _il.Emit(OpCodes.Newobj, listType.GetConstructor(new Type[]{typeof(int)}) ?? throw new InvalidOperationException());
@@ -246,7 +248,7 @@ namespace CobraCompiler.Assemble
             foreach (Expression element in expr.Elements)
             {
                 _il.Emit(OpCodes.Dup);
-                element.Accept(this, new ParentExpressionAssemblyContext());
+                element.Accept(this, new ParentExpressionAssemblyContext(expected:elementType));
                 _il.Emit(OpCodes.Callvirt, listType.GetMethod("Add") ?? throw new InvalidOperationException());
             }
 
