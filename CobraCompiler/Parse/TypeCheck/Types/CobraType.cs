@@ -7,8 +7,9 @@ using CobraCompiler.Parse.TypeCheck.Operators;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
-    abstract class CobraType: CobraTypeBase
+    class CobraType: CobraTypeBase
     {
+        public static readonly CobraType UnitType = new CobraType("Unit");
 
         protected CobraType(string identifier): base(identifier)
         {
