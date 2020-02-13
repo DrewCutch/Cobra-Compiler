@@ -14,6 +14,7 @@ namespace CobraCompiler.Parse
     {
         private readonly ListNibbler<Token> _tokens;
         private readonly ErrorLogger _errorLogger;
+        private bool IsAtEnd => !_tokens.HasNext() || _tokens.Peek().Type == TokenType.Eof;
 
         public Parser(IReadOnlyList<Token> tokens, ErrorLogger errorLogger)
         {
@@ -24,7 +25,7 @@ namespace CobraCompiler.Parse
         public List<Statement> Parse()
         {
             List<Statement> statements = new List<Statement>();
-            while (_tokens.HasNext() && _tokens.Peek().Type != TokenType.Eof)
+            while (!IsAtEnd)
             {
                 try
                 {
@@ -36,10 +37,21 @@ namespace CobraCompiler.Parse
                 {
                     _errorLogger.Log(parsingException);
                     _tokens.Pop();
+                    sync();
                 }
             }
 
             return statements;
+        }
+
+        private void sync()
+        {
+            while (!IsAtEnd)
+            {
+                if (Match(TokenType.NewLine))
+                    return;
+                _tokens.Pop();
+            }
         }
 
         private Statement Definition()
@@ -55,16 +67,26 @@ namespace CobraCompiler.Parse
 
         private Statement Declaration()
         {
-            if (Match(TokenType.Var))
-                return VarDeclaration();
+            try
+            {
+                if (Match(TokenType.Var))
+                    return VarDeclaration();
 
-            if (Match(TokenType.Func))
-                return FuncDeclaration();
+                if (Match(TokenType.Func))
+                    return FuncDeclaration();
 
-            if (Match(TokenType.NewLine))
-                return null;
+                if (Match(TokenType.NewLine))
+                    return null;
 
-            return Statement();
+                return Statement();
+            }
+            catch (ParsingException parsingException)
+            {
+                _errorLogger.Log(parsingException);
+                _tokens.Pop();
+                sync();
+                return new InvalidStatement();
+            }
         }
 
         private Statement VarDeclaration()
@@ -172,7 +194,7 @@ namespace CobraCompiler.Parse
         {
             List<Statement> body = new List<Statement>();
 
-            while (!Check(TokenType.RightBrace) && _tokens.HasNext() && _tokens.Peek().Type != TokenType.Eof)
+            while (!Check(TokenType.RightBrace) && !IsAtEnd)
             {
                 Statement nextStatement = Declaration();
                 if (nextStatement != null)
