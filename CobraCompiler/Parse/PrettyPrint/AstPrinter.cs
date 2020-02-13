@@ -82,6 +82,9 @@ namespace CobraCompiler.Parse.PrettyPrint
                     case IConditionalExpression conditional:
                         PrintConditional(conditional, onLast);
                         break;
+                    case InvalidStatement invalid:
+                        _printer.AddLeaf("Invalid Statement", onLast);
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
