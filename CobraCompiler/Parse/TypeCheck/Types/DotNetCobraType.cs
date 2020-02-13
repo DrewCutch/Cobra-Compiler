@@ -10,10 +10,11 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         public static DotNetCobraType Str = new DotNetCobraType("str", typeof(string));
         public static DotNetCobraType Null = new DotNetCobraType("null", null);
         public static DotNetCobraType Object = new DotNetCobraType("obj", typeof(object));
+        public static DotNetCobraType Unit = new DotNetCobraType("unit", typeof(void));
 
         public static DotNetCobraType[] DotNetCobraTypes =
         {
-            Bool, Int, Float, Str, Null, Object
+            Bool, Int, Float, Str, Null, Object, Unit
         };
 
         public Type Type { get; }
