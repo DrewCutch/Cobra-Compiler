@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
@@ -32,7 +33,8 @@ namespace CobraCompiler.Assemble
             _locals = new Dictionary<Scope, Dictionary<string, LocalBuilder>>();
             _il = il;
 
-            DeclareVar(funcScope, "@ret", returnType);
+            if(returnType != typeof(void))
+                DeclareVar(funcScope, "@ret", returnType);
         }
 
         public void LoadVar(Scope scope, string name)
@@ -103,6 +105,9 @@ namespace CobraCompiler.Assemble
 
         public void LoadLiteral(object value)
         {
+            if (value == null)
+                return;
+
             switch (value)
             {
                 case string str:

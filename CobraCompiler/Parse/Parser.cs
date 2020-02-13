@@ -186,8 +186,8 @@ namespace CobraCompiler.Parse
         private Statement Return()
         {
             Token keyword = _tokens.Previous();
-            Expression expr = Expression();
-            Expect(TokenType.NewLine, "Expect newline after return statement");
+            Expression expr = Expression() ?? new LiteralExpression(null, DotNetCobraType.Unit);
+            // Expect(TokenType.NewLine, "Expect newline after return statement");
             return new ReturnStatement(keyword, expr);
         }
 

@@ -87,6 +87,10 @@ namespace CobraCompiler.Parse.TypeCheck
         {
             if (statement is FuncDeclarationStatement funcDeclaration)
             {
+                CobraType returnType = funcDeclaration.ReturnType == null
+                    ? DotNetCobraType.Unit
+                    : scope.GetType(funcDeclaration.ReturnType);
+
                 FuncScope funcScope = new FuncScope(scope, funcDeclaration,
                     funcDeclaration.Params.Select(param => (param.Name.Lexeme, scope.GetType(param.TypeInit))),
                     scope.GetType(funcDeclaration.ReturnType));

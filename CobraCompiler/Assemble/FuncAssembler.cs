@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
@@ -151,8 +152,12 @@ namespace CobraCompiler.Assemble
 
         private void ReturnStatement()
         {
-            _localManager.StoreVar(CurrentScope, "@ret");
-            _localManager.LoadVar(CurrentScope, "@ret");
+            if (_funcScope.ReturnType != DotNetCobraType.Unit)
+            {
+                _localManager.StoreVar(CurrentScope, "@ret");
+                _localManager.LoadVar(CurrentScope, "@ret");
+            }
+            
             _il.Emit(OpCodes.Ret);
         }
 
