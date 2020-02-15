@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -6,6 +7,7 @@ using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Compiler;
 using CobraCompiler.Parse;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
@@ -62,15 +64,44 @@ namespace CobraCompiler.Assemble
             }
         }
 
-        public void AssembleModule(ModuleScope scope)
+        public void AssembleProject(CheckedProject project)
         {
-            ModuleBuilder moduleBuilder = _assemblyBuilder.DefineDynamicModule(AssemblyName, AssemblyFileName);
-            TypeBuilder typeBuilder = moduleBuilder.DefineType(scope.Name, ModuleTypeAttributes);
+            ModuleBuilder moduleBuilder = _assemblyBuilder.DefineDynamicModule(project.Name, AssemblyFileName);
+            List<DefinedModule> definedModules = new List<DefinedModule>();
+
+            foreach (Scope subScope in project.Scope.SubScopes)
+            {
+                if(subScope is ModuleScope module)
+                    definedModules.Add(CreateModule(module, moduleBuilder));
+            }
+
+            MethodInfo printStrInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(string) });
+            MethodInfo printIntInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(int) });
+            MethodInfo listGetInfo = typeof(List<>).GetMethod("get_Item");
+
+            _methodStore.AddMethodInfo("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Str, DotNetCobraType.Null }), printStrInfo);
+            _methodStore.AddMethodInfo("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Null }), printIntInfo);
+            _methodStore.AddMethodInfo("get_Item", GenericOperator.DotNetGenericOperators[0].GetGenericFuncType(), listGetInfo);
+
+            foreach (DefinedModule module in definedModules)
+            {
+                foreach (FuncAssembler assembler in module.FuncAssemblers)
+                {
+                    assembler.AssembleBody();
+                }
+
+                module.TypeBuilder.CreateType();
+            }
+        }
+
+        public DefinedModule CreateModule(ModuleScope scope, ModuleBuilder mb)
+        {
+            TypeBuilder typeBuilder = mb.DefineType(scope.Name, ModuleTypeAttributes);
 
             FuncAssemblerFactory funcAssemblerFactory = new FuncAssemblerFactory(_assemblyBuilder, typeBuilder, _typeStore, _methodStore);
-            
+
             List<FuncAssembler> funcAssemblers = new List<FuncAssembler>();
-            
+
             foreach (Scope subScope in scope.SubScopes)
             {
                 if (subScope is FuncScope funcScope)
@@ -83,20 +114,7 @@ namespace CobraCompiler.Assemble
                 }
             }
 
-            MethodInfo printStrInfo = typeof(Console).GetMethod("WriteLine", new[] {typeof(string)});
-            MethodInfo printIntInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(int) });
-            MethodInfo listGetInfo = typeof(List<>).GetMethod("get_Item");
-
-            _methodStore.AddMethodInfo("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Str, DotNetCobraType.Null }), printStrInfo);
-            _methodStore.AddMethodInfo("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[]{DotNetCobraType.Int, DotNetCobraType.Null}), printIntInfo);
-            _methodStore.AddMethodInfo("get_Item", GenericOperator.DotNetGenericOperators[0].GetGenericFuncType(), listGetInfo);
-
-            foreach (FuncAssembler assembler in funcAssemblers)
-            {
-                assembler.AssembleBody();
-            }
-
-            typeBuilder.CreateType();
+            return new DefinedModule(funcAssemblers, typeBuilder);
         }
 
         public void SaveAssembly()
