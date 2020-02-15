@@ -10,6 +10,7 @@ namespace CobraCompiler.ErrorLogging
     class ParsingException: CompilingException
     {
         public override int LineNumber { get; }
+        public override bool isWarning => false;
 
         public ParsingException(Token token, String message) : base($"{message} at {token.Lexeme}")
         {

@@ -9,6 +9,7 @@ namespace CobraCompiler.Parse.TypeCheck
 {
     class TypeNotDefinedException: TypingException
     {
+        public override bool isWarning => false;
         public TypeNotDefinedException(Token typeName) : base($"{typeName.Lexeme} is not defined", typeName.Line)
         {
 

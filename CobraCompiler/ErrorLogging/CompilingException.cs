@@ -10,6 +10,7 @@ namespace CobraCompiler.ErrorLogging
     abstract class CompilingException : Exception
     {
         public abstract int LineNumber { get; }
+        public abstract bool isWarning { get; }
 
         protected CompilingException()
         {

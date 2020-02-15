@@ -10,6 +10,7 @@ namespace CobraCompiler.Parse.TypeCheck
 {
     class OperatorNotDefinedException: TypingException
     {
+        public override bool isWarning => false;
         public OperatorNotDefinedException(Token op, CobraType lhs, CobraType rhs) : 
             base($"Operator {op.Lexeme} not defined for {lhs.Identifier} and {rhs.Identifier}", op.Line)
         {
