@@ -9,31 +9,35 @@ namespace CobraCompiler.Scanning
 {
     class FileReader
     {
-        private StreamReader sr;
+        private string Path;
 
         public FileReader(string filePath)
         {
-            sr = File.OpenText(filePath);
+            Path = filePath;
         }
 
-        public string NextLine()
+        public string GetLine(int n)
         {
-            string line = sr.ReadLine();
+            using (StreamReader sr = File.OpenText(Path))
+            {
+                for (int i = 0; i < n && !sr.EndOfStream; i++)
+                {
+                    sr.ReadLine();
+                }
 
-            if (line != null)
-                return line;
-
-            sr.Close();
-
-            return null;
+                return sr.ReadLine();
+            }
         }
 
         public IEnumerable<string> Lines()
         {
             string line = String.Empty;
-            while ((line = NextLine()) != null)
+            using (StreamReader sr = File.OpenText(Path))
             {
-                yield return line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    yield return line;
+                }
             }
         }
     }
