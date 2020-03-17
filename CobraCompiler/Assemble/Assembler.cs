@@ -39,10 +39,10 @@ namespace CobraCompiler.Assemble
         private ILGenerator _il;
         private FuncScope _currentFunc;
 
-        private Stack<Scope> _scopeStack;
+        private readonly Stack<Scope> _scopeStack;
         private Scope CurrentScope => _scopeStack.Peek();
         
-        private MethodStore _methodStore;
+        private readonly MethodStore _methodStore;
 
         public Assembler(String assName)
         {
