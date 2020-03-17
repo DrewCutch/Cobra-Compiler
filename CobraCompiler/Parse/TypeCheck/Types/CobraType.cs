@@ -17,8 +17,6 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         {
             if(implementation.Params.Count != 2 || implementation.Params[0].Item2 != op.Lhs || implementation.Params[1].Item2 != op.Rhs)
                 throw new ArgumentException("Implementation does not handler operator");
-
-
         }
 
         public void DefineMethod(FuncScope implementation)
