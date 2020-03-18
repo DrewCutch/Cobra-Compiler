@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assemble\DefinedModule.cs" />
     <Compile Include="Compiler\ArgsReader.cs" />
     <Compile Include="Assemble\Assembler.cs" />
     <Compile Include="Assemble\ExpressionAssemblyContexts\ExpressionAssemblyContext.cs" />
@@ -63,9 +64,17 @@
     <Compile Include="Assemble\ScopeCrawler.cs" />
     <Compile Include="Assemble\TypeStore.cs" />
     <Compile Include="Class1.cs" />
+    <Compile Include="Compiler\CheckedProject.cs" />
     <Compile Include="Compiler\CompilationOptions.cs" />
     <Compile Include="Compiler\Compiler.cs" />
+    <Compile Include="Compiler\CompilerException.cs" />
     <Compile Include="Compiler\CompilerFlags.cs" />
+    <Compile Include="Compiler\Module.cs" />
+    <Compile Include="Compiler\ParsedModule.cs" />
+    <Compile Include="Compiler\ScannedModule.cs" />
+    <Compile Include="Compiler\System.cs" />
+    <Compile Include="Compiler\Project.cs" />
+    <Compile Include="Compiler\ProjectReader.cs" />
     <Compile Include="ErrorLogging\CompilingException.cs" />
     <Compile Include="ErrorLogging\ErrorLogger.cs" />
     <Compile Include="ErrorLogging\ParsingException.cs" />
@@ -82,16 +91,22 @@
     <Compile Include="Parse\Scopes\ModuleScope.cs" />
     <Compile Include="Parse\Statements\IConditionalExpression.cs" />
     <Compile Include="Parse\Statements\IfStatement.cs" />
+    <Compile Include="Parse\Statements\ImportStatement.cs" />
+    <Compile Include="Parse\Statements\InvalidStatement.cs" />
     <Compile Include="Parse\Statements\ParamDeclarationStatement.cs" />
     <Compile Include="Parse\Statements\BlockStatement.cs" />
     <Compile Include="Parse\Statements\FuncDeclarationStatement.cs" />
     <Compile Include="Parse\Statements\ReturnStatement.cs" />
     <Compile Include="Parse\PrettyPrint\TreePrinter.cs" />
     <Compile Include="Parse\Statements\WhileStatement.cs" />
+    <Compile Include="Parse\TypeCheck\InvalidArgumentException.cs" />
+    <Compile Include="Parse\TypeCheck\IncorrectArgumentCountException.cs" />
+    <Compile Include="Parse\TypeCheck\InvalidImportException.cs" />
     <Compile Include="Parse\TypeCheck\Operators\GenericOperator.cs" />
     <Compile Include="Parse\TypeCheck\Operators\Operation.cs" />
     <Compile Include="Parse\TypeCheck\Operators\Operator.cs" />
     <Compile Include="Parse\TypeCheck\Types\CobraTypeBase.cs" />
+    <Compile Include="Parse\TypeCheck\Types\NamespaceType.cs" />
     <Compile Include="Parse\TypeCheck\Types\DotNetCobraGeneric.cs" />
     <Compile Include="Parse\TypeCheck\InvalidReturnTypeException.cs" />
     <Compile Include="Parse\TypeCheck\OperatorNotDefinedException.cs" />
@@ -136,9 +151,6 @@
     <Compile Include="Scanning\Scanner.cs" />
     <Compile Include="Scanning\StringNibbler.cs" />
     <Compile Include="Scanning\Token.cs" />
-    <Compile Include="SymbolTables\Symbol.cs" />
-    <Compile Include="SymbolTables\SymbolFlag.cs" />
-    <Compile Include="SymbolTables\SymbolTable.cs" />
     <Compile Include="TokenType.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -148,7 +160,6 @@
     <None Include="SupportedProject\SupportedProject.cobraproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="supportedcode.txt" />
     <None Include="SupportedProject\SupportedCode.cobra" />
   </ItemGroup>
   <ItemGroup />
