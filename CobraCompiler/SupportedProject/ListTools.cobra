@@ -1,0 +1,24 @@
+﻿func maxInt(nums: [int], len: int): int{
+	var i: int = 1
+	var max: int = nums[0]
+	while(i < len){
+		if(nums[i] > max)
+			max = nums[i]
+
+		i = i + 1
+	}
+	return max
+}
+
+func minInt(nums: [int], len: int): int{
+	var i: int = 1
+	var min: int = nums[0]
+	while(i < len){
+		if(nums[i] < min)
+			min = nums[i]
+
+		i = i + 1
+	}
+
+	return min
+}

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project name="SupportedProject">
+  <SystemSet>
+      <System name="default" path ="">
+        <Module name="SupportedCode" path="SupportedCode.cobra"/>
+        <Module name="ListTools" path="ListTools.cobra"/>
+      </System>
+  </SystemSet>
+</Project>
