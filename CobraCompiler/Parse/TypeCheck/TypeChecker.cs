@@ -328,9 +328,14 @@ namespace CobraCompiler.Parse.TypeCheck
 
         public CobraType Visit(GetExpression expr)
         {
-            if (IsIdentifier(expr))
+            CobraType objType = expr.Obj.Accept(this);
+
+            if (objType is NamespaceType namespaceType)
             {
-                return CurrentScope.GetVarType(ToIdentifier(expr));
+                if (namespaceType.HasType(expr.Name.Lexeme))
+                    return namespaceType.GetType(expr.Name.Lexeme);
+
+                return CurrentScope.GetVarType(namespaceType.ResolveName(expr.Name.Lexeme));
             }
 
             throw new NotImplementedException();
@@ -347,28 +352,6 @@ namespace CobraCompiler.Parse.TypeCheck
                 throw new VarNotDefinedException(expr.Name.Lexeme, expr.Name.Line);
 
             return CurrentScope.GetVarType(expr.Name.Lexeme);
-        }
-
-        private string ToIdentifier(Expression expr)
-        {
-            if (expr is VarExpression var)
-                return var.Name.Lexeme;
-
-            if (expr is GetExpression get)
-                return ToIdentifier(get.Obj) + "." + get.Name.Lexeme;
-
-            throw new ArgumentException("Expression is not identifier!");
-        }
-
-        private bool IsIdentifier(Expression expr)
-        {
-            if (expr is VarExpression)
-                return true;
-
-            if (expr is GetExpression get)
-                return IsIdentifier(get.Obj);
-
-            return false;
         }
     }
 
