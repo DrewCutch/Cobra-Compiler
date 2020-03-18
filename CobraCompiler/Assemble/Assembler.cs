@@ -71,7 +71,7 @@ namespace CobraCompiler.Assemble
 
             foreach (Scope subScope in project.Scope.SubScopes)
             {
-                if(subScope is ModuleScope module)
+                if (subScope is ModuleScope module)
                     definedModules.Add(CreateModule(module, moduleBuilder));
             }
 
@@ -109,11 +109,12 @@ namespace CobraCompiler.Assemble
                     FuncAssembler funcAssembler = funcAssemblerFactory.CreateFuncAssembler(funcScope);
                     MethodBuilder builder = funcAssembler.AssembleDefinition();
                     funcAssemblers.Add(funcAssembler);
-
+                    
+                    _methodStore.AddMethodInfo(scope.Name + "." + funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
                     _methodStore.AddMethodInfo(funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
                 }
             }
-
+            
             return new DefinedModule(funcAssemblers, typeBuilder);
         }
 
