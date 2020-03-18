@@ -344,7 +344,11 @@ namespace CobraCompiler.Parse.TypeCheck
                 if (namespaceType.HasType(expr.Name.Lexeme))
                     return namespaceType.GetType(expr.Name.Lexeme);
 
-                return CurrentScope.GetVarType(namespaceType.ResolveName(expr.Name.Lexeme));
+                string resolvedName = namespaceType.ResolveName(expr.Name.Lexeme);
+                if(!CurrentScope.IsDefined(resolvedName))
+                    throw new VarNotDefinedException(resolvedName, expr.Name.Line);
+
+                return CurrentScope.GetVarType(resolvedName);
             }
 
             throw new NotImplementedException();
