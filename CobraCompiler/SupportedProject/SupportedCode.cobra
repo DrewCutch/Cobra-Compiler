@@ -1,4 +1,6 @@
-﻿func add(a: int, b: int): int{
+﻿import SupportedProject.default.ListTools
+
+func add(a: int, b: int): int{
 	var c: int = a + b
 	return c
 }
@@ -97,7 +99,9 @@ func main(): int{
 
 	var squares: [int] = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 
-	var smallest: int = SupportedProject.default.ListTools.minInt(squares, 10)
+	var smallest: int = ListTools.minInt(squares, 10)
+	printInt(smallest)
+
 
 	var i: int = 0
 	while(i < 10){
