@@ -215,6 +215,15 @@ namespace CobraCompiler.Parse.TypeCheck
                             throw new InvalidReturnTypeException(returnStatement.Keyword,
                                 returnStatementType, CurrentScope.GetReturnType());
                         break;
+                    case ImportStatement importStatement:
+                        CobraType importType = importStatement.Import.Accept(this);
+                        if (!(importType is NamespaceType))
+                            throw new InvalidImportException(importType.Identifier, importStatement.Keyword.Line);
+
+                        CurrentScope.Declare(((GetExpression) importStatement.Import).Name.Lexeme, importType);
+                        break;
+                    //default:
+                        //throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");
                 }
             }
             catch (TypingException typingException)
