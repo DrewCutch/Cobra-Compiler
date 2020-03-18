@@ -25,6 +25,7 @@ namespace CobraCompiler.Parse
         public List<Statement> Parse()
         {
             List<Statement> statements = new List<Statement>();
+           
             while (!IsAtEnd)
             {
                 try
@@ -58,6 +59,9 @@ namespace CobraCompiler.Parse
         {
             if(Match(TokenType.Func))
                 return FuncDeclaration();
+
+            if (Match(TokenType.Import))
+                return Import();
 
             if (Match(TokenType.NewLine))
                 return null;
@@ -134,6 +138,33 @@ namespace CobraCompiler.Parse
             Match(TokenType.NewLine);
 
             return new FuncDeclarationStatement(name, paramDeclarations, returnType, Statement());
+        }
+
+        private ImportStatement Import()
+        {
+            Queue<Token> names = new Queue<Token>();
+            Token keyword = _tokens.Previous();
+
+            while (true)
+            {
+                if (Match(TokenType.Identifier))
+                    names.Enqueue(_tokens.Previous());
+                else if (Match(TokenType.NewLine))
+                    break;
+                else if (!Match(TokenType.Dot))
+                    throw new ParsingException(_tokens.Peek(0), "Invalid import target");
+            }
+
+            Expression identifierExpression = new VarExpression(names.Dequeue());
+
+            while (names.Count > 0)
+            {
+                Token name = names.Dequeue();
+
+                identifierExpression = new GetExpression(identifierExpression, name);
+            }
+
+            return new ImportStatement(keyword, identifierExpression);
         }
 
         private ParamDeclarationStatement ParamDeclaration()
