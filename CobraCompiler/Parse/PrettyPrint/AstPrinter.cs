@@ -85,6 +85,11 @@ namespace CobraCompiler.Parse.PrettyPrint
                     case InvalidStatement invalid:
                         _printer.AddLeaf("Invalid Statement", onLast);
                         break;
+                    case ImportStatement import:
+                        _printer.AddNode("Import", onLast);
+                        import.Import.Accept(this, true);
+                        _printer.ExitNode();
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
