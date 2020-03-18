@@ -107,7 +107,7 @@ namespace CobraCompiler.Parse.Scopes
             return Parent?.GetVarType(identifier);
         }
 
-        public void DefineType(string identifier, CobraType cobraType)
+        public virtual void DefineType(string identifier, CobraType cobraType)
         {
             _types[identifier] = cobraType;
         }
@@ -117,7 +117,7 @@ namespace CobraCompiler.Parse.Scopes
             Declare(var, GetType(typeInit));
         }
 
-        public void Declare(string var, CobraType type)
+        public virtual void Declare(string var, CobraType type)
         {
             _vars[var] = type;
         }
@@ -127,7 +127,7 @@ namespace CobraCompiler.Parse.Scopes
             if (_vars.ContainsKey(var))
                 return true;
 
-            return Parent != null && Parent.IsDeclared(var);
+            return Parent != null && Parent.IsDefined(var);
         }
 
         public bool IsDeclared(string var)
