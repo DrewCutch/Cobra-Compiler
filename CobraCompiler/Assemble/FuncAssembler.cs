@@ -16,6 +16,7 @@ using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
 using CobraCompiler.Parse.TypeCheck.Operators;
 using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.Scanning;
 using InvalidOperationException = System.InvalidOperationException;
 
 namespace CobraCompiler.Assemble
@@ -189,7 +190,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(CallExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(true));
+            ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(calling:true));
 
             foreach (Expression arg in expr.Arguments)
                 arg.Accept(this, new ParentExpressionAssemblyContext());
@@ -317,6 +318,30 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(GetExpression expr, ParentExpressionAssemblyContext context)
         {
+            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, context);
+            if (exprContext.Type is NamespaceType _namespace)
+            {
+                if(_namespace.HasType(expr.Name.Lexeme))
+                    return new ExpressionAssemblyContext(_namespace.GetType(expr.Name.Lexeme));
+
+                Token resolvedToken = new Token(TokenType.Identifier, _namespace.ResolveName(expr.Name.Lexeme), null,
+                    expr.Name.Line);
+
+                return Visit(new VarExpression(resolvedToken), context);
+            }
+
+            MemberInfo[] potentialMembers = _typeStore.GetType(exprContext.Type).GetMember(expr.Name.Lexeme);
+
+            MemberInfo member = potentialMembers[0];
+
+            foreach (MemberInfo potentialMember in potentialMembers)
+            {
+                switch (potentialMember)
+                {
+                        
+                }
+            }
+
             throw new NotImplementedException();
         }
     }
