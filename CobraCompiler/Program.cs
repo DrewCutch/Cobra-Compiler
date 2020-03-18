@@ -34,14 +34,25 @@ namespace CobraCompiler
                 return;
             }
 
+            
+            ProjectReader projectReader = new ProjectReader(options.FilePath);
+            Project project = projectReader.ReadProject();
+            
             ErrorLogger errorLogger = new ErrorLogger();
 
             Compiler.Compiler compiler = new Compiler.Compiler(options, errorLogger);
 
-            compiler.Run();
-
-            if (!options.Flags.HasFlag(CompilerFlags.HideErrors))
-                errorLogger.DisplayErrors();
+            try
+            {
+                compiler.Compile(project);
+            }
+            catch (CompilerException ce)
+            {
+                if (!options.Flags.HasFlag(CompilerFlags.HideErrors))
+                    errorLogger.DisplayErrors();
+                if(!options.Flags.HasFlag(CompilerFlags.HideWarnings))
+                    errorLogger.DisplayWarnings();
+            }
             
             Console.ReadKey();
         }
