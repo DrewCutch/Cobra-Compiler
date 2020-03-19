@@ -37,8 +37,8 @@ namespace CobraCompiler.Parse.TypeCheck
             foreach (GenericOperator genericOperator in GenericOperator.DotNetGenericOperators)
                 _globalScope.DefineOperator(genericOperator);
 
-            _globalScope.Declare("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new []{DotNetCobraType.Str, DotNetCobraType.Null}));
-            _globalScope.Declare("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Null }));
+            _globalScope.Declare("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new []{DotNetCobraType.Str, DotNetCobraType.Unit}));
+            _globalScope.Declare("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Unit }));
         }
 
         public void DefineNamespaces(Project project)
