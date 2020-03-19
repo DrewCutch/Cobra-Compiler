@@ -1,5 +1,6 @@
 ﻿import SupportedProject.default.ListTools
 
+
 func add(a: int, b: int): int{
 	var c: int = a + b
 	return c
@@ -55,6 +56,7 @@ func printTimes(phrase: str, times: int){
 	return
 }
 
+
 func main(): int{
 	var a: int = (4 - 3) * (10 / 3)
 	a = a + 1
@@ -98,8 +100,9 @@ func main(): int{
 	printTimes("Hello", 5)
 
 	var squares: [int] = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+	var size: int = squares.Count
 
-	var smallest: int = ListTools.minInt(squares, 10)
+	var smallest: int = ListTools.minInt(squares)
 	printInt(smallest)
 
 

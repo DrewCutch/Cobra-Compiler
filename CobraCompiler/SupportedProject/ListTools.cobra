@@ -1,7 +1,7 @@
-﻿func maxInt(nums: [int], len: int): int{
+﻿func maxInt(nums: [int]): int{
 	var i: int = 1
 	var max: int = nums[0]
-	while(i < len){
+	while(i < nums.Count){
 		if(nums[i] > max)
 			max = nums[i]
 
@@ -10,10 +10,10 @@
 	return max
 }
 
-func minInt(nums: [int], len: int): int{
+func minInt(nums: [int]): int{
 	var i: int = 1
 	var min: int = nums[0]
-	while(i < len){
+	while(i < nums.Count){
 		if(nums[i] < min)
 			min = nums[i]
 
