@@ -9,8 +9,11 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 {
     abstract class CobraType: CobraTypeBase
     {
+        private readonly Dictionary<string, CobraType> _symbols;
+
         protected CobraType(string identifier): base(identifier)
         {
+            _symbols = new Dictionary<string, CobraType>();
         }
 
         public void DefineOperator(BinaryOperator op, FuncScope implementation)
@@ -23,6 +26,21 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         {
             if(implementation.Params[0].Item2 != this)
                 throw new ArgumentException($"First param of implementation must be of type {this.Identifier}");
+        }
+
+        public virtual bool HasSymbol(string symbol)
+        {
+            return _symbols.ContainsKey(symbol);
+        }
+
+        public virtual CobraType GetSymbol(string symbol)
+        {
+            return _symbols[symbol];
+        }
+
+        public virtual void DefineSymbol(string symbol, CobraType type)
+        {
+            _symbols[symbol] = type;
         }
 
         public virtual bool CanImplicitCast(CobraType other)
