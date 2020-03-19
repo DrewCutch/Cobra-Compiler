@@ -102,6 +102,7 @@
     <Compile Include="Parse\TypeCheck\InvalidArgumentException.cs" />
     <Compile Include="Parse\TypeCheck\IncorrectArgumentCountException.cs" />
     <Compile Include="Parse\TypeCheck\InvalidImportException.cs" />
+    <Compile Include="Parse\TypeCheck\InvalidMemberException.cs" />
     <Compile Include="Parse\TypeCheck\Operators\GenericOperator.cs" />
     <Compile Include="Parse\TypeCheck\Operators\Operation.cs" />
     <Compile Include="Parse\TypeCheck\Operators\Operator.cs" />
