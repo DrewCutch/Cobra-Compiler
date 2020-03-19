@@ -330,17 +330,25 @@ namespace CobraCompiler.Assemble
                 return Visit(new VarExpression(resolvedToken), context);
             }
 
-            MemberInfo[] potentialMembers = _typeStore.GetType(exprContext.Type).GetMember(expr.Name.Lexeme);
+            Type varType = _typeStore.GetType(exprContext.Type);
+            MemberInfo[] members = varType.GetMember(expr.Name.Lexeme);
 
-            MemberInfo member = potentialMembers[0];
+            if(members.Length > 1)
+                throw new NotImplementedException();
 
-            foreach (MemberInfo potentialMember in potentialMembers)
+            MemberInfo member = members[0];
+
+            switch (member)
             {
-                switch (potentialMember)
-                {
-                        
-                }
+                case PropertyInfo prop:
+                    MethodInfo get = prop.GetGetMethod();
+                    _il.Emit(OpCodes.Callvirt, get);
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
+
+            return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme));
 
             throw new NotImplementedException();
         }
