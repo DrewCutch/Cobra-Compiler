@@ -30,5 +30,13 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
             return this == other;
         }
+
+        public override CobraType GetSymbol(string symbol)
+        {
+            Type memberType = Type.GetProperty(symbol).PropertyType;
+
+            return null;
+        }
+
     }
 }
