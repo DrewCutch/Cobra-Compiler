@@ -104,11 +104,12 @@ namespace CobraCompiler.Compiler
         {
             TypeChecker typeChecker = new TypeChecker(ErrorLogger);
             typeChecker.DefineNamespaces(project);
+            GlobalScope globalScope = typeChecker.Check(parsedModules);
 
             if (ErrorLogger.HasErrors)
                 throw new CompilerException("Error checking project!");
 
-            return new CheckedProject(project, typeChecker.Check(parsedModules));
+            return new CheckedProject(project, globalScope);
         }
 
         private void Assemble(CheckedProject project)
