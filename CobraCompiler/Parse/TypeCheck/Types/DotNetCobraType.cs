@@ -38,5 +38,15 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             return null;
         }
 
+        public static DotNetCobraType FromType(Type type)
+        {
+            foreach (DotNetCobraType dotNetCobraType in DotNetCobraTypes)
+            {
+                if (type == dotNetCobraType.Type)
+                    return dotNetCobraType;
+            }
+
+            return null;
+        }
     }
 }
