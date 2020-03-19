@@ -351,6 +351,10 @@ namespace CobraCompiler.Parse.TypeCheck
                 return CurrentScope.GetVarType(resolvedName);
             }
 
+            if (!objType.HasSymbol(expr.Name.Lexeme))
+                throw new InvalidMemberException(objType.Identifier, expr.Name.Lexeme, expr.Name.Line);
+
+            return objType.GetSymbol(expr.Name.Lexeme);
             throw new NotImplementedException();
         }
 
