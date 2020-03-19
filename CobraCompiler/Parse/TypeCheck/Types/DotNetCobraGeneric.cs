@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
@@ -27,6 +28,32 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         public Type GetType(params Type[] typeArgs)
         {
             return InstanceGenerator(typeArgs);
+        }
+
+        public override CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
+        {
+            CobraGenericInstance instance = base.CreateGenericInstance(typeParams);
+
+            Type[] typeArgs = new Type[typeParams.Count];
+            for(int i = 0; i < typeParams.Count; i++)
+            {
+                if (typeParams[i] is DotNetCobraType dotNetType)
+                    typeArgs[i] = dotNetType.Type;
+                else
+                    return instance;
+            }
+
+            Type instanceType = GetType(typeArgs);
+            PropertyInfo[] properties = instanceType.GetProperties();
+
+            foreach (PropertyInfo property in properties)
+            {
+                DotNetCobraType propertyType = DotNetCobraType.FromType(property.PropertyType);
+                if(propertyType != null)
+                    instance.DefineSymbol(property.Name, propertyType);
+            }
+
+            return instance;
         }
     }
 }
