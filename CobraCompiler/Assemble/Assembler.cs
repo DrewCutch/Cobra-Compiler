@@ -24,6 +24,7 @@ namespace CobraCompiler.Assemble
         public string AssemblyFileName => $"{AssemblyName}.exe";
 
         private readonly AssemblyBuilder _assemblyBuilder;
+        private readonly ModuleBuilder _moduleBuilder;
         private readonly TypeStore _typeStore;
         private readonly Dictionary<Scope, Dictionary<string, LocalBuilder>> _locals;
 
@@ -52,7 +53,9 @@ namespace CobraCompiler.Assemble
             AssemblyName assemblyName = new AssemblyName(AssemblyName);
 
             _assemblyBuilder = appDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Save);
-            _typeStore = new TypeStore(_assemblyBuilder);
+            _moduleBuilder = _assemblyBuilder.DefineDynamicModule(assName, AssemblyFileName);
+
+            _typeStore = new TypeStore(_assemblyBuilder, _moduleBuilder);
             _methodStore = new MethodStore(_assemblyBuilder);
             _locals = new Dictionary<Scope, Dictionary<string, LocalBuilder>>();
             _scopeStack = new Stack<Scope>();
@@ -66,13 +69,12 @@ namespace CobraCompiler.Assemble
 
         public void AssembleProject(CheckedProject project)
         {
-            ModuleBuilder moduleBuilder = _assemblyBuilder.DefineDynamicModule(project.Name, AssemblyFileName);
             List<DefinedModule> definedModules = new List<DefinedModule>();
 
             foreach (Scope subScope in project.Scope.SubScopes)
             {
                 if (subScope is ModuleScope module)
-                    definedModules.Add(CreateModule(module, moduleBuilder));
+                    definedModules.Add(CreateModule(module, _moduleBuilder));
             }
 
             MethodInfo printStrInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(string) });

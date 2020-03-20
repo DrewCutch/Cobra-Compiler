@@ -14,16 +14,18 @@ namespace CobraCompiler.Assemble
     class TypeStore
     {
         private readonly AssemblyBuilder _assemblyBuilder;
+        private readonly ModuleBuilder _moduleBuilder;
         private readonly Dictionary<string, Type> _typeAlias;
         public readonly Dictionary<CobraType, Type> _types;
-        private readonly Dictionary<string, GenericInstanceGenerator> _genericInstanceGenerators;
+        private readonly Dictionary<string, GenericTypeAssembler> _genericInstanceGenerators;
 
-        public TypeStore(AssemblyBuilder assemblyBuilder)
+        public TypeStore(AssemblyBuilder assemblyBuilder, ModuleBuilder moduleBuilder)
         {
             _assemblyBuilder = assemblyBuilder;
+            _moduleBuilder = moduleBuilder;
             _typeAlias = new Dictionary<string, Type>();
             _types = new Dictionary<CobraType, Type>();
-            _genericInstanceGenerators = new Dictionary<string, GenericInstanceGenerator>();
+            _genericInstanceGenerators = new Dictionary<string, GenericTypeAssembler>();
         }
 
         public void AddTypeAlias(string identifier, Type type)
@@ -38,8 +40,8 @@ namespace CobraCompiler.Assemble
 
         public Type GetType(CobraType cobraType)
         {
-            if (cobraType is CobraGenericInstance genericInstance && genericInstance.Base is DotNetCobraGeneric generic)
-                return generic.GetType(genericInstance.TypeParams.Select(GetType).ToArray());
+            if (cobraType is CobraGenericInstance genericInstance && genericInstance.Base is ITypeGenerator typeGen)
+                return typeGen.GetType(_moduleBuilder, genericInstance.TypeParams.Select(GetType).ToArray());
 
             return _types[cobraType];
         }
@@ -54,7 +56,7 @@ namespace CobraCompiler.Assemble
             if (!_genericInstanceGenerators.ContainsKey(genericName))
                 return null;
 
-            return _genericInstanceGenerators[genericName](typeInit.GenericParams.Select(GetType).ToArray());
+            return _genericInstanceGenerators[genericName](_moduleBuilder, typeInit.GenericParams.Select(GetType).ToArray());
         }
 
         private Type GetType(string identifier)
