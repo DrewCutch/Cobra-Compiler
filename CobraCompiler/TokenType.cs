@@ -8,7 +8,8 @@ namespace CobraCompiler
 {
     enum TokenType
     {
-        // Single-character tokens.                      
+        // Single-character tokens. 
+        Ampersand, Bar,
         LeftParen, RightParen, LeftBrace, RightBrace,
         LeftBracket, RightBracket, Comma, Dot, Minus,
         Plus, Colon, Slash, Star,

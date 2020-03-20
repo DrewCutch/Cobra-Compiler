@@ -78,6 +78,10 @@ namespace CobraCompiler.Scanning
         {
             switch (lexeme)
             {
+                case "&":
+                    return TokenType.Ampersand;
+                case "|":
+                    return TokenType.Bar;
                 case "(":
                     return TokenType.LeftParen;
                 case ")":
