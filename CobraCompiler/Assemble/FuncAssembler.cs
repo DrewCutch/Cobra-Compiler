@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -248,16 +249,28 @@ namespace CobraCompiler.Assemble
             Type listType = _typeStore.GetType(type);
 
             CobraType elementType = (type as CobraGenericInstance).TypeParams[0];
+            ConstructorInfo listCtor;
+            MethodInfo addMethod;
 
-            // Create List with initial size of the number of literal elements
+            if (listType.GetGenericArguments()[0] is TypeBuilder)
+            {
+                listCtor = TypeBuilder.GetConstructor(listType, listType.GetGenericTypeDefinition().GetConstructor(new[] {typeof(int)}) ?? throw new InvalidOperationException());
+                addMethod = TypeBuilder.GetMethod(listType, listType.GetGenericTypeDefinition().GetMethod("Add") ?? throw new InvalidOperationException());
+            }
+            else
+            {
+                listCtor = listType.GetConstructor(new[] { typeof(int) }) ?? throw new InvalidOperationException();
+                addMethod = listType.GetMethod("Add") ?? throw new InvalidOperationException();
+            }
+                
             _localManager.LoadLiteral(expr.Elements.Count);
-            _il.Emit(OpCodes.Newobj, listType.GetConstructor(new Type[]{typeof(int)}) ?? throw new InvalidOperationException());
+            _il.Emit(OpCodes.Newobj, listCtor);
 
             foreach (Expression element in expr.Elements)
             {
                 _il.Emit(OpCodes.Dup);
                 element.Accept(this, new ParentExpressionAssemblyContext(expected:elementType));
-                _il.Emit(OpCodes.Callvirt, listType.GetMethod("Add") ?? throw new InvalidOperationException());
+                _il.Emit(OpCodes.Callvirt, addMethod);
             }
 
             return new ExpressionAssemblyContext(type);
