@@ -21,10 +21,17 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
         public virtual CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
         {
+            string instanceName = GenerateGenericInstanceName(typeParams);
+
+            return new CobraGenericInstance(instanceName, typeParams, this);
+        }
+
+        protected string GenerateGenericInstanceName(IReadOnlyList<CobraType> typeParams)
+        {
             if (HasFixedParamCount && typeParams.Count > NumberOfParams)
                 throw new ArgumentException("Invalid number of parameters");
 
-            return new CobraGenericInstance($"{Identifier}[{string.Join(",", typeParams.Select(param => param.Identifier))}]", typeParams, this);
+            return $"{Identifier}[{string.Join(",", typeParams.Select(param => param.Identifier))}]";
         }
     }
 }
