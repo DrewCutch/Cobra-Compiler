@@ -307,7 +307,7 @@ namespace CobraCompiler.Parse.TypeCheck
 
             foreach (Expression element in expr.Elements)
             {
-                elementsCommonType = element.Accept(this).GetCommonParent(elementsCommonType);
+                elementsCommonType = elementsCommonType.GetCommonParent(element.Accept(this));
             }
 
             return DotNetCobraGeneric.ListType.CreateGenericInstance(new[] {elementsCommonType});
