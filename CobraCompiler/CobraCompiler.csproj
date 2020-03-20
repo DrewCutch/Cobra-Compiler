@@ -50,6 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assemble\DefinedModule.cs" />
+    <Compile Include="Assemble\LangTypeAssemblers\LangTypeAssembler.cs" />
+    <Compile Include="Assemble\LangTypeAssemblers\UnionAssembler.cs" />
     <Compile Include="Compiler\ArgsReader.cs" />
     <Compile Include="Assemble\Assembler.cs" />
     <Compile Include="Assemble\ExpressionAssemblyContexts\ExpressionAssemblyContext.cs" />
@@ -107,6 +109,8 @@
     <Compile Include="Parse\TypeCheck\Operators\Operation.cs" />
     <Compile Include="Parse\TypeCheck\Operators\Operator.cs" />
     <Compile Include="Parse\TypeCheck\Types\CobraTypeBase.cs" />
+    <Compile Include="Parse\TypeCheck\Types\ITypeGenerator.cs" />
+    <Compile Include="Parse\TypeCheck\Types\LangCobraGeneric.cs" />
     <Compile Include="Parse\TypeCheck\Types\NamespaceType.cs" />
     <Compile Include="Parse\TypeCheck\Types\DotNetCobraGeneric.cs" />
     <Compile Include="Parse\TypeCheck\InvalidReturnTypeException.cs" />
@@ -143,6 +147,8 @@
     <Compile Include="Parse\TypeCheck\TypeNotDefinedException.cs" />
     <Compile Include="Parse\TypeCheck\Types\GenericTypeParamPlaceholder.cs" />
     <Compile Include="Parse\TypeCheck\Types\IDotNetType.cs" />
+    <Compile Include="Parse\TypeCheck\Types\UnionInstanceType.cs" />
+    <Compile Include="Parse\TypeCheck\Types\UnionLangCobraGeneric.cs" />
     <Compile Include="Parse\TypeCheck\TypingException.cs" />
     <Compile Include="Parse\TypeCheck\VarAlreadyDeclaredException.cs" />
     <Compile Include="Parse\TypeCheck\VarNotDefinedException.cs" />
@@ -152,7 +158,9 @@
     <Compile Include="Scanning\Scanner.cs" />
     <Compile Include="Scanning\StringNibbler.cs" />
     <Compile Include="Scanning\Token.cs" />
+    <Compile Include="SupportedProject\ExampleUnionBoolInt.cs" />
     <Compile Include="TokenType.cs" />
+    <Compile Include="Util\ListByElementComparer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
