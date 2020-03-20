@@ -10,10 +10,12 @@ namespace CobraCompiler.Parse.TypeCheck.Types
     abstract class CobraType: CobraTypeBase
     {
         private readonly Dictionary<string, CobraType> _symbols;
+        private readonly HashSet<CobraType> _parents;
 
         protected CobraType(string identifier): base(identifier)
         {
             _symbols = new Dictionary<string, CobraType>();
+            _parents = new HashSet<CobraType>();
         }
 
         public void DefineOperator(BinaryOperator op, FuncScope implementation)
@@ -53,7 +55,13 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             if (Equals(other))
                 return this;
 
-            return DotNetCobraType.Object;
+            if (_parents.Contains(other))
+                return other;
+
+            if (_parents.Count == 1)
+                return _parents.First().GetCommonParent(other);
+
+            return UnionLangCobraGeneric.UnionGeneric.CreateGenericInstance(new List<CobraType>(new CobraType[] {this, other}));
         }
 
         public static CobraType GetCommonParent(IEnumerable<CobraType> types)
