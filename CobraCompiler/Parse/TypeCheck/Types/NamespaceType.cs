@@ -45,5 +45,23 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         {
             return definitions[id];
         }
+
+        protected bool Equals(NamespaceType other)
+        {
+            return string.Equals(name, other.name);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((NamespaceType) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return (name != null ? name.GetHashCode() : 0);
+        }
     }
 }
