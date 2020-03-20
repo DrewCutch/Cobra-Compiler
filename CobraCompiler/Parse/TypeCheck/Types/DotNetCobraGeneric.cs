@@ -3,19 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
+using CobraCompiler.Assemble.LangTypeAssemblers;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
-    public delegate Type GenericInstanceGenerator(params Type[] typeArgs);
+    public delegate Type GenericInstanceGenerator(params Type[] typeParams);
 
-    class DotNetCobraGeneric: CobraGeneric
+    class DotNetCobraGeneric : CobraGeneric, ITypeGenerator
     {
         public static DotNetCobraGeneric FuncType = new DotNetCobraGeneric("f", -1, Expression.GetDelegateType);
         public static DotNetCobraGeneric ListType = new DotNetCobraGeneric("list", 1, typeof(List<>).MakeGenericType);
+
         public static CobraGeneric[] BuiltInCobraGenerics =
         {
             FuncType,
-            ListType
+            ListType,
+            UnionLangCobraGeneric.UnionGeneric
         };
 
         public readonly GenericInstanceGenerator InstanceGenerator;
@@ -25,7 +29,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             InstanceGenerator = instanceGenerator;
         }
 
-        public Type GetType(params Type[] typeArgs)
+        public Type GetType(ModuleBuilder mb, params Type[] typeArgs)
         {
             return InstanceGenerator(typeArgs);
         }
@@ -43,7 +47,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
                     return instance;
             }
 
-            Type instanceType = GetType(typeArgs);
+            Type instanceType = GetType(null, typeArgs);
             PropertyInfo[] properties = instanceType.GetProperties();
 
             foreach (PropertyInfo property in properties)
