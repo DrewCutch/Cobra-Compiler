@@ -63,6 +63,9 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.Import))
                 return Import();
 
+            if (Match(TokenType.Type))
+                return TypeDeclaration();
+
             if (Match(TokenType.NewLine))
                 return null;
 
@@ -165,6 +168,18 @@ namespace CobraCompiler.Parse
             }
 
             return new ImportStatement(keyword, identifierExpression);
+        }
+
+        private Statement TypeDeclaration()
+        {
+            Token name = Expect(TokenType.Identifier, "Expect type name.");
+            Expect(TokenType.Colon, "Expect colon after type declaration.");
+
+            TypeInitExpression typeInit = TypeInit();
+
+            Expect(TokenType.NewLine, "Expect new line after type declaration.");
+
+            return new TypeDeclarationStatement(name, typeInit);
         }
 
         private ParamDeclarationStatement ParamDeclaration()
