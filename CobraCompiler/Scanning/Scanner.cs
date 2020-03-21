@@ -198,6 +198,10 @@ namespace CobraCompiler.Scanning
                     if (!isAlphanumeric(next))
                         return TokenType.True;
                     return null;
+                case "type":
+                    if (!isAlphanumeric(next))
+                        return TokenType.Type;
+                    return null;
                 case "var":
                     if (!isAlphanumeric(next))
                         return TokenType.Var;
