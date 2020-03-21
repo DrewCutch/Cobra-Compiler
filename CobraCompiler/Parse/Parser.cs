@@ -98,7 +98,7 @@ namespace CobraCompiler.Parse
             Token name = Expect(TokenType.Identifier, "Expect variable name.");
             Expect(TokenType.Colon, "Expect colon after variable declaration.");
 
-            TypeInitExpression typeInit = InitType();
+            TypeInitExpression typeInit = TypeInit();
 
             AssignExpression initializer = null;
             if (Match(TokenType.Equal))
@@ -132,7 +132,7 @@ namespace CobraCompiler.Parse
             TypeInitExpression returnType = null;
             if (Match(TokenType.Colon))
             {
-                returnType = InitType();
+                returnType = TypeInit();
             }
 
             Match(TokenType.NewLine);
@@ -171,12 +171,12 @@ namespace CobraCompiler.Parse
         {
             Token name = Expect(TokenType.Identifier, "Expect parameter name.", ignoreNewline:true);
             Expect(TokenType.Colon, "Expect colon after parameter name.");
-            TypeInitExpression typeInit = InitType();
+            TypeInitExpression typeInit = TypeInit();
 
             return new ParamDeclarationStatement(name, typeInit);
         }
 
-        private TypeInitExpression InitType()
+        private TypeInitExpression SimpleTypeInit()
         {
             List<Token> typeIdentifier = new List<Token>();
             List<TypeInitExpression> genericParams = new List<TypeInitExpression>();
@@ -195,14 +195,72 @@ namespace CobraCompiler.Parse
             {
                 do
                 {
-                    genericParams.Add(InitType());
+                    genericParams.Add(TypeInit());
                 } while (Match(TokenType.Comma));
 
                 Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
             }
+            
 
             return new TypeInitExpression(typeIdentifier, genericParams);
         }
+
+        private TypeInitExpression TypeInit()
+        {
+            Expression typeInit = Union();
+            return ResolveType(typeInit);
+        }
+
+        private TypeInitExpression ResolveType(Expression expr)
+        {
+            Expression typeExpression = expr;
+            if (typeExpression is TypeInitExpression simpleTypeInit)
+                return simpleTypeInit;
+
+            if(!(typeExpression is BinaryExpression))
+                throw new NotImplementedException();
+            
+            BinaryExpression typeBinary = typeExpression as BinaryExpression;
+            switch (typeBinary.Op.Type)
+            {
+                case TokenType.Bar:
+                    TypeInitExpression left = ResolveType(typeBinary.Left);
+                    TypeInitExpression right = ResolveType(typeBinary.Right);
+                    return new TypeInitExpression(new Token[]{new Token(TokenType.Identifier, "union", null, typeBinary.Op.Line)}, new TypeInitExpression[] {left, right});
+            }
+
+            throw new NotImplementedException();
+        }
+
+        private Expression Union()
+        {
+            Expression expr = Intersect();
+
+            while (Match(TokenType.Bar))
+            {
+                Token op = _tokens.Previous();
+                Expression right = Intersect();
+                expr = new BinaryExpression(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        private Expression Intersect()
+        {
+            Expression expr = SimpleTypeInit();
+
+            while (Match(TokenType.Ampersand))
+            {
+                Token op = _tokens.Previous();
+                Expression right = SimpleTypeInit();
+                expr = new BinaryExpression(expr, op, right);
+            }
+
+            return expr;
+        }
+
+
 
         private Statement Statement()
         {
