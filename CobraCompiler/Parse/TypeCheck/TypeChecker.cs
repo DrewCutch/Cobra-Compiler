@@ -149,6 +149,12 @@ namespace CobraCompiler.Parse.TypeCheck
                 _scopes.Enqueue(funcScope);
             }
 
+            if (statement is TypeDeclarationStatement typeDeclaration)
+            {
+                CobraType type = scope.GetType(typeDeclaration.Type);
+                scope.DefineType(typeDeclaration.Name.Lexeme, type);
+            }
+
             if (statement is BlockStatement blockStatement)
             {
                 Scope blockScope = new Scope(scope, blockStatement);
