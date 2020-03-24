@@ -9,6 +9,7 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
     enum Operation
     {
         Add,
+        Cast,
         CompareEqual,
         CompareGreater,
         CompareGreaterEqual,
