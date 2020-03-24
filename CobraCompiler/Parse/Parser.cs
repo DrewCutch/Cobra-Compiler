@@ -215,9 +215,45 @@ namespace CobraCompiler.Parse
 
                 Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
             }
-            
 
             return new TypeInitExpression(typeIdentifier, genericParams);
+        }
+
+        private InterfaceDefinitionExpression InterfaceDefinition()
+        {
+            List<PropertyDefinitionExpression> properties = new List<PropertyDefinitionExpression>();
+            Token openBrace = _tokens.Previous();
+
+            while (!Check(TokenType.RightBrace) && !IsAtEnd)
+            {
+                PropertyDefinitionExpression nextProperty = PropertyDefinition();
+                if (nextProperty != null)
+                    properties.Add(nextProperty);
+            }
+
+            Expect(TokenType.RightBrace, "Expect '}' after interface definition.");
+            return new InterfaceDefinitionExpression(openBrace, properties);
+        }
+
+        private PropertyDefinitionExpression PropertyDefinition()
+        {
+            if (!MatchIgnoringNewline(TokenType.Identifier))
+                return null;
+
+            Token identifier = _tokens.Previous();
+            Expect(TokenType.Colon, "Expect colon after property definition.");
+
+            TypeInitExpression type = TypeInit();
+
+            return new PropertyDefinitionExpression(identifier, type);
+        }
+
+        private TypeInitExpression TypeInitExpression()
+        {
+            if (Match(TokenType.LeftBrace))
+                return InterfaceDefinition();
+
+            return SimpleTypeInit();
         }
 
         private TypeInitExpression TypeInit()
@@ -263,18 +299,17 @@ namespace CobraCompiler.Parse
 
         private Expression Intersect()
         {
-            Expression expr = SimpleTypeInit();
+            Expression expr = TypeInitExpression();
 
             while (Match(TokenType.Ampersand))
             {
                 Token op = _tokens.Previous();
-                Expression right = SimpleTypeInit();
+                Expression right = TypeInitExpression();
                 expr = new BinaryExpression(expr, op, right);
             }
 
             return expr;
         }
-
 
 
         private Statement Statement()
