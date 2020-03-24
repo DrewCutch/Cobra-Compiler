@@ -85,6 +85,7 @@
     <Compile Include="Parse\Expressions\GetExpression.cs" />
     <Compile Include="Parse\Expressions\IExpressionVisitorWithContext.cs" />
     <Compile Include="Parse\Expressions\IndexExpression.cs" />
+    <Compile Include="Parse\Expressions\InterfaceDefinitionExpression.cs" />
     <Compile Include="Parse\Expressions\ListLiteralExpression.cs" />
     <Compile Include="Parse\Expressions\PropertyDefinitionExpression.cs" />
     <Compile Include="Parse\Expressions\TypeInitExpression.cs" />
