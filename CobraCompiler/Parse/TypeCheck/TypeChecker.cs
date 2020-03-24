@@ -217,7 +217,7 @@ namespace CobraCompiler.Parse.TypeCheck
                         break;
                     case ReturnStatement returnStatement:
                         CobraType returnStatementType = returnStatement.Value.Accept(this);
-                        if (returnStatementType != CurrentScope.GetReturnType())
+                        if (!CurrentScope.GetReturnType().CanImplicitCast(returnStatementType))
                             throw new InvalidReturnTypeException(returnStatement.Keyword,
                                 returnStatementType, CurrentScope.GetReturnType());
                         break;
