@@ -44,7 +44,7 @@ namespace CobraCompiler.Parse.Scopes
         public virtual CobraType GetType(TypeInitExpression typeInit)
         {
             if (!typeInit.IsGenericInstance)
-                return GetType(typeInit.IdentifierStr);
+                return GetSimpleType(typeInit);
 
             List<CobraType> paramTypes = typeInit.GenericParams.Select(GetType).ToList();
             CobraGeneric generic = GetGeneric(typeInit.IdentifierStrWithoutParams);
@@ -52,15 +52,32 @@ namespace CobraCompiler.Parse.Scopes
             return generic.CreateGenericInstance(paramTypes);
         }
 
-        protected virtual CobraType GetType(string identifier)
+        private CobraType CreateInterface(InterfaceDefinitionExpression interfaceDefinitionExpression)
         {
-            if (identifier == null)
+            CobraType interfaceType = new CobraType(interfaceDefinitionExpression.IdentifierStr);
+
+            foreach (PropertyDefinitionExpression property in interfaceDefinitionExpression.Properties)
+            {
+                interfaceType.DefineSymbol(property.Identifier.Lexeme, GetType(property.Type));
+            }
+
+            _types[interfaceDefinitionExpression.IdentifierStr] = interfaceType;
+
+            return interfaceType;
+        }
+
+        protected virtual CobraType GetSimpleType(TypeInitExpression typeInit)
+        {
+            if (typeInit.IdentifierStr == null)
                 return null;
 
-            if(_types.ContainsKey(identifier))
-                return _types[identifier];
+            if(_types.ContainsKey(typeInit.IdentifierStr))
+                return _types[typeInit.IdentifierStr];
 
-            return Parent?.GetType(identifier);
+            if (typeInit is InterfaceDefinitionExpression interfaceDefinition)
+                return CreateInterface(interfaceDefinition);
+
+            return Parent?.GetSimpleType(typeInit);
         }
 
         public virtual bool IsTypeDefined(TypeInitExpression typeInit)

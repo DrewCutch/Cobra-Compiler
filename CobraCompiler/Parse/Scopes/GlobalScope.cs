@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Parse.TypeCheck;
 using CobraCompiler.Parse.TypeCheck.Types;
@@ -20,18 +21,18 @@ namespace CobraCompiler.Parse.Scopes
             return _types.ContainsKey(identifier) || Type.GetType(identifier) != null;
         }
 
-        protected override CobraType GetType(string identifier)
+        protected override CobraType GetSimpleType(TypeInitExpression typeInit)
         {
-            if (identifier == null)
+            if (typeInit.IdentifierStr == null)
                 return null;
 
-            if (_types.ContainsKey(identifier))
-                return _types[identifier];
+            if (_types.ContainsKey(typeInit.IdentifierStr))
+                return _types[typeInit.IdentifierStr];
 
-            if (Type.GetType(identifier) is Type coreType)
+            if (Type.GetType(typeInit.IdentifierStr) is Type coreType)
             {
-                DotNetCobraType cobraType = new DotNetCobraType(identifier, coreType);
-                _types[identifier] = cobraType;
+                DotNetCobraType cobraType = new DotNetCobraType(typeInit.IdentifierStr, coreType);
+                _types[typeInit.IdentifierStr] = cobraType;
                 return cobraType;
             }
 
