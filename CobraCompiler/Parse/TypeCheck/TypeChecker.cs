@@ -229,7 +229,7 @@ namespace CobraCompiler.Parse.TypeCheck
                         CurrentScope.Declare(((GetExpression) importStatement.Import).Name.Lexeme, importType);
                         break;
                     //default:
-                        //throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");
+                        //throw new NotImplementedException($"Type checking not defined for statement of {statement.GetSimpleType()}");
                 }
             }
             catch (TypingException typingException)
@@ -283,7 +283,7 @@ namespace CobraCompiler.Parse.TypeCheck
                     if (!generic.TypeParams[i].CanImplicitCast(expr.Arguments[i].Accept(this)))
                     {
                         CobraType test = expr.Arguments[i].Accept(this);
-                        throw new InvalidArgumentException(expr.Paren);
+                        throw new InvalidArgumentException(expr.Paren, generic.TypeParams[i].Identifier, test.Identifier);
                     }
                 }
                 return generic.TypeParams.Last();
