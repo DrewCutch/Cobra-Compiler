@@ -173,7 +173,7 @@ namespace CobraCompiler.Parse
         private Statement TypeDeclaration()
         {
             Token name = Expect(TokenType.Identifier, "Expect type name.");
-            Expect(TokenType.Colon, "Expect colon after type declaration.");
+            Expect(TokenType.Equal, "Expect assignment after type declaration.");
 
             TypeInitExpression typeInit = TypeInit();
 
