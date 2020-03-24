@@ -12,6 +12,8 @@ namespace CobraCompiler.Parse.Scopes
     {
         protected readonly Dictionary<string, CobraType> _vars;
         protected readonly Dictionary<string, CobraType> _types;
+        public HashSet<CobraType> DefinedTypes => new HashSet<CobraType>(_types.Values);
+
         protected readonly Dictionary<string, CobraGeneric> _generics;
 
         protected readonly Dictionary<(Operation, CobraType, CobraType), IOperator> _operators;
