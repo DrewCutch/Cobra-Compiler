@@ -104,6 +104,12 @@ namespace CobraCompiler.Assemble
 
             List<FuncAssembler> funcAssemblers = new List<FuncAssembler>();
 
+            foreach (CobraType definedType in scope.DefinedTypes)
+            {
+                if (!(definedType is CobraGenericInstance))
+                    DefineInterface(definedType, mb);
+            }
+
             foreach (Scope subScope in scope.SubScopes)
             {
                 if (subScope is FuncScope funcScope)
@@ -118,6 +124,26 @@ namespace CobraCompiler.Assemble
             }
             
             return new DefinedModule(funcAssemblers, typeBuilder);
+        }
+
+        public TypeBuilder DefineInterface(CobraType cobraType, ModuleBuilder mb)
+        {
+            TypeBuilder typeBuilder = mb.DefineType(cobraType.Identifier, TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
+            foreach (KeyValuePair<string, CobraType> symbol in cobraType.Symbols)
+            {
+                Type returnType = _typeStore.GetType(symbol.Value);
+                PropertyBuilder propertyBuilder = typeBuilder.DefineProperty(symbol.Key, PropertyAttributes.None, returnType, null);
+                MethodBuilder getMethod = typeBuilder.DefineMethod($"get_{symbol.Key}",
+                    MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.Abstract | MethodAttributes.Virtual, returnType, Type.EmptyTypes);
+
+                propertyBuilder.SetGetMethod(getMethod);
+            }
+
+            typeBuilder.CreateType();
+
+            _typeStore.AddType(cobraType, typeBuilder);
+
+            return typeBuilder;
         }
 
         public void SaveAssembly()
