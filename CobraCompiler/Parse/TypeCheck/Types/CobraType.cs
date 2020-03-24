@@ -7,7 +7,7 @@ using CobraCompiler.Parse.TypeCheck.Operators;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
-    abstract class CobraType: CobraTypeBase
+    class CobraType: CobraTypeBase
     {
         private readonly Dictionary<string, CobraType> _symbols;
         private readonly HashSet<CobraType> _parents;
