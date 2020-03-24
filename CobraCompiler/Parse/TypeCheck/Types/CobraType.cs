@@ -10,6 +10,9 @@ namespace CobraCompiler.Parse.TypeCheck.Types
     class CobraType: CobraTypeBase
     {
         private readonly Dictionary<string, CobraType> _symbols;
+
+        public IReadOnlyDictionary<string, CobraType> Symbols => _symbols;
+
         private readonly HashSet<CobraType> _parents;
 
         protected CobraType(string identifier): base(identifier)
