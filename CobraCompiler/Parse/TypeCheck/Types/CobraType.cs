@@ -15,7 +15,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
         private readonly HashSet<CobraType> _parents;
 
-        protected CobraType(string identifier): base(identifier)
+        public CobraType(string identifier): base(identifier)
         {
             _symbols = new Dictionary<string, CobraType>();
             _parents = new HashSet<CobraType>();
