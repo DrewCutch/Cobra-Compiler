@@ -85,22 +85,6 @@ namespace CobraCompiler.Parse.TypeCheck
             }
 
             return _globalScope;
-        } 
-
-        public ModuleScope CreateModule(IReadOnlyList<Statement> statements, string moduleName)
-        {
-            BlockStatement baseBlock = new BlockStatement(statements);
-            ModuleScope moduleScope = new ModuleScope(_globalScope, baseBlock, moduleName);
-
-            _scopes.Enqueue(moduleScope);
-
-            while (_scopes.Count > 0)
-            {
-                CheckScope(CurrentScope);
-                _scopes.Dequeue();
-            }
-
-            return moduleScope;
         }
 
         private void CheckScope(Scope scope)
