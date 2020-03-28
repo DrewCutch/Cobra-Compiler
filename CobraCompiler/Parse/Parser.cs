@@ -66,8 +66,57 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.Type))
                 return TypeDeclaration();
 
+            if (Match(TokenType.Class))
+                return ClassDeclaration();
+
             if (Match(TokenType.NewLine))
                 return null;
+
+            throw new ParsingException(_tokens.Peek(0), "Invalid code outside of function");
+        }
+
+        private Statement ClassDeclaration()
+        {
+            Token name = Expect(TokenType.Identifier, "Expect class name.");
+
+            TypeInitExpression type = null;
+
+            if (Match(TokenType.Colon))
+            {
+                type = TypeInit();
+            }
+
+            Match(TokenType.NewLine);
+
+            return new ClassDeclarationStatement(name, type, ClassBody());
+        }
+
+        private BlockStatement ClassBody()
+        {
+            List<Statement> body = new List<Statement>();
+            Expect(TokenType.LeftBrace, "Expect '{' after class definition.");
+
+            while (!Check(TokenType.RightBrace) && !IsAtEnd)
+            {
+                Statement nextStatement = ClassMemberDefinition();
+                if (nextStatement != null)
+                    body.Add(nextStatement);
+            }
+
+            Expect(TokenType.RightBrace, "Expect '}' after code block.");
+            return new BlockStatement(body);
+        }
+
+        private Statement ClassMemberDefinition()
+        {
+            if (Match(TokenType.NewLine))
+                return null;
+
+            if (Match(TokenType.Func))
+                return FuncDeclaration();
+
+            if (Match(TokenType.Var))
+                return VarDeclaration();
 
             throw new ParsingException(_tokens.Peek(0), "Invalid code outside of function");
         }
@@ -106,7 +155,7 @@ namespace CobraCompiler.Parse
             AssignExpression initializer = null;
             if (Match(TokenType.Equal))
             {
-                initializer = new AssignExpression(name, Expression());
+                initializer = new AssignExpression(new VarExpression(name), Expression());
             }
 
             Expect(TokenType.NewLine, "Expect new line after variable declaration.");
@@ -439,13 +488,7 @@ namespace CobraCompiler.Parse
                 Token equals = _tokens.Previous();
                 Expression value = Assignment();
 
-                if (expr is VarExpression varExpression)
-                {
-                    Token name = varExpression.Name;
-                    return new AssignExpression(name, value);
-                }
-
-                throw new ParsingException(equals, "Invalid assignment target.");
+                return new AssignExpression(expr, value);
             }
 
             return expr;

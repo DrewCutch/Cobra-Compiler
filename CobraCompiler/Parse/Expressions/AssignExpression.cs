@@ -5,12 +5,12 @@ namespace CobraCompiler.Parse.Expressions
 {
     class AssignExpression : Expression
     {
-        public readonly Token Name;
+        public readonly Expression Target;
         public readonly Expression Value;
 
-        public AssignExpression(Token name, Expression value)
+        public AssignExpression(Expression target, Expression value)
         {
-            Name = name;
+            Target = target;
             Value = value;
         }
 

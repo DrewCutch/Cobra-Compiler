@@ -241,14 +241,12 @@ namespace CobraCompiler.Parse.TypeCheck
 
         public CobraType Visit(AssignExpression expr)
         {
-            if(!CurrentScope.IsDefined(expr.Name.Lexeme))
-                throw new VarNotDefinedException(expr.Name.Lexeme, expr.Name.Line);
+            CobraType varType = expr.Target.Accept(this);
 
-            CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
             CobraType assignType = expr.Value.Accept(this);
 
             if (!varType.CanImplicitCast(assignType))
-                throw new InvalidAssignmentException(varType.Identifier, assignType?.Identifier, expr.Name.Line);
+                throw new InvalidAssignmentException(varType.Identifier, assignType?.Identifier, -1); //TODO: make line number correct
 
             return varType;
         }

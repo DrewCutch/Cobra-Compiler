@@ -166,13 +166,14 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(AssignExpression expr, ParentExpressionAssemblyContext context)
         {
-            CobraType expectedType = CurrentScope.GetVarType(expr.Name.Lexeme);
+            ExpressionAssemblyContext targetContext = expr.Target.Accept(this, new ParentExpressionAssemblyContext());
 
-            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(expected:expectedType));
+            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(expected: targetContext.Type));
 
-            _localManager.StoreVar(_scopeCrawler.Current, expr.Name.Lexeme);
+            if(expr.Target is VarExpression varExpression)
+                _localManager.StoreVar(_scopeCrawler.Current, varExpression.Name.Lexeme);
 
-            return new ExpressionAssemblyContext(_funcScope.GetVarType(expr.Name.Lexeme));
+            return new ExpressionAssemblyContext(targetContext.Type);
         }
 
         public ExpressionAssemblyContext Visit(BinaryExpression expr, ParentExpressionAssemblyContext context)
