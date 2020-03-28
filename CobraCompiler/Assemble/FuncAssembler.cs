@@ -24,7 +24,7 @@ namespace CobraCompiler.Assemble
 {
     class FuncAssembler: IExpressionVisitorWithContext<ExpressionAssemblyContext, ParentExpressionAssemblyContext>
     {
-        public static readonly MethodAttributes FuncMethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
+        private readonly MethodAttributes _methodAttributes;
 
         private readonly AssemblyBuilder _assemblyBuilder;
         private readonly TypeBuilder _typeBuilder;
@@ -40,13 +40,14 @@ namespace CobraCompiler.Assemble
 
         private readonly MethodStore _methodStore;
 
-        public FuncAssembler(FuncScope funcScope, TypeStore typeStore, MethodStore methodStore, TypeBuilder typeBuilder, AssemblyBuilder assemblyBuilder)
+        public FuncAssembler(FuncScope funcScope, TypeStore typeStore, MethodStore methodStore, TypeBuilder typeBuilder, AssemblyBuilder assemblyBuilder, MethodAttributes methodAttributes)
         {
             _funcScope = funcScope;
             _typeStore = typeStore;
             _methodStore = methodStore;
             _typeBuilder = typeBuilder;
             _assemblyBuilder = assemblyBuilder;
+            _methodAttributes = methodAttributes;
             _scopeCrawler = new ScopeCrawler(funcScope);
         }
 
@@ -57,14 +58,14 @@ namespace CobraCompiler.Assemble
             Type[] paramTypes = _funcScope.Params.Select(param => _typeStore.GetType(param.Item2)).ToArray();
             Type returnType = _funcScope.ReturnType != null ? _typeStore.GetType(_funcScope.ReturnType) : null;
 
-            MethodBuilder methodBuilder = _typeBuilder.DefineMethod(funcDeclaration.Name.Lexeme, FuncMethodAttributes, returnType, paramTypes);
+            MethodBuilder methodBuilder = _typeBuilder.DefineMethod(funcDeclaration.Name.Lexeme, _methodAttributes, returnType, paramTypes);
 
             if (funcDeclaration.Name.Lexeme == "main")
                 _assemblyBuilder.SetEntryPoint(methodBuilder);
 
             for (int i = 0; i < funcDeclaration.Params.Count; i++)
             {
-                ParameterBuilder parameterBuilder = methodBuilder.DefineParameter(i + 1, ParameterAttributes.None, funcDeclaration.Params[i].Name.Lexeme);
+                methodBuilder.DefineParameter(i + 1, ParameterAttributes.None, funcDeclaration.Params[i].Name.Lexeme);
             }
             
             _il = methodBuilder.GetILGenerator();

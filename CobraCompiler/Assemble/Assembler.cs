@@ -100,7 +100,7 @@ namespace CobraCompiler.Assemble
         {
             TypeBuilder typeBuilder = mb.DefineType(scope.Name, ModuleTypeAttributes);
 
-            FuncAssemblerFactory funcAssemblerFactory = new FuncAssemblerFactory(_assemblyBuilder, typeBuilder, _typeStore, _methodStore);
+            FuncAssemblerFactory funcAssemblerFactory = new FuncAssemblerFactory(_assemblyBuilder, typeBuilder, _typeStore, _methodStore, FuncMethodAttributes);
 
             List<FuncAssembler> funcAssemblers = new List<FuncAssembler>();
 
