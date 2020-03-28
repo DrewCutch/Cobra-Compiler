@@ -93,6 +93,11 @@ namespace CobraCompiler.Parse.PrettyPrint
                     case TypeDeclarationStatement typeDeclaration:
                         _printer.AddLeaf($"Type {typeDeclaration.Name.Lexeme} = {typeDeclaration.Type.IdentifierStr}", onLast);
                         break;
+                    case ClassDeclarationStatement classDeclaration:
+                        _printer.AddNode($"Class {classDeclaration.Name.Lexeme}", onLast);
+                        GenerateTree(classDeclaration.Body);
+                        _printer.ExitNode();
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
@@ -103,10 +108,10 @@ namespace CobraCompiler.Parse.PrettyPrint
         {
             switch (conditional)
             {
-                case IfStatement ifStatement:
+                case IfStatement _:
                     _printer.AddNode("If", onLast);
                     break;
-                case WhileStatement whileStatement:
+                case WhileStatement _:
                     _printer.AddNode("While", onLast);
                     break;
             }
@@ -129,6 +134,7 @@ namespace CobraCompiler.Parse.PrettyPrint
         public void Visit(AssignExpression expr, bool onLast)
         {
             _printer.AddNode("Assign", onLast);
+            expr.Target.Accept(this, false);
             expr.Value.Accept(this, true);
             _printer.ExitNode();
         }
