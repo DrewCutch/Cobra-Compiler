@@ -190,10 +190,6 @@ namespace CobraCompiler.Scanning
                     if (!isAlphanumeric(next))
                         return TokenType.Super;
                     return null;
-                case "this":
-                    if (!isAlphanumeric(next))
-                        return TokenType.This;
-                    return null;
                 case "true":
                     if (!isAlphanumeric(next))
                         return TokenType.True;
