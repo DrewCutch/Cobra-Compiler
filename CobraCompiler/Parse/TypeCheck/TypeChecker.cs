@@ -223,6 +223,17 @@ namespace CobraCompiler.Parse.TypeCheck
             
         }
 
+        public static CobraType GetExpressionType(Expression expr, Scope scope)
+        {
+            ErrorLogger dummyLogger = new ErrorLogger();
+            TypeChecker dummyChecker = new TypeChecker(dummyLogger);
+            
+            dummyChecker._scopes.Enqueue(scope);
+            CobraType type = expr.Accept(dummyChecker);
+
+            return dummyLogger.HasErrors ? null : type;
+        }
+
         public CobraType Visit(AssignExpression expr)
         {
             CobraType varType = expr.Target.Accept(this);
