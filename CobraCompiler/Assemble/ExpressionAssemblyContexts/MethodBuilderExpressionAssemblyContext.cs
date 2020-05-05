@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,10 +12,10 @@ namespace CobraCompiler.Assemble.ExpressionAssemblyContexts
 {
     class MethodBuilderExpressionAssemblyContext: MethodExpressionAssemblyContext
     {
-        public readonly string Identifier;
-        public MethodBuilderExpressionAssemblyContext(CobraType type, string identifier): base(type)
+        public readonly MethodBase Method;
+        public MethodBuilderExpressionAssemblyContext(CobraType type, MethodBase method) : base(type)
         {
-            Identifier = identifier;
+            Method = method;
         }
     }
 }
