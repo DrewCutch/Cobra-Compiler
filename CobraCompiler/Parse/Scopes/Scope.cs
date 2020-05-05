@@ -41,32 +41,32 @@ namespace CobraCompiler.Parse.Scopes
             _subScopes = new List<Scope>();
         }
 
-        public virtual CobraType GetType(TypeInitExpression typeInit)
+        public virtual CobraType GetType(TypeInitExpression typeInit, string self="")
         {
             if (!typeInit.IsGenericInstance)
-                return GetSimpleType(typeInit);
+                return GetSimpleType(typeInit, self);
 
-            List<CobraType> paramTypes = typeInit.GenericParams.Select(GetType).ToList();
+            List<CobraType> paramTypes = typeInit.GenericParams.Select(param => GetType(param)).ToList();
             CobraGeneric generic = GetGeneric(typeInit.IdentifierStrWithoutParams);
 
             return generic.CreateGenericInstance(paramTypes);
         }
 
-        private CobraType CreateInterface(InterfaceDefinitionExpression interfaceDefinitionExpression)
+        private CobraType CreateInterface(InterfaceDefinitionExpression interfaceDefinitionExpression, string self = "")
         {
             CobraType interfaceType = new CobraType(interfaceDefinitionExpression.IdentifierStr);
+            _types[interfaceDefinitionExpression.IdentifierStr] = interfaceType;
+            _types[self] = interfaceType;
 
             foreach (PropertyDefinitionExpression property in interfaceDefinitionExpression.Properties)
             {
                 interfaceType.DefineSymbol(property.Identifier.Lexeme, GetType(property.Type));
             }
 
-            _types[interfaceDefinitionExpression.IdentifierStr] = interfaceType;
-
             return interfaceType;
         }
 
-        protected virtual CobraType GetSimpleType(TypeInitExpression typeInit)
+        protected virtual CobraType GetSimpleType(TypeInitExpression typeInit, string self = "")
         {
             if (typeInit.IdentifierStr == null)
                 return null;
@@ -75,7 +75,7 @@ namespace CobraCompiler.Parse.Scopes
                 return _types[typeInit.IdentifierStr];
 
             if (typeInit is InterfaceDefinitionExpression interfaceDefinition)
-                return CreateInterface(interfaceDefinition);
+                return CreateInterface(interfaceDefinition, self);
 
             return Parent?.GetSimpleType(typeInit);
         }
