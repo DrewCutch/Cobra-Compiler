@@ -10,9 +10,13 @@ namespace CobraCompiler.Parse.TypeCheck.Types
     {
         public UnionInstanceType(string identifier, IEnumerable<CobraType> typeParams) : base(identifier, typeParams, UnionLangCobraGeneric.UnionGeneric)
         {
+            CobraType commonParent = GetCommonParent(typeParams, unionize:false);
+            foreach (KeyValuePair<string, CobraType> symbol in commonParent.Symbols)
+                DefineSymbol(symbol.Key, symbol.Value);
 
+            _parents.Add(commonParent);
         }
-
+        
         public override bool CanImplicitCast(CobraType other)
         {
             if(other is UnionInstanceType otherUnion)
@@ -26,7 +30,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             return base.CanImplicitCast(other) || TypeParams.Contains(other);
         }
 
-        public override CobraType GetCommonParent(CobraType other)
+        public override CobraType GetCommonParent(CobraType other, bool unionize=true)
         {
             if (Equals(other))
                 return this;
@@ -44,7 +48,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             if (myTypes.Contains(other))
                 return this;
 
-            return base.GetCommonParent(other);
+            return base.GetCommonParent(other, unionize);
         }
     }
 }
