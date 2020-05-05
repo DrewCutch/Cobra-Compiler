@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.TypeCheck;
+using CobraCompiler.Parse.TypeCheck.Exceptions;
 
 namespace CobraCompiler.Assemble
 {
@@ -17,39 +18,51 @@ namespace CobraCompiler.Assemble
         };
 
         private readonly Dictionary<Scope, Dictionary<string, LocalBuilder>> _locals;
+        private readonly Dictionary<string, FieldBuilder> _fields;
+
         private readonly FuncScope _funcScope;
         private readonly ILGenerator _il;
 
-        public LocalManager(FuncScope funcScope, ILGenerator il)
-        {
-            _funcScope = funcScope;
-            _locals = new Dictionary<Scope, Dictionary<string, LocalBuilder>>();
-            _il = il;
-        }
+        private readonly ClassScope _classScope;
 
         public LocalManager(FuncScope funcScope, ILGenerator il, Type returnType)
         {
             _funcScope = funcScope;
             _locals = new Dictionary<Scope, Dictionary<string, LocalBuilder>>();
+            _fields = new Dictionary<string, FieldBuilder>();
             _il = il;
-
+            // TODO: Implement FieldStore
             if(returnType != typeof(void))
                 DeclareVar(funcScope, "@ret", returnType);
         }
 
+        private bool IsClassField(string name) => _fields.ContainsKey(name);
+
         public void LoadVar(Scope scope, string name)
         {
             int argPos = _funcScope.GetParamPosition(name);
-            if (argPos == -1)
+            if (argPos != -1)
             {
-                LoadLocal(scope, name);
+                if (argPos < LoadArgShortCodes.Length)
+                    _il.Emit(LoadArgShortCodes[argPos]);
+                else
+                    _il.Emit(OpCodes.Ldarg, argPos);
                 return;
             }
 
-            if (argPos < LoadArgShortCodes.Length)
-                _il.Emit(LoadArgShortCodes[argPos]);
+            if (IsClassField(name))
+                LoadField(name);
             else
-                _il.Emit(OpCodes.Ldarg, argPos);
+                LoadLocal(scope, name);
+        }
+
+        private void LoadField(string name)
+        {
+            if(!IsClassField(name))
+                throw new ArgumentOutOfRangeException(nameof(name));
+
+            _il.Emit(OpCodes.Ldarg_0);
+            _il.Emit(OpCodes.Ldfld, _fields[name]);
         }
 
         private void LoadLocal(Scope scope, string name)
@@ -70,7 +83,10 @@ namespace CobraCompiler.Assemble
                 return;
             }
 
-            _il.Emit(OpCodes.Starg, argPos);
+            if (IsClassField(name))
+                StoreField(name);
+            else
+                _il.Emit(OpCodes.Starg, argPos);
         }
 
         private void StoreLocal(Scope scope, string name)
@@ -79,6 +95,15 @@ namespace CobraCompiler.Assemble
 
             if (local != null)
                 _il.Emit(OpCodes.Stloc, local);
+        }
+
+        private void StoreField(string name)
+        {
+            if(!IsClassField(name))
+                throw new ArgumentOutOfRangeException(nameof(name));
+
+            _il.Emit(OpCodes.Ldarg_0);
+            _il.Emit(OpCodes.Stfld, _fields[name]);
         }
 
         public LocalBuilder GetLocal(Scope scope, string name)
