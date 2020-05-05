@@ -1,4 +1,4 @@
-﻿namespace CobraCompiler.Parse.TypeCheck
+﻿namespace CobraCompiler.Parse.TypeCheck.Exceptions
 {
     class VarNotDefinedException: TypingException
     {

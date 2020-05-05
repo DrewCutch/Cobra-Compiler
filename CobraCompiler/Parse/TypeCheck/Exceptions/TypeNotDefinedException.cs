@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CobraCompiler.Scanning;
+﻿using CobraCompiler.Scanning;
 
-namespace CobraCompiler.Parse.TypeCheck
+namespace CobraCompiler.Parse.TypeCheck.Exceptions
 {
     class TypeNotDefinedException: TypingException
     {

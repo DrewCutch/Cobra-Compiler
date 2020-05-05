@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CobraCompiler.ErrorLogging;
+﻿using CobraCompiler.ErrorLogging;
 
-namespace CobraCompiler.Parse.TypeCheck
+namespace CobraCompiler.Parse.TypeCheck.Exceptions
 {
     abstract class TypingException : CompilingException
     {
