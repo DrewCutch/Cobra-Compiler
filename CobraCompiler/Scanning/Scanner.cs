@@ -170,6 +170,10 @@ namespace CobraCompiler.Scanning
                     if (!isAlphanumeric(next))
                         return TokenType.In;
                     return null;
+                case "init":
+                    if (!isAlphanumeric(next))
+                        return TokenType.Init;
+                    return null;
                 case "null":
                     if (!isAlphanumeric(next))
                         return TokenType.Null;
