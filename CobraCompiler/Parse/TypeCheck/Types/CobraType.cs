@@ -13,7 +13,9 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
         public IReadOnlyDictionary<string, CobraType> Symbols => _symbols;
 
-        private readonly HashSet<CobraType> _parents;
+        public IReadOnlyCollection<CobraType> Parents => _parents;
+
+        protected readonly HashSet<CobraType> _parents;
 
         public CobraType(string identifier): base(identifier)
         {
@@ -21,26 +23,27 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             _parents = new HashSet<CobraType>();
         }
 
-        public void DefineOperator(BinaryOperator op, FuncScope implementation)
+        public CobraType(string identifier, params CobraType[] parents) : base(identifier)
         {
-            if(implementation.Params.Count != 2 || implementation.Params[0].Item2 != op.Lhs || implementation.Params[1].Item2 != op.Rhs)
-                throw new ArgumentException("Implementation does not handler operator");
-        }
-
-        public void DefineMethod(FuncScope implementation)
-        {
-            if(implementation.Params[0].Item2 != this)
-                throw new ArgumentException($"First param of implementation must be of type {this.Identifier}");
+            _symbols = new Dictionary<string, CobraType>();
+            _parents = new HashSet<CobraType>(parents);
         }
 
         public virtual bool HasSymbol(string symbol)
         {
-            return _symbols.ContainsKey(symbol);
+            return GetSymbol(symbol) != null;
         }
 
         public virtual CobraType GetSymbol(string symbol)
         {
-            return _symbols[symbol];
+            if(_symbols.ContainsKey(symbol))
+                return _symbols[symbol];
+
+            foreach (CobraType parent in _parents)
+                if (parent.HasSymbol(symbol))
+                    return parent.GetSymbol(symbol);
+
+            return null;
         }
 
         public virtual void DefineSymbol(string symbol, CobraType type)
@@ -53,7 +56,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             return Equals(other) || GetCommonParent(other) == this;
         }
 
-        public virtual CobraType GetCommonParent(CobraType other)
+        public virtual CobraType GetCommonParent(CobraType other, bool unionize=true)
         {
             if (Equals(other))
                 return this;
@@ -64,15 +67,18 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             if (_parents.Count == 1)
                 return _parents.First().GetCommonParent(other);
 
-            return UnionLangCobraGeneric.UnionGeneric.CreateGenericInstance(new List<CobraType>(new CobraType[] {this, other}));
+            if(unionize)
+                return UnionLangCobraGeneric.UnionGeneric.CreateGenericInstance(new List<CobraType>(new CobraType[] {this, other}));
+
+            return DotNetCobraType.Object;
         }
 
-        public static CobraType GetCommonParent(IEnumerable<CobraType> types)
+        public static CobraType GetCommonParent(IEnumerable<CobraType> types, bool unionize=true)
         {
             CobraType commonType = types.First();
 
             foreach (CobraType type in types)
-                commonType = commonType.GetCommonParent(type);
+                commonType = commonType.GetCommonParent(type, unionize);
 
             return commonType;
         }
