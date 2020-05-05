@@ -1,5 +1,35 @@
 ﻿import SupportedProject.default.ListTools
 
+//type result: int & unit
+
+
+
+//type point:{
+//	prop x: int
+//	prop y: int
+	
+//	func mag():float
+//}
+
+//class Point: point {
+//	prop x: int
+//	prop y: int
+
+//	init(x, y);
+
+//	func mag(): float{
+//		return sqrt(x*x + y*y)
+//	}
+//}
+
+//instance Origin: point {
+//	prop x: int = 0
+//	prop y: int = 0
+	
+//	func mag(): float
+//		return 0.0
+//}
+
 
 func add(a: int, b: int): int{
 	var c: int = a + b
@@ -56,8 +86,112 @@ func printTimes(phrase: str, times: int){
 	return
 }
 
+type t1 = int | bool
+type t2 = str | float
+type t3 = t1 | t2
+
+type vec2D = {
+	x: int
+	y: int
+}
+
+class Vector2D: vec2D{
+	var x: int
+	var y: int
+
+	init(x: int, y: int){
+		this.x = x
+		this.y = y
+	}
+}
+
+func addVec(a: vec2D, b: vec2D): vec2D{
+	return Vector2D(a.x + b.x, a.y + b.y)
+}
+
+type person = {
+	name: str
+	age: int
+	bestFriend: person
+
+	greet: f[str, unit]
+	meet: f[person, unit]
+	setBest: f[person, unit]
+	callBestie: f[unit]
+}
+
+type strSerializable = {
+	toString: f[str]
+}
+
+type sperson = person & strSerializable
+
+class Person: person {
+	var name: str
+	var age: int
+	var bestFriend: person
+
+	init(name: str, age: int){
+		this.name = name
+		this.age = age
+	}
+
+	func setBest(best: person){
+		this.bestFriend = best
+
+		return
+	}
+
+	func callBestie(){
+		printStr("calling: ")
+		printStr(this.bestFriend.name)
+
+		return
+	}
+
+	func greet(greeting: str){
+		printStr(this.name)
+		printStr(greeting)
+
+		return
+	}
+
+	func meet(other: person){
+		printStr(this.name)
+		printStr("meet")
+		printStr(other.name)
+
+		return
+	}
+}
+
+
+func testVecs(){
+	var a: vec2D = Vector2D(5, 5)
+	var b: vec2D = Vector2D(2, 0 - 1)
+
+	var c: vec2D = addVec(a, b)
+
+	printStr("resulting vector:")
+	printInt(c.x)
+	printInt(c.y)
+
+	return
+}
 
 func main(): int{
+	var drew: person = Person("drew", 20)
+	var briti: person = Person("briti", 19)
+
+	drew.setBest(briti)
+	drew.callBestie()
+
+	drew.meet(briti)
+
+	if("hello".Contains("o")){
+		printStr("hello contains o")
+	}
+
 	var a: int = (4 - 3) * (10 / 3)
 	a = a + 1
 	var b: int = 5
@@ -111,6 +245,19 @@ func main(): int{
 		printInt(squares[i])
 		i = i + 1
 	}
+
+	var u: t1 = 5
+	var u2: union[int, bool, str] = u
+	var u3: union[int, bool, union[str, float]]
+	var u4: union[int, bool, str, float] = u3
+
+	var unionList: [int | bool] = [1, true, 5, 2, false, false]
+	var boolList: [bool] = [true, true, false]
+	var strList: [str] = ["hello", "world"]
+	
+	var listList: [[int]] = [[1,2,3], [4,5,6]]
+
+	var u5: int|bool|float = 5
 
 	return 0
 }
