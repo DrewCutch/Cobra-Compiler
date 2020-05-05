@@ -7,8 +7,10 @@ using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.Parse.TypeCheck.Exceptions;
 using CobraCompiler.Parse.TypeCheck.Operators;
 using CobraCompiler.Parse.TypeCheck.Types;
+using InvalidOperationException = CobraCompiler.Parse.TypeCheck.Exceptions.InvalidOperationException;
 using System = CobraCompiler.Compiler.System;
 
 namespace CobraCompiler.Parse.TypeCheck
@@ -112,11 +114,23 @@ namespace CobraCompiler.Parse.TypeCheck
 
         private void DefineWithStatement(Scope scope, Statement statement)
         {
+            if (statement is ClassDeclarationStatement classDeclaration)
+            {
+                ClassScope classScope = new ClassScope(scope, classDeclaration);
+
+                scope.AddSubScope(classScope);
+
+                _scopes.Enqueue(classScope);
+            }
+
             if (statement is FuncDeclarationStatement funcDeclaration)
             {
                 CobraType returnType = funcDeclaration.ReturnType == null
                     ? DotNetCobraType.Unit
                     : scope.GetType(funcDeclaration.ReturnType);
+
+                if (funcDeclaration is InitDeclarationStatement)
+                    returnType = CurrentScope.GetType((CurrentScope as ClassScope).ClassDeclaration.Type);
 
                 FuncScope funcScope = new FuncScope(scope, funcDeclaration,
                     funcDeclaration.Params.Select(param => (param.Name.Lexeme, scope.GetType(param.TypeInit))),
@@ -135,7 +149,7 @@ namespace CobraCompiler.Parse.TypeCheck
 
             if (statement is TypeDeclarationStatement typeDeclaration)
             {
-                CobraType type = scope.GetType(typeDeclaration.Type);
+                CobraType type = scope.GetType(typeDeclaration.Type, typeDeclaration.Name.Lexeme);
                 scope.DefineType(typeDeclaration.Name.Lexeme, type);
             }
 
@@ -168,6 +182,26 @@ namespace CobraCompiler.Parse.TypeCheck
             foreach (Statement statement in statements)
             {
                 Check(statement);
+            }
+
+
+            if (scope is ClassScope classScope)
+            {
+                CobraType classType = CurrentScope.GetType(classScope.ClassDeclaration.Type);
+                HashSet<KeyValuePair<string, CobraType>> definedSymbols = new HashSet<KeyValuePair<string, CobraType>>(classScope.ThisType.Symbols);
+                HashSet<KeyValuePair<string, CobraType>> requiredSymbols = new HashSet<KeyValuePair<string, CobraType>>(classType.Symbols);
+
+                if (!definedSymbols.IsSupersetOf(requiredSymbols))
+                {
+                    List<string> missingElements = new List<string>();
+
+                    requiredSymbols.ExceptWith(definedSymbols);
+                    foreach (KeyValuePair<string, CobraType> requiredSymbol in requiredSymbols)
+                    {
+                        missingElements.Add($"({requiredSymbol.Key}: {requiredSymbol.Value.Identifier})");
+                    }
+                    _errorLogger.Log(new InvalidTypeImplementationException(classScope.ClassDeclaration.Name.Lexeme, classScope.ClassDeclaration.Type.IdentifierStr, missingElements, classScope.ClassDeclaration.Name.Line)); 
+                }
             }
         }
 
@@ -213,7 +247,7 @@ namespace CobraCompiler.Parse.TypeCheck
                         CurrentScope.Declare(((GetExpression) importStatement.Import).Name.Lexeme, importType);
                         break;
                     //default:
-                        //throw new NotImplementedException($"Type checking not defined for statement of {statement.GetSimpleType()}");
+                    //    throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");
                 }
             }
             catch (TypingException typingException)
@@ -273,7 +307,7 @@ namespace CobraCompiler.Parse.TypeCheck
 
                 for (int i = 0; i < generic.TypeParams.Count - 1; i++)
                 {
-                    if (!generic.TypeParams[i].CanImplicitCast(expr.Arguments[i].Accept(this)))
+                    if (!expr.Arguments[i].Accept(this).CanImplicitCast(generic.TypeParams[i]))
                     {
                         CobraType test = expr.Arguments[i].Accept(this);
                         throw new InvalidArgumentException(expr.Paren, generic.TypeParams[i].Identifier, test.Identifier);
