@@ -17,14 +17,14 @@ namespace CobraCompiler.Assemble
     {
         private readonly AssemblyBuilder _assemblyBuilder;
         private readonly Dictionary<(string, CobraType), MethodInfo> _methodAlias;
-        private readonly Dictionary<string, Dictionary<CobraType, MethodInfo>> _methodBuilders;
+        private readonly Dictionary<string, Dictionary<CobraType, MethodBase>> _methodBuilders;
 
         public MethodStore(AssemblyBuilder assemblyBuilder)
         {
             _assemblyBuilder = assemblyBuilder;
 
             _methodAlias = new Dictionary<(string, CobraType), MethodInfo>();
-            _methodBuilders = new Dictionary<string, Dictionary<CobraType, MethodInfo>>();
+            _methodBuilders = new Dictionary<string, Dictionary<CobraType, MethodBase>>();
         }
 
         public bool HasMethodBuilder(string identifier)
@@ -32,15 +32,15 @@ namespace CobraCompiler.Assemble
             return _methodBuilders.ContainsKey(identifier);
         }
 
-        public void AddMethodInfo(string identifier, CobraType funcType, MethodInfo info)
+        public void AddMethodInfo(string identifier, CobraType funcType, MethodBase info)
         {
             if(!_methodBuilders.ContainsKey(identifier))
-                _methodBuilders[identifier] = new Dictionary<CobraType, MethodInfo>();
+                _methodBuilders[identifier] = new Dictionary<CobraType, MethodBase>();
 
             _methodBuilders[identifier][funcType] = info;
         }
 
-        public MethodInfo GetMethodInfo(BinaryOperator op)
+        public MethodBase GetMethodInfo(BinaryOperator op)
         {
             string methodName = Operator.GetOverloadSpecialName(op.Operation);
             CobraType methodType = op.GetFuncType();
@@ -48,15 +48,9 @@ namespace CobraCompiler.Assemble
             return _methodBuilders[methodName][methodType];
         }
 
-        public MethodInfo GetMethodInfo(MethodExpressionAssemblyContext context)
+        public MethodBase GetMethodInfo(CobraType type, string identifier)
         {
-            switch (context)
-            {
-                case MethodBuilderExpressionAssemblyContext methodBuilderContext:
-                    return _methodBuilders[methodBuilderContext.Identifier][context.Type];
-            }
-
-            throw new NotImplementedException();
+            return _methodBuilders[identifier][type];
         }
     }
 }
