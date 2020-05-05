@@ -116,6 +116,15 @@ namespace CobraCompiler.Assemble
                     _methodStore.AddMethodInfo(scope.Name + "." + funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
                     _methodStore.AddMethodInfo(funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
                 }
+
+                if (subScope is ClassScope classScope)
+                {
+                    ClassAssembler classAssembler = new ClassAssembler(classScope, _typeStore, _methodStore, _assemblyBuilder, _moduleBuilder);
+                    TypeBuilder builder = classAssembler.AssembleDefinition();
+
+                    _typeStore.AddType(classScope.ThisType, builder);
+                    assemblers.Add(classAssembler);
+                }
             }
             
             return new DefinedModule(assemblers, typeBuilder);
@@ -124,19 +133,36 @@ namespace CobraCompiler.Assemble
         public TypeBuilder DefineInterface(CobraType cobraType, ModuleBuilder mb)
         {
             TypeBuilder typeBuilder = mb.DefineType(cobraType.Identifier, TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
+            _typeStore.AddType(cobraType, typeBuilder);
+
             foreach (KeyValuePair<string, CobraType> symbol in cobraType.Symbols)
             {
-                Type returnType = _typeStore.GetType(symbol.Value);
-                PropertyBuilder propertyBuilder = typeBuilder.DefineProperty(symbol.Key, PropertyAttributes.None, returnType, null);
-                MethodBuilder getMethod = typeBuilder.DefineMethod($"get_{symbol.Key}",
-                    MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.Abstract | MethodAttributes.Virtual, returnType, Type.EmptyTypes);
+                MemberInfo member;
 
-                propertyBuilder.SetGetMethod(getMethod);
+                if (symbol.Value is CobraGenericInstance genInst && genInst.Base == DotNetCobraGeneric.FuncType)
+                {
+                    Type returnType = _typeStore.GetType(genInst.TypeParams.Last());
+                    Type[] paramTypes = genInst.TypeParams.Take(genInst.TypeParams.Count - 1).Select(param => _typeStore.GetType(param)).ToArray();
+
+                    member = typeBuilder.DefineMethod(symbol.Key,
+                        MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.Public | MethodAttributes.HideBySig |
+                        MethodAttributes.NewSlot, CallingConventions.HasThis, returnType, paramTypes);
+                }
+                else
+                {
+
+                    Type returnType = _typeStore.GetType(symbol.Value);
+                    PropertyBuilder propertyBuilder = typeBuilder.DefineProperty(symbol.Key, PropertyAttributes.None, returnType, null);
+                    MethodBuilder getMethod = PropertyAssembler.DefineGetMethod(typeBuilder, symbol.Key, returnType, true);
+                    propertyBuilder.SetGetMethod(getMethod);
+
+                    member = propertyBuilder;
+                }
+
+                _typeStore.AddTypeMember(cobraType, member);
             }
 
             typeBuilder.CreateType();
-
-            _typeStore.AddType(cobraType, typeBuilder);
 
             return typeBuilder;
         }
