@@ -112,6 +112,9 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.NewLine))
                 return null;
 
+            if (Match(TokenType.Init))
+                return InitDeclaration();
+
             if (Match(TokenType.Func))
                 return FuncDeclaration();
 
@@ -190,6 +193,29 @@ namespace CobraCompiler.Parse
             Match(TokenType.NewLine);
 
             return new FuncDeclarationStatement(name, paramDeclarations, returnType, Statement());
+        }
+
+        private Statement InitDeclaration()
+        {
+            Token keyWord = _tokens.Previous();
+
+            Expect(TokenType.LeftParen, "Expect '(' after 'init'.");
+
+            List<ParamDeclarationStatement> paramDeclarations = new List<ParamDeclarationStatement>();
+
+            if (!Check(TokenType.RightParen))
+            {
+                do
+                {
+                    paramDeclarations.Add(ParamDeclaration());
+                } while (Match(TokenType.Comma));
+            }
+
+            Expect(TokenType.RightParen, "Expect ')' after parameters.");
+
+            Match(TokenType.NewLine);
+
+            return new InitDeclarationStatement(keyWord, paramDeclarations, Statement());
         }
 
         private ImportStatement Import()
