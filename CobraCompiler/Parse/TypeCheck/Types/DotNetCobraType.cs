@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace CobraCompiler.Parse.TypeCheck.Types
 {
@@ -17,6 +20,12 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             Bool, Int, Float, Str, Null, Object, Unit
         };
 
+        static DotNetCobraType()
+        {
+            foreach (DotNetCobraType cobraType in DotNetCobraTypes)
+                cobraType.DefineSymbols();
+        }
+
         public Type Type { get; }
         public DotNetCobraType(string identifier, Type type) : base(identifier)
         {
@@ -33,9 +42,9 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
         public override CobraType GetSymbol(string symbol)
         {
-            Type memberType = Type.GetProperty(symbol).PropertyType;
+            //Type memberType = Type.GetProperty(symbol).PropertyType;
 
-            return null;
+            return base.GetSymbol(symbol);
         }
 
         public static DotNetCobraType FromType(Type type)
@@ -47,6 +56,35 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             }
 
             return null;
+        }
+
+        public void DefineSymbols()
+        {
+            if (Type == null)
+                return;
+
+            foreach (MemberInfo member in Type.GetMembers())
+            {
+                switch (member)
+                {
+                    case FieldInfo field:
+                        if (FromType(field.FieldType) != null)
+                            DefineSymbol(field.Name, FromType(field.FieldType));
+                        break;
+                    case MethodInfo method:
+                        CobraType returnType = FromType(method.ReturnType);
+                        List<CobraType> paramTypes = method.GetParameters().Select(parameter => FromType(parameter.ParameterType)).Cast<CobraType>().ToList();
+                        if (!paramTypes.TrueForAll(element => element != null) || returnType == null)
+                            continue;
+                        paramTypes.Add(returnType);
+                        DefineSymbol(method.Name, DotNetCobraGeneric.FuncType.CreateGenericInstance(paramTypes));
+                        break;
+                    case PropertyInfo property:
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
     }
 }
