@@ -37,9 +37,6 @@ namespace CobraCompiler.Assemble
             OpCodes.Ldarg_0, OpCodes.Ldarg_1, OpCodes.Ldarg_2, OpCodes.Ldarg_3
         };
 
-        private ILGenerator _il;
-        private FuncScope _currentFunc;
-
         private readonly Stack<Scope> _scopeStack;
         private Scope CurrentScope => _scopeStack.Peek();
         
