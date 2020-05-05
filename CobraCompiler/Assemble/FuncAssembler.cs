@@ -22,7 +22,7 @@ using InvalidOperationException = System.InvalidOperationException;
 
 namespace CobraCompiler.Assemble
 {
-    class FuncAssembler: IExpressionVisitorWithContext<ExpressionAssemblyContext, ParentExpressionAssemblyContext>
+    class FuncAssembler: IExpressionVisitorWithContext<ExpressionAssemblyContext, ParentExpressionAssemblyContext>, IAssemble
     {
         private readonly MethodAttributes _methodAttributes;
 
@@ -51,34 +51,61 @@ namespace CobraCompiler.Assemble
             _scopeCrawler = new ScopeCrawler(funcScope);
         }
 
-        public MethodBuilder AssembleDefinition()
+        public MethodBase AssembleDefinition()
         {
             FuncDeclarationStatement funcDeclaration = _funcScope.FuncDeclaration;
 
             Type[] paramTypes = _funcScope.Params.Select(param => _typeStore.GetType(param.Item2)).ToArray();
             Type returnType = _funcScope.ReturnType != null ? _typeStore.GetType(_funcScope.ReturnType) : null;
 
+            MethodBase methodBase = funcDeclaration is InitDeclarationStatement
+                ? CreateConstructorBuilder(paramTypes, funcDeclaration)
+                : CreateMethodBuilder(paramTypes, returnType, funcDeclaration);
+
+            _localManager = new LocalManager(_funcScope, _il, returnType);
+
+            return methodBase;
+        }
+
+        private MethodBase CreateConstructorBuilder(Type[] paramTypes, FuncDeclarationStatement funcDeclaration)
+        {
+            ConstructorBuilder builder = _typeBuilder.DefineConstructor(_methodAttributes,CallingConventions.HasThis, paramTypes);
+
+            for (int i = 0; i < funcDeclaration.Params.Count; i++)
+                builder.DefineParameter(i + 1, ParameterAttributes.None, funcDeclaration.Params[i].Name.Lexeme);
+
+            _il = builder.GetILGenerator();
+
+            // Call object ctor
+            _il.Emit(OpCodes.Ldarg_0);
+            _il.Emit(OpCodes.Call, typeof(Object).GetConstructor(Type.EmptyTypes));
+
+            return builder;
+        }
+
+        private MethodBase CreateMethodBuilder(Type[] paramTypes, Type returnType, FuncDeclarationStatement funcDeclaration)
+        {
             MethodBuilder methodBuilder = _typeBuilder.DefineMethod(funcDeclaration.Name.Lexeme, _methodAttributes, returnType, paramTypes);
 
             if (funcDeclaration.Name.Lexeme == "main")
                 _assemblyBuilder.SetEntryPoint(methodBuilder);
 
             for (int i = 0; i < funcDeclaration.Params.Count; i++)
-            {
                 methodBuilder.DefineParameter(i + 1, ParameterAttributes.None, funcDeclaration.Params[i].Name.Lexeme);
-            }
-            
+
             _il = methodBuilder.GetILGenerator();
-            _localManager = new LocalManager(_funcScope, _il, returnType);
 
             return methodBuilder;
         }
 
-        public void AssembleBody()
+        public void Assemble()
         {
             _scopeCrawler.Reset();
         
             AssembleStatement(_funcScope.FuncDeclaration.Body, _typeBuilder);
+
+            if(_funcScope.FuncDeclaration is InitDeclarationStatement)
+                _il.Emit(OpCodes.Ret);
         }
 
         private void AssembleStatement(Statement statement, TypeBuilder typeBuilder)
@@ -167,12 +194,14 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(AssignExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext targetContext = expr.Target.Accept(this, new ParentExpressionAssemblyContext());
+            ExpressionAssemblyContext targetContext = expr.Target.Accept(this, new ParentExpressionAssemblyContext(assigning: true));
+            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(expected:targetContext.Type));
 
-            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(expected: targetContext.Type));
+            if(expr.Target is VarExpression varExpr)
+                _localManager.StoreVar(CurrentScope, varExpr.Name.Lexeme);
 
-            if(expr.Target is VarExpression varExpression)
-                _localManager.StoreVar(_scopeCrawler.Current, varExpression.Name.Lexeme);
+            if (targetContext.AssigningToField)
+                _il.Emit(OpCodes.Stfld, targetContext.AssignToField);
 
             return new ExpressionAssemblyContext(targetContext.Type);
         }
@@ -200,11 +229,19 @@ namespace CobraCompiler.Assemble
 
             CobraType returnType = null;
 
-            if (calleeContext is MethodExpressionAssemblyContext methodExpressionContext)
+            if (calleeContext is MethodBuilderExpressionAssemblyContext methodExpressionContext)
             {
-                MethodInfo method = _methodStore.GetMethodInfo(methodExpressionContext);
-
-                _il.Emit(OpCodes.Call, method);
+                switch (methodExpressionContext.Method)
+                {
+                    case ConstructorInfo constructorInfo:
+                        _il.Emit(OpCodes.Newobj, constructorInfo);
+                        break;
+                    case MethodInfo methodInfo:
+                        _il.Emit(OpCodes.Call, methodInfo);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(methodExpressionContext.Method));
+                }
             }
             else
             {
@@ -230,7 +267,7 @@ namespace CobraCompiler.Assemble
 
             BinaryOperator getOp = CurrentScope.GetGenericBinaryOperator(Operation.Get, collectionContext.Type, DotNetCobraType.Int) ?? throw new NotImplementedException();
 
-            MethodInfo get = _methodStore.GetMethodInfo(getOp);
+            MethodInfo get = _methodStore.GetMethodInfo(getOp) as MethodInfo;
 
             if (collectionContext.Type is CobraGenericInstance genericCollection)
             {
@@ -248,6 +285,7 @@ namespace CobraCompiler.Assemble
         public ExpressionAssemblyContext Visit(ListLiteralExpression expr, ParentExpressionAssemblyContext context)
         {
             CobraType type = context.ExpectedType;
+
             Type listType = _typeStore.GetType(type);
 
             CobraType elementType = (type as CobraGenericInstance).TypeParams[0];
@@ -267,6 +305,8 @@ namespace CobraCompiler.Assemble
                 
             _localManager.LoadLiteral(expr.Elements.Count);
             _il.Emit(OpCodes.Newobj, listCtor);
+
+
 
             foreach (Expression element in expr.Elements)
             {
@@ -313,19 +353,34 @@ namespace CobraCompiler.Assemble
 
             if (_methodStore.HasMethodBuilder(expr.Name.Lexeme))
             {
+                CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
+                string varId = expr.Name.Lexeme;
+                MethodBase method = _methodStore.GetMethodInfo(CurrentScope.GetVarType(varId), varId);
+
                 MethodBuilderExpressionAssemblyContext mbContext =
-                    new MethodBuilderExpressionAssemblyContext(CurrentScope.GetVarType(expr.Name.Lexeme), expr.Name.Lexeme);
+                    new MethodBuilderExpressionAssemblyContext(varType, method);
 
                 if (context.ImmediatelyCalling)
                     return mbContext;
                 
                 _il.Emit(OpCodes.Ldnull);
-                _il.Emit(OpCodes.Ldftn, _methodStore.GetMethodInfo(mbContext));
+
+                switch (method)
+                {
+                    case ConstructorInfo constructorInfo:
+                        _il.Emit(OpCodes.Ldftn, constructorInfo);
+                        break;
+                    case MethodInfo methodInfo:
+                        _il.Emit(OpCodes.Ldftn, methodInfo);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
 
                 Type[] types = { typeof(object), typeof(IntPtr) };
                 _il.Emit(OpCodes.Newobj, _typeStore.GetType(mbContext.Type).GetConstructor(types) ?? throw new InvalidOperationException());
             }
-            else
+            else if(!context.Assigning)
                 _localManager.LoadVar(_scopeCrawler.Current, expr.Name.Lexeme);
 
             return new ExpressionAssemblyContext(CurrentScope.GetVarType(expr.Name.Lexeme));
@@ -333,7 +388,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(GetExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, context);
+            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext(context.ImmediatelyCalling, context.ExpectedType, assigning:false));
             if (exprContext.Type is NamespaceType _namespace)
             {
                 if(_namespace.HasType(expr.Name.Lexeme))
@@ -346,10 +401,10 @@ namespace CobraCompiler.Assemble
             }
 
             Type varType = _typeStore.GetType(exprContext.Type);
-            MemberInfo[] members = varType.GetMember(expr.Name.Lexeme);
+            MemberInfo[] members = _typeStore.GetMemberInfo(exprContext.Type, expr.Name.Lexeme);
 
-            if(members.Length > 1)
-                throw new NotImplementedException();
+            //if(members.Length > 1)
+            //    throw new NotImplementedException();
 
             MemberInfo member = members[0];
 
@@ -359,13 +414,21 @@ namespace CobraCompiler.Assemble
                     MethodInfo get = prop.GetGetMethod();
                     _il.Emit(OpCodes.Callvirt, get);
                     break;
+                case FieldInfo field:
+                    if(!context.Assigning)
+                        _il.Emit(OpCodes.Ldfld, field);
+                    else 
+                        return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme), field);
+                    break;
+                case MethodInfo method:
+                    if (context.ImmediatelyCalling)
+                        return new MethodBuilderExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme), method);
+                    break;
                 default:
                     throw new NotImplementedException();
             }
 
             return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme));
-
-            throw new NotImplementedException();
         }
     }
 }
