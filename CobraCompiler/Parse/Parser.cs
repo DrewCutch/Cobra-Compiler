@@ -346,13 +346,25 @@ namespace CobraCompiler.Parse
             if(!(typeExpression is BinaryExpression))
                 throw new NotImplementedException();
             
-            BinaryExpression typeBinary = typeExpression as BinaryExpression;
+            BinaryExpression typeBinary = (BinaryExpression) typeExpression;
             switch (typeBinary.Op.Type)
             {
                 case TokenType.Bar:
+                {
                     TypeInitExpression left = ResolveType(typeBinary.Left);
                     TypeInitExpression right = ResolveType(typeBinary.Right);
-                    return new TypeInitExpression(new Token[]{new Token(TokenType.Identifier, "union", null, typeBinary.Op.Line)}, new TypeInitExpression[] {left, right});
+                    return new TypeInitExpression(
+                        new Token[] {new Token(TokenType.Identifier, "union", null, typeBinary.Op.Line)},
+                        new [] {left, right});
+                }
+                case TokenType.Ampersand:
+                {
+                    TypeInitExpression left = ResolveType(typeBinary.Left);
+                    TypeInitExpression right = ResolveType(typeBinary.Right);
+                    return new TypeInitExpression(
+                        new Token[] {new Token(TokenType.Identifier, "intersect", null, typeBinary.Op.Line)},
+                        new [] {left, right});
+                }
             }
 
             throw new NotImplementedException();
