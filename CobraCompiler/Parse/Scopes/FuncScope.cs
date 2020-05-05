@@ -25,12 +25,17 @@ namespace CobraCompiler.Parse.Scopes
             FuncType = DotNetCobraGeneric.FuncType.CreateGenericInstance(funcTypeArgs);
         }
 
-        public int GetParamPosition(string paramName)
+        public virtual int GetParamPosition(string paramName)
         {
+            if (Parent is ClassScope && paramName == "this")
+            {
+                return 0;
+            }
+
             for (int i = 0; i < Params.Count; i++)
             {
                 if (paramName == Params[i].Item1)
-                    return i;
+                    return i + (Parent is ClassScope ? 1 : 0);
             }
 
             return -1;
