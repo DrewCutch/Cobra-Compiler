@@ -87,10 +87,8 @@ namespace CobraCompiler.Assemble
 
             foreach (DefinedModule module in definedModules)
             {
-                foreach (FuncAssembler assembler in module.FuncAssemblers)
-                {
-                    assembler.AssembleBody();
-                }
+                foreach (IAssemble assembler in module.ToAssemble)
+                    assembler.Assemble();
 
                 module.TypeBuilder.CreateType();
             }
@@ -102,7 +100,7 @@ namespace CobraCompiler.Assemble
 
             FuncAssemblerFactory funcAssemblerFactory = new FuncAssemblerFactory(_assemblyBuilder, typeBuilder, _typeStore, _methodStore, FuncMethodAttributes);
 
-            List<FuncAssembler> funcAssemblers = new List<FuncAssembler>();
+            List<IAssemble> assemblers = new List<IAssemble>();
 
             foreach (CobraType definedType in scope.DefinedTypes)
             {
@@ -115,15 +113,15 @@ namespace CobraCompiler.Assemble
                 if (subScope is FuncScope funcScope)
                 {
                     FuncAssembler funcAssembler = funcAssemblerFactory.CreateFuncAssembler(funcScope);
-                    MethodBuilder builder = funcAssembler.AssembleDefinition();
-                    funcAssemblers.Add(funcAssembler);
+                    MethodBase builder = funcAssembler.AssembleDefinition();
+                    assemblers.Add(funcAssembler);
                     
                     _methodStore.AddMethodInfo(scope.Name + "." + funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
                     _methodStore.AddMethodInfo(funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
                 }
             }
             
-            return new DefinedModule(funcAssemblers, typeBuilder);
+            return new DefinedModule(assemblers, typeBuilder);
         }
 
         public TypeBuilder DefineInterface(CobraType cobraType, ModuleBuilder mb)

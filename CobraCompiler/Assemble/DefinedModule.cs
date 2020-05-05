@@ -9,12 +9,12 @@ namespace CobraCompiler.Assemble
 {
     class DefinedModule
     {
-        public readonly IReadOnlyList<FuncAssembler> FuncAssemblers;
+        public readonly IReadOnlyList<IAssemble> ToAssemble;
         public readonly TypeBuilder TypeBuilder;
 
-        public DefinedModule(IEnumerable<FuncAssembler> funcAssemblers, TypeBuilder typeBuilder)
+        public DefinedModule(IEnumerable<IAssemble> toAssemble, TypeBuilder typeBuilder)
         {
-            FuncAssemblers = new List<FuncAssembler>(funcAssemblers);
+            ToAssemble = new List<IAssemble>(toAssemble);
             TypeBuilder = typeBuilder;
         }
     }
