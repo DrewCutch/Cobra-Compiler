@@ -19,7 +19,8 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         {
             FuncType,
             ListType,
-            UnionLangCobraGeneric.UnionGeneric
+            UnionLangCobraGeneric.UnionGeneric,
+            IntersectionLangCobraGeneric.IntersectGeneric
         };
 
         public readonly GenericInstanceGenerator InstanceGenerator;
