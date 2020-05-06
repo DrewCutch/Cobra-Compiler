@@ -14,17 +14,17 @@ namespace CobraCompiler.Parse.TypeCheck.Types
                 _parents.Add(typeParam);
         }
 
-        public override bool CanImplicitCast(CobraType other)
+        public override bool CanCastTo(CobraType other)
         {
             if (other is IntersectionInstanceType otherIntersection)
             {
                 HashSet<CobraType> myTypes = new HashSet<CobraType>(TypeParams);
                 HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherIntersection.TypeParams);
 
-                return otherTypes.IsSupersetOf(myTypes);
+                return myTypes.IsSupersetOf(otherTypes);
             }
 
-            return base.CanImplicitCast(other) || TypeParams.Contains(other);
+            return base.CanCastTo(other) || TypeParams.Contains(other);
         }
 
         public override CobraType GetCommonParent(CobraType other, bool unionize = true)

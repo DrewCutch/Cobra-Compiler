@@ -41,7 +41,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
                 }
             }
 
-            return types;
+            return new HashSet<CobraType>(types).ToList();
         }
     }
 }

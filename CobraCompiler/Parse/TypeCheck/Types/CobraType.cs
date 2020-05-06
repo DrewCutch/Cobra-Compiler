@@ -51,9 +51,9 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             _symbols[symbol] = type;
         }
 
-        public virtual bool CanImplicitCast(CobraType other)
+        public virtual bool CanCastTo(CobraType other)
         {
-            return Equals(other) || GetCommonParent(other) == this;
+            return Equals(other) || GetCommonParent(other).Equals(other);
         }
 
         public virtual CobraType GetCommonParent(CobraType other, bool unionize=true)

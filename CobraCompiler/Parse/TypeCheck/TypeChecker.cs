@@ -235,7 +235,7 @@ namespace CobraCompiler.Parse.TypeCheck
                         break;
                     case ReturnStatement returnStatement:
                         CobraType returnStatementType = returnStatement.Value.Accept(this);
-                        if (!CurrentScope.GetReturnType().CanImplicitCast(returnStatementType))
+                        if (!returnStatementType.CanCastTo(CurrentScope.GetReturnType()))
                             throw new InvalidReturnTypeException(returnStatement.Keyword,
                                 returnStatementType, CurrentScope.GetReturnType());
                         break;
@@ -274,7 +274,7 @@ namespace CobraCompiler.Parse.TypeCheck
 
             CobraType assignType = expr.Value.Accept(this);
 
-            if (!varType.CanImplicitCast(assignType))
+            if (!assignType.CanCastTo(varType))
                 throw new InvalidAssignmentException(varType.Identifier, assignType?.Identifier, -1); //TODO: make line number correct
 
             return varType;
@@ -307,7 +307,7 @@ namespace CobraCompiler.Parse.TypeCheck
 
                 for (int i = 0; i < generic.TypeParams.Count - 1; i++)
                 {
-                    if (!expr.Arguments[i].Accept(this).CanImplicitCast(generic.TypeParams[i]))
+                    if(!generic.TypeParams[i].CanCastTo(expr.Arguments[i].Accept(this)))
                     {
                         CobraType test = expr.Arguments[i].Accept(this);
                         throw new InvalidArgumentException(expr.Paren, generic.TypeParams[i].Identifier, test.Identifier);

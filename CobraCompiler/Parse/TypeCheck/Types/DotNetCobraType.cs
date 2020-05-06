@@ -32,12 +32,12 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             Type = type;
         }
 
-        public override bool CanImplicitCast(CobraType other)
+        public override bool CanCastTo(CobraType other)
         {
             if (other is DotNetCobraType dotNetCobraType)
-                return Type.IsAssignableFrom(dotNetCobraType.Type);
+                return dotNetCobraType.Type.IsAssignableFrom(Type);
 
-            return this == other;
+            return base.CanCastTo(other);
         }
 
         public override CobraType GetSymbol(string symbol)
