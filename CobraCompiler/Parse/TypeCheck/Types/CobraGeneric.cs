@@ -16,7 +16,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
         public CobraGenericInstance CreateGenericInstance(params CobraType[] typeParams)
         {
-            return CreateGenericInstance(typeParams);
+            return CreateGenericInstance(new List<CobraType>(typeParams));
         }
 
         public virtual CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)

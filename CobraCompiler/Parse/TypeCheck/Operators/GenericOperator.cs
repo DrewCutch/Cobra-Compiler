@@ -32,16 +32,16 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
 
         public BinaryOperator GetGenericBinaryOperator()
         {
-            CobraType lhs = Lhs is CobraGeneric gen1 ? gen1.CreatGenericInstance(new GenericTypeParamPlaceholder("LHS")) : ((CobraType)Lhs);
-            CobraType rhs = Rhs is CobraGeneric gen2 ? gen2.CreatGenericInstance(new GenericTypeParamPlaceholder("RHS")) : ((CobraType)Rhs);
+            CobraType lhs = Lhs is CobraGeneric gen1 ? gen1.CreateGenericInstance(new GenericTypeParamPlaceholder("LHS")) : ((CobraType)Lhs);
+            CobraType rhs = Rhs is CobraGeneric gen2 ? gen2.CreateGenericInstance(new GenericTypeParamPlaceholder("RHS")) : ((CobraType)Rhs);
             return new BinaryOperator(Operation, lhs, rhs, ReturnTypeResolver(lhs, rhs));
         }
 
         public CobraType GetGenericFuncType()
         {
-            CobraType lhs = Lhs is CobraGeneric gen1 ? gen1.CreatGenericInstance(new GenericTypeParamPlaceholder("LHS")) : ((CobraType) Lhs);
-            CobraType rhs = Rhs is CobraGeneric gen2 ? gen2.CreatGenericInstance(new GenericTypeParamPlaceholder("RHS")) : ((CobraType) Rhs);
-            return DotNetCobraGeneric.FuncType.CreatGenericInstance(lhs, rhs, ReturnTypeResolver(lhs, rhs));
+            CobraType lhs = Lhs is CobraGeneric gen1 ? gen1.CreateGenericInstance(new GenericTypeParamPlaceholder("LHS")) : ((CobraType) Lhs);
+            CobraType rhs = Rhs is CobraGeneric gen2 ? gen2.CreateGenericInstance(new GenericTypeParamPlaceholder("RHS")) : ((CobraType) Rhs);
+            return DotNetCobraGeneric.FuncType.CreateGenericInstance(lhs, rhs, ReturnTypeResolver(lhs, rhs));
         }
     }
 }

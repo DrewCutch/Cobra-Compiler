@@ -20,7 +20,7 @@ namespace CobraCompiler.Parse.TypeCheck.Operators
 
         public CobraType GetFuncType()
         {
-            return DotNetCobraGeneric.FuncType.CreatGenericInstance(Lhs, Rhs, ResultType);
+            return DotNetCobraGeneric.FuncType.CreateGenericInstance(Lhs, Rhs, ResultType);
         }
     }
 }
