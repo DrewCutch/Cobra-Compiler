@@ -15,7 +15,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
         public IReadOnlyCollection<CobraType> Parents => _parents;
 
-        protected readonly HashSet<CobraType> _parents;
+        private readonly HashSet<CobraType> _parents;
 
         public CobraType(string identifier): base(identifier)
         {
@@ -27,6 +27,14 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         {
             _symbols = new Dictionary<string, CobraType>();
             _parents = new HashSet<CobraType>(parents);
+        }
+
+        protected void AddParent(CobraType parent)
+        {
+            foreach (KeyValuePair<string, CobraType> symbol in parent.Symbols)
+                DefineSymbol(symbol.Key, symbol.Value);
+
+            _parents.Add(parent);
         }
 
         public virtual bool HasSymbol(string symbol)

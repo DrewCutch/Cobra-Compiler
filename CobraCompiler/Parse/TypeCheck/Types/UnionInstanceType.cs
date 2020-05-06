@@ -14,7 +14,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             foreach (KeyValuePair<string, CobraType> symbol in commonParent.Symbols)
                 DefineSymbol(symbol.Key, symbol.Value);
 
-            _parents.Add(commonParent);
+            AddParent(commonParent);
         }
 
         public override bool CanCastTo(CobraType other)

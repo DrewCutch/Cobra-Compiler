@@ -11,7 +11,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
         public IntersectionInstanceType(string identifier, IEnumerable<CobraType> typeParams) : base(identifier, typeParams, IntersectionLangCobraGeneric.IntersectGeneric)
         {
             foreach (CobraType typeParam in typeParams)
-                _parents.Add(typeParam);
+                AddParent(typeParam);
         }
 
         public override bool CanCastTo(CobraType other)
