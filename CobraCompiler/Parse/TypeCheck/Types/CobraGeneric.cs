@@ -14,7 +14,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
             NumberOfParams = numberOfParams;
         }
 
-        public CobraGenericInstance CreatGenericInstance(params CobraType[] typeParams)
+        public CobraGenericInstance CreateGenericInstance(params CobraType[] typeParams)
         {
             return CreateGenericInstance(typeParams);
         }
