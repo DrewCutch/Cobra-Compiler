@@ -6,8 +6,8 @@ using CobraCompiler.Parse;
 using CobraCompiler.Parse.PrettyPrint;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
-using CobraCompiler.Parse.TypeCheck;
 using CobraCompiler.Scanning;
+using CobraCompiler.TypeCheck;
 
 namespace CobraCompiler.Compiler
 {

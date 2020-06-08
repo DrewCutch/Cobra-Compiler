@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Statements;
-using CobraCompiler.Parse.TypeCheck;
-using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
 {

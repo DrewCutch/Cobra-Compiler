@@ -6,8 +6,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Expressions;
-using CobraCompiler.Parse.TypeCheck;
-using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
 {

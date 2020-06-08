@@ -12,9 +12,8 @@ using CobraCompiler.Parse;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
-using CobraCompiler.Parse.TypeCheck;
-using CobraCompiler.Parse.TypeCheck.Operators;
-using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.TypeCheck.Operators;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
 {

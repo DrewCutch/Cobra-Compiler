@@ -7,9 +7,8 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Assemble.ExpressionAssemblyContexts;
-using CobraCompiler.Parse.TypeCheck;
-using CobraCompiler.Parse.TypeCheck.Operators;
-using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.TypeCheck.Operators;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
 {

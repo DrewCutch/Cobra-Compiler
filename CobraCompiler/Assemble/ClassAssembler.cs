@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
-using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
 {

@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
-using CobraCompiler.Parse.TypeCheck;
-using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble.ExpressionAssemblyContexts
 {

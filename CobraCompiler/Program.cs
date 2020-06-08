@@ -14,7 +14,6 @@ using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.PrettyPrint;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
-using CobraCompiler.Parse.TypeCheck;
 using CobraCompiler.Scanning;
 
 namespace CobraCompiler

@@ -2,8 +2,7 @@
 using System.Collections.Specialized;
 using System.Linq;
 using CobraCompiler.Parse.Statements;
-using CobraCompiler.Parse.TypeCheck;
-using CobraCompiler.Parse.TypeCheck.Types;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
 {

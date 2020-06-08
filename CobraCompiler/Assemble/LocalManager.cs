@@ -6,8 +6,6 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Scopes;
-using CobraCompiler.Parse.TypeCheck;
-using CobraCompiler.Parse.TypeCheck.Exceptions;
 
 namespace CobraCompiler.Assemble
 {
