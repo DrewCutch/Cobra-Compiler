@@ -120,6 +120,8 @@
     <Compile Include="Parse\TypeCheck\Operators\Operation.cs" />
     <Compile Include="Parse\TypeCheck\Operators\Operator.cs" />
     <Compile Include="Parse\TypeCheck\Types\CobraTypeBase.cs" />
+    <Compile Include="Parse\TypeCheck\Types\FuncCobraGeneric.cs" />
+    <Compile Include="Parse\TypeCheck\Types\FuncGenericInstance.cs" />
     <Compile Include="Parse\TypeCheck\Types\IntersectionInstanceType.cs" />
     <Compile Include="Parse\TypeCheck\Types\IntersectionLangCobraGeneric.cs" />
     <Compile Include="Parse\TypeCheck\Types\ITypeGenerator.cs" />

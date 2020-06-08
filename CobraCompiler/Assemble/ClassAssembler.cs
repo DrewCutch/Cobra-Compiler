@@ -127,11 +127,13 @@ namespace CobraCompiler.Assemble
 
         private void AssembleVarDeclaration(VarDeclarationStatement declaration)
         {
-            Type varType = _typeStore.GetType(_classScope.GetType(declaration.TypeInit));
+            CobraType cobraType = _classScope.GetType(declaration.TypeInit);
+
+            Type varType = _typeStore.GetType(cobraType);
 
             FieldBuilder field = _typeBuilder.DefineField(declaration.Name.Lexeme, varType, MemberAttributes);
 
-            _typeStore.AddTypeMember(_classScope.ThisType, field);
+            _typeStore.AddTypeMember(_classScope.ThisType, cobraType, field);
 
             if (IsTypeProperty(declaration))
             {

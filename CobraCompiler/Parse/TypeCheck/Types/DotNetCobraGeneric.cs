@@ -12,16 +12,22 @@ namespace CobraCompiler.Parse.TypeCheck.Types
 
     class DotNetCobraGeneric : CobraGeneric, ITypeGenerator
     {
-        public static DotNetCobraGeneric FuncType = new DotNetCobraGeneric("f", -1, Expression.GetDelegateType);
+        public static DotNetCobraGeneric FuncType = new FuncCobraGeneric();
         public static DotNetCobraGeneric ListType = new DotNetCobraGeneric("list", 1, typeof(List<>).MakeGenericType);
+        
+        public static CobraGeneric[] BuiltInCobraGenerics;
 
-        public static CobraGeneric[] BuiltInCobraGenerics =
+        static DotNetCobraGeneric()
         {
-            FuncType,
-            ListType,
-            UnionLangCobraGeneric.UnionGeneric,
-            IntersectionLangCobraGeneric.IntersectGeneric
-        };
+            var awake = FuncCobraGeneric.FuncType;
+
+            BuiltInCobraGenerics = new CobraGeneric[]{
+                FuncType,
+                ListType,
+                UnionLangCobraGeneric.UnionGeneric,
+                IntersectionLangCobraGeneric.IntersectGeneric
+            };
+        }
 
         public readonly GenericInstanceGenerator InstanceGenerator;
 

@@ -78,8 +78,8 @@ namespace CobraCompiler.Assemble
             MethodInfo printIntInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(int) });
             MethodInfo listGetInfo = typeof(List<>).GetMethod("get_Item");
 
-            _methodStore.AddMethodInfo("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Str, DotNetCobraType.Unit }), printStrInfo);
-            _methodStore.AddMethodInfo("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Unit }), printIntInfo);
+            _methodStore.AddMethodInfo("printStr", FuncCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Str, DotNetCobraType.Unit }), printStrInfo);
+            _methodStore.AddMethodInfo("printInt", FuncCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Unit }), printIntInfo);
             _methodStore.AddMethodInfo("get_Item", GenericOperator.DotNetGenericOperators[0].GetGenericFuncType(), listGetInfo);
 
             foreach (DefinedModule module in definedModules)
@@ -137,16 +137,19 @@ namespace CobraCompiler.Assemble
 
             foreach (KeyValuePair<string, CobraType> symbol in cobraType.Symbols)
             {
-                MemberInfo member;
-
-                if (symbol.Value is CobraGenericInstance genInst && genInst.Base == DotNetCobraGeneric.FuncType)
+                if (symbol.Value.IsCallable())
                 {
-                    Type returnType = _typeStore.GetType(genInst.TypeParams.Last());
-                    Type[] paramTypes = genInst.TypeParams.Take(genInst.TypeParams.Count - 1).Select(param => _typeStore.GetType(param)).ToArray();
+                    foreach (IReadOnlyList<CobraType> sig in symbol.Value.CallSigs)
+                    {
+                        Type returnType = _typeStore.GetType(sig.Last());
+                        Type[] paramTypes = sig.Take(sig.Count - 1).Select(param => _typeStore.GetType(param)).ToArray();
 
-                    member = typeBuilder.DefineMethod(symbol.Key,
-                        MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.Public | MethodAttributes.HideBySig |
-                        MethodAttributes.NewSlot, CallingConventions.HasThis, returnType, paramTypes);
+                        MethodBuilder member = typeBuilder.DefineMethod(symbol.Key,
+                            MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.Public | MethodAttributes.HideBySig |
+                            MethodAttributes.NewSlot, CallingConventions.HasThis, returnType, paramTypes);
+
+                        _typeStore.AddTypeMember(cobraType, DotNetCobraGeneric.FuncType.CreateGenericInstance(sig), member);
+                    }
                 }
                 else
                 {
@@ -156,10 +159,8 @@ namespace CobraCompiler.Assemble
                     MethodBuilder getMethod = PropertyAssembler.DefineGetMethod(typeBuilder, symbol.Key, returnType, true);
                     propertyBuilder.SetGetMethod(getMethod);
 
-                    member = propertyBuilder;
+                    _typeStore.AddTypeMember(cobraType, symbol.Value, propertyBuilder);
                 }
-
-                _typeStore.AddTypeMember(cobraType, member);
             }
 
             typeBuilder.CreateType();

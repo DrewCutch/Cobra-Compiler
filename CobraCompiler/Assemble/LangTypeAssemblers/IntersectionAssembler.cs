@@ -17,7 +17,8 @@ namespace CobraCompiler.Assemble.LangTypeAssemblers
             string name = typeParams.Aggregate("@Intersection", (current, typeParam) => current + $"_{typeParam.Name}");
             TypeBuilder intersection = mb.DefineType(name, IntersectionTypeAttributes);
             foreach (Type type in typeParams)
-                intersection.AddInterfaceImplementation(type);
+                if(type.IsInterface) //TODO: handle when its not
+                    intersection.AddInterfaceImplementation(type);
 
             intersection.CreateType();
             return intersection;

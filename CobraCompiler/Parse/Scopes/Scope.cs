@@ -60,7 +60,8 @@ namespace CobraCompiler.Parse.Scopes
 
             foreach (PropertyDefinitionExpression property in interfaceDefinitionExpression.Properties)
             {
-                interfaceType.DefineSymbol(property.Identifier.Lexeme, GetType(property.Type));
+                CobraType propType = GetType(property.Type);
+                interfaceType.DefineSymbol(property.Identifier.Lexeme, propType, propType is FuncGenericInstance);
             }
 
             return interfaceType;
@@ -131,14 +132,17 @@ namespace CobraCompiler.Parse.Scopes
             _types[identifier] = cobraType;
         }
 
-        public void Declare(string var, TypeInitExpression typeInit)
+        public void Declare(string var, TypeInitExpression typeInit, bool overload = false)
         {
-            Declare(var, GetType(typeInit));
+            Declare(var, GetType(typeInit), overload);
         }
 
-        public virtual void Declare(string var, CobraType type)
+        public virtual void Declare(string var, CobraType type, bool overload = false)
         {
-            _vars[var] = type;
+            if(IsDefined(var) && overload) 
+                _vars[var] = IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(_vars[var], type);
+            else
+                _vars[var] = type;
         }
 
         public bool IsDefined(string var)

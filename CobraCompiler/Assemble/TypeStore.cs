@@ -17,7 +17,7 @@ namespace CobraCompiler.Assemble
         private readonly ModuleBuilder _moduleBuilder;
         private readonly Dictionary<string, Type> _typeAlias;
         private readonly Dictionary<CobraType, Type> _types;
-        private readonly Dictionary<CobraType, Dictionary<string, List<MemberInfo>>> _typeMembers;
+        private readonly Dictionary<CobraType, Dictionary<string, Dictionary<CobraType, MemberInfo>>> _typeMembers;
         private readonly Dictionary<string, GenericTypeAssembler> _genericInstanceGenerators;
 
         public TypeStore(AssemblyBuilder assemblyBuilder, ModuleBuilder moduleBuilder)
@@ -26,7 +26,7 @@ namespace CobraCompiler.Assemble
             _moduleBuilder = moduleBuilder;
             _typeAlias = new Dictionary<string, Type>();
             _types = new Dictionary<CobraType, Type>();
-            _typeMembers = new Dictionary<CobraType, Dictionary<string, List<MemberInfo>>>();
+            _typeMembers = new Dictionary<CobraType, Dictionary<string, Dictionary<CobraType, MemberInfo>>>();
             _genericInstanceGenerators = new Dictionary<string, GenericTypeAssembler>();
         }
 
@@ -75,37 +75,62 @@ namespace CobraCompiler.Assemble
             return null;
         }
 
-        public void AddTypeMember(CobraType type, MemberInfo member)
+        public void AddTypeMember(CobraType type, CobraType memberType, MemberInfo member)
         {
-            AddTypeMember(type, member.Name, member);
+            AddTypeMember(type, member.Name, memberType, member);
         }
 
-        public void AddTypeMember(CobraType type, string memberName, MemberInfo member)
+        public void AddTypeMember(CobraType type, string memberName, CobraType memberType, MemberInfo member)
         {
             if(!_typeMembers.ContainsKey(type))
-                _typeMembers[type] = new Dictionary<string, List<MemberInfo>>();
+                _typeMembers[type] = new Dictionary<string, Dictionary<CobraType, MemberInfo>>();
 
             if(!_typeMembers[type].ContainsKey(memberName))
-                _typeMembers[type][memberName] = new List<MemberInfo>();
+                _typeMembers[type][memberName] = new Dictionary<CobraType, MemberInfo>();
 
-            _typeMembers[type][memberName].Add(member);
+            _typeMembers[type][memberName][memberType] = member;
         }
 
-        public MemberInfo[] GetMemberInfo(CobraType cobraType, string memberName)
+        public MemberInfo GetMemberInfo(CobraType cobraType, string memberName, CobraType memberType)
         {
             Type type = GetType(cobraType);
 
             if (!(type is TypeBuilder))
-                return type.GetMember(memberName);
+                return type.GetMember(memberName).FirstOrDefault();
 
-            List<MemberInfo> members = new List<MemberInfo>();
-            if(_typeMembers.ContainsKey(cobraType) && _typeMembers[cobraType].ContainsKey(memberName))
-                members.AddRange(_typeMembers[cobraType][memberName].ToArray());
+            //List<MemberInfo> members = new List<MemberInfo>();
+            //if(_typeMembers.ContainsKey(cobraType) && _typeMembers[cobraType].ContainsKey(memberName))
+                //members.AddRange(_typeMembers[cobraType][memberName].ToArray());
 
-            foreach (CobraType parent in cobraType.Parents)
-                members.AddRange(GetMemberInfo(parent, memberName));
+            //foreach (CobraType parent in cobraType.Parents)
+            //    members.AddRange(GetMemberInfo(parent, memberName));
 
-            return members.ToArray();
+            if(!(memberType is FuncGenericInstance func))
+                return _typeMembers[cobraType][memberName].Values.First();
+
+            foreach (CobraType key in _typeMembers[cobraType][memberName].Keys)
+            {
+                FuncGenericInstance keyFunc = key as FuncGenericInstance;
+
+                if(keyFunc.TypeParams.Count != func.TypeParams.Count)
+                    continue;
+
+                bool matches = true;
+
+                for (int i = 0; i < func.TypeParams.Count; i++)
+                    if (!func.TypeParams[i].CanCastTo(keyFunc.TypeParams[i]))
+                    {
+                        matches = false;
+                        break;
+                    }
+
+                if (!matches)
+                    continue;
+
+                return _typeMembers[cobraType][memberName][keyFunc];
+            }
+
+            return null;
         }
     }
 }

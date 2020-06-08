@@ -21,10 +21,10 @@ namespace CobraCompiler.Parse.Scopes
             ImportAlias = new Dictionary<string, string>();
         }
 
-        public override void Declare(string var, CobraType type)
+        public override void Declare(string var, CobraType type, bool overload = false)
         {
-            base.Declare(var, type);
-            Parent.Declare($"{Name}.{var}", type);
+            base.Declare(var, type, overload);
+            Parent.Declare($"{Name}.{var}", _vars[var]);
         }
     }
 }

@@ -77,7 +77,7 @@ namespace CobraCompiler.Parse.TypeCheck.Types
                         if (!paramTypes.TrueForAll(element => element != null) || returnType == null)
                             continue;
                         paramTypes.Add(returnType);
-                        DefineSymbol(method.Name, DotNetCobraGeneric.FuncType.CreateGenericInstance(paramTypes));
+                        DefineSymbol(method.Name, DotNetCobraGeneric.FuncType.CreateGenericInstance(paramTypes), true);
                         break;
                     case PropertyInfo property:
                         break;

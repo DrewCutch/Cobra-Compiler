@@ -39,8 +39,8 @@ namespace CobraCompiler.Parse.TypeCheck
             foreach (GenericOperator genericOperator in GenericOperator.DotNetGenericOperators)
                 _globalScope.DefineOperator(genericOperator);
 
-            _globalScope.Declare("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(new []{DotNetCobraType.Str, DotNetCobraType.Unit}));
-            _globalScope.Declare("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Unit }));
+            _globalScope.Declare("printStr", FuncCobraGeneric.FuncType.CreateGenericInstance(new []{DotNetCobraType.Str, DotNetCobraType.Unit}));
+            _globalScope.Declare("printInt", FuncCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Unit }));
         }
 
         public void DefineNamespaces(Project project)
@@ -139,10 +139,10 @@ namespace CobraCompiler.Parse.TypeCheck
                 List<CobraType> typeArgs = funcDeclaration.Params.Select(param => scope.GetType(param.TypeInit)).ToList();
                 typeArgs.Add(funcScope.ReturnType);
 
-                CobraGenericInstance funcType = DotNetCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
+                CobraGenericInstance funcType = FuncCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
 
                 scope.AddSubScope(funcScope);
-                scope.Declare(funcDeclaration.Name.Lexeme, funcType);
+                scope.Declare(funcDeclaration.Name.Lexeme, funcType, true);
 
                 _scopes.Enqueue(funcScope);
             }
@@ -298,25 +298,28 @@ namespace CobraCompiler.Parse.TypeCheck
         public CobraType Visit(CallExpression expr)
         {
             CobraType calleeType = expr.Callee.Accept(this);
-            if (calleeType is CobraGenericInstance generic && generic.Base == DotNetCobraGeneric.FuncType)
+            List<CobraType> paramTypes = expr.Arguments.Select(arg => arg.Accept(this)).ToList();
+
+            if (calleeType.IsCallable(paramTypes))
+                return calleeType.CallReturn(paramTypes);
+
+            if (calleeType is FuncGenericInstance func)
             {
-                if (generic.TypeParams.Count - 1 != expr.Arguments.Count)
+                if (func.TypeParams.Count - 1 != expr.Arguments.Count)
                 {
-                    throw new IncorrectArgumentCountException(expr.Paren, expectedArgs: generic.TypeParams.Count - 1, providedArgs: expr.Arguments.Count);
+                    throw new IncorrectArgumentCountException(expr.Paren, expectedArgs: func.TypeParams.Count - 1, providedArgs: expr.Arguments.Count);
                 }
 
-                for (int i = 0; i < generic.TypeParams.Count - 1; i++)
+                for (int i = 0; i < func.TypeParams.Count - 1; i++)
                 {
-                    if(!generic.TypeParams[i].CanCastTo(expr.Arguments[i].Accept(this)))
+                    if (!paramTypes[i].CanCastTo(func.TypeParams[i]))
                     {
                         CobraType test = expr.Arguments[i].Accept(this);
-                        throw new InvalidArgumentException(expr.Paren, generic.TypeParams[i].Identifier, test.Identifier);
+                        throw new InvalidArgumentException(expr.Paren, func.TypeParams[i].Identifier, test.Identifier);
                     }
                 }
-                return generic.TypeParams.Last();
             }
-                
-
+            
             throw new InvalidOperationException(expr.Paren.Line);
         }
 

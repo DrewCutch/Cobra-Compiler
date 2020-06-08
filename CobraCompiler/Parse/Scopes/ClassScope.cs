@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,13 +21,13 @@ namespace CobraCompiler.Parse.Scopes
             Declare("this", ThisType);
         }
 
-        public override void Declare(string var, CobraType type)
+        public override void Declare(string var, CobraType type, bool overload = false)
         {
-            if(var == "init" && type is CobraGenericInstance genericInstance && genericInstance.Base == DotNetCobraGeneric.FuncType)
+            if(var == "init" && type is CobraGenericInstance genericInstance && genericInstance.Base == FuncCobraGeneric.FuncType)
                 Parent.Declare(ClassDeclaration.Name.Lexeme, type);
 
 
-            ThisType.DefineSymbol(var, type);
+            ThisType.DefineSymbol(var, type, type is FuncGenericInstance);
             base.Declare(var, type);
         }
     }

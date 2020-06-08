@@ -222,11 +222,19 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(CallExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(calling:true));
-
+            //Used for overload resolution TODO: improve performance
+            List<CobraType> sig = new List<CobraType>();
             foreach (Expression arg in expr.Arguments)
-                arg.Accept(this, new ParentExpressionAssemblyContext());
+                sig.Add(TypeChecker.GetExpressionType(arg, CurrentScope));
 
+            sig.Add(TypeChecker.GetExpressionType(expr, CurrentScope));
+
+            CobraGenericInstance expected = DotNetCobraGeneric.FuncType.CreateGenericInstance(sig);
+
+            ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(calling: true, expected: expected));
+            for (int i = 0; i < expr.Arguments.Count; i++)
+                expr.Arguments[i].Accept(this, new ParentExpressionAssemblyContext(expected: sig[i]));
+            
             CobraType returnType = null;
 
             if (calleeContext is MethodBuilderExpressionAssemblyContext methodExpressionContext)
@@ -355,7 +363,7 @@ namespace CobraCompiler.Assemble
             {
                 CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
                 string varId = expr.Name.Lexeme;
-                MethodBase method = _methodStore.GetMethodInfo(CurrentScope.GetVarType(varId), varId);
+                MethodBase method = _methodStore.GetMethodInfo(context.ExpectedType, varId);
 
                 MethodBuilderExpressionAssemblyContext mbContext =
                     new MethodBuilderExpressionAssemblyContext(varType, method);
@@ -388,7 +396,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(GetExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext(context.ImmediatelyCalling, context.ExpectedType, assigning:false));
+            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext());
             if (exprContext.Type is NamespaceType _namespace)
             {
                 if(_namespace.HasType(expr.Name.Lexeme))
@@ -400,13 +408,9 @@ namespace CobraCompiler.Assemble
                 return Visit(new VarExpression(resolvedToken), context);
             }
 
+            //TODO implement class method overloading
             Type varType = _typeStore.GetType(exprContext.Type);
-            MemberInfo[] members = _typeStore.GetMemberInfo(exprContext.Type, expr.Name.Lexeme);
-
-            //if(members.Length > 1)
-            //    throw new NotImplementedException();
-
-            MemberInfo member = members[0];
+            MemberInfo member = _typeStore.GetMemberInfo(exprContext.Type, expr.Name.Lexeme, context.ExpectedType);
 
             switch (member)
             {
