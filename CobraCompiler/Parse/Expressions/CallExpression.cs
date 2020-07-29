@@ -10,14 +10,17 @@ namespace CobraCompiler.Parse.Expressions
 {
     class CallExpression: Expression
     {
+        public override Token FirstToken => Callee.FirstToken;
+        public override Token LastToken => ClosingParen;
+
         public readonly Expression Callee;
-        public readonly Token Paren;
+        public readonly Token ClosingParen;
         public readonly IReadOnlyList<Expression> Arguments;
 
-        public CallExpression(Expression callee, Token paren, IReadOnlyList<Expression> arguments)
+        public CallExpression(Expression callee, Token closingParen, IReadOnlyList<Expression> arguments)
         {
             Callee = callee;
-            Paren = paren;
+            ClosingParen = closingParen;
             Arguments = arguments.ToList();
         }
 

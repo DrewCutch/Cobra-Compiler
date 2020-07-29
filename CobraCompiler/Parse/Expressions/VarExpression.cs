@@ -5,6 +5,9 @@ namespace CobraCompiler.Parse.Expressions
 {
     class VarExpression : Expression
     {
+        public override Token FirstToken => Name;
+        public override Token LastToken => Name;
+
         public readonly Token Name;
 
         public VarExpression(Token name)

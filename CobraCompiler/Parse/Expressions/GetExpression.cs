@@ -10,6 +10,9 @@ namespace CobraCompiler.Parse.Expressions
 {
     class GetExpression: Expression
     {
+        public override Token FirstToken => Obj.FirstToken;
+        public override Token LastToken => Name;
+
         public readonly Expression Obj;
         public readonly Token Name;
 

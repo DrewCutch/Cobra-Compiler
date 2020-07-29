@@ -10,16 +10,21 @@ namespace CobraCompiler.Parse.Expressions
 {
     class TypeInitExpression: Expression
     {
+        public override Token FirstToken => Identifier.First();
+        public override Token LastToken { get; }
+
         public readonly IReadOnlyList<Token> Identifier;
         public readonly IReadOnlyList<TypeInitExpression> GenericParams;
         public readonly string IdentifierStr;
         public readonly string IdentifierStrWithoutParams;
         public bool IsGenericInstance => GenericParams.Count > 0;
 
-        public TypeInitExpression(IEnumerable<Token> identifier, IEnumerable<TypeInitExpression> genericParams)
+        public TypeInitExpression(IEnumerable<Token> identifier, IEnumerable<TypeInitExpression> genericParams, Token closingBrace)
         {
             Identifier = new List<Token>(identifier);
             GenericParams = new List<TypeInitExpression>(genericParams);
+            LastToken = closingBrace ?? Identifier.Last();
+
             IdentifierStr = string.Join(".", Identifier.Select(token => token.Lexeme).ToArray());
             IdentifierStrWithoutParams = IdentifierStr;
 

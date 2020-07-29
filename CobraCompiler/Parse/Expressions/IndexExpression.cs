@@ -3,16 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Parse.Expressions
 {
     class IndexExpression: Expression
     {
+        public override Token FirstToken => Collection.FirstToken;
+        public override Token LastToken => ClosingBrace;
+
         public readonly Expression Collection;
+        public readonly Token ClosingBrace;
         public readonly IReadOnlyList<Expression> Indicies;
 
-        public IndexExpression(Expression collection, IEnumerable<Expression> indicies)
+        public IndexExpression(Token closingBrace, Expression collection, IEnumerable<Expression> indicies)
         {
+            ClosingBrace = closingBrace;
             Collection = collection;
             Indicies = new List<Expression>(indicies);
         }

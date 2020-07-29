@@ -5,6 +5,9 @@ namespace CobraCompiler.Parse.Expressions
 {
     class BinaryExpression: Expression
     {
+        public override Token FirstToken => Left.FirstToken;
+        public override Token LastToken => Right.LastToken;
+
         public readonly Expression Left;
         public readonly Expression Right;
         public readonly Token Op;

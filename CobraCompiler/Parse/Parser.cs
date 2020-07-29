@@ -149,6 +149,8 @@ namespace CobraCompiler.Parse
 
         private Statement VarDeclaration()
         {
+            Token keyword = _tokens.Previous();
+
             Token name = Expect(TokenType.Identifier, "Expect variable name.");
             Expect(TokenType.Colon, "Expect colon after variable declaration.");
 
@@ -162,7 +164,7 @@ namespace CobraCompiler.Parse
 
             Expect(TokenType.NewLine, "Expect new line after variable declaration.");
 
-            return new VarDeclarationStatement(name, typeInit, initializer);
+            return new VarDeclarationStatement(keyword, name, typeInit, initializer);
         }
 
         private Statement FuncDeclaration()
@@ -281,8 +283,12 @@ namespace CobraCompiler.Parse
             List<Token> typeIdentifier = new List<Token>();
             List<TypeInitExpression> genericParams = new List<TypeInitExpression>();
 
-            if(Check(TokenType.LeftBracket)) // List Type literal special case
-                typeIdentifier.Add(new Token(TokenType.Identifier, "list", null, _tokens.Previous().Line));
+            if (Check(TokenType.LeftBracket)) // List Type literal special case}
+            {
+                Token listId = new Token(TokenType.Identifier, "list", null, _tokens.Previous().SourceLocation, null);
+
+                typeIdentifier.Add(_tokens.Previous().InsertBefore(TokenType.Identifier, "list", null));
+            }
             else
                 typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier."));
 
@@ -291,6 +297,8 @@ namespace CobraCompiler.Parse
                 typeIdentifier.Add(Expect(TokenType.Identifier, "Expect identifier after '.'"));
             }
 
+            Token closingBrace = null;
+
             if (Match(TokenType.LeftBracket))
             {
                 do
@@ -298,10 +306,10 @@ namespace CobraCompiler.Parse
                     genericParams.Add(TypeInit());
                 } while (Match(TokenType.Comma));
 
-                Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
+                closingBrace = Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
             }
 
-            return new TypeInitExpression(typeIdentifier, genericParams);
+            return new TypeInitExpression(typeIdentifier, genericParams, closingBrace);
         }
 
         private InterfaceDefinitionExpression InterfaceDefinition()
@@ -316,8 +324,8 @@ namespace CobraCompiler.Parse
                     properties.Add(nextProperty);
             }
 
-            Expect(TokenType.RightBrace, "Expect '}' after interface definition.");
-            return new InterfaceDefinitionExpression(openBrace, properties);
+            Token closingBrace = Expect(TokenType.RightBrace, "Expect '}' after interface definition.");
+            return new InterfaceDefinitionExpression(openBrace, properties, closingBrace);
         }
 
         private PropertyDefinitionExpression PropertyDefinition()
@@ -363,17 +371,21 @@ namespace CobraCompiler.Parse
                 {
                     TypeInitExpression left = ResolveType(typeBinary.Left);
                     TypeInitExpression right = ResolveType(typeBinary.Right);
+
+                    Token unionInsert = left.FirstToken.InsertBefore(TokenType.Identifier, "union", null);
                     return new TypeInitExpression(
-                        new Token[] {new Token(TokenType.Identifier, "union", null, typeBinary.Op.Line)},
-                        new [] {left, right});
+                        new Token[] {unionInsert},
+                        new[] {left, right}, right.LastToken);
                 }
                 case TokenType.Ampersand:
                 {
                     TypeInitExpression left = ResolveType(typeBinary.Left);
                     TypeInitExpression right = ResolveType(typeBinary.Right);
-                    return new TypeInitExpression(
-                        new Token[] {new Token(TokenType.Identifier, "intersect", null, typeBinary.Op.Line)},
-                        new [] {left, right});
+
+                    Token intersectInsert = left.FirstToken.InsertBefore(TokenType.Identifier, "intersect", null);
+                        return new TypeInitExpression(
+                        new Token[] {intersectInsert },
+                        new [] {left, right}, right.LastToken);
                 }
             }
 
@@ -444,7 +456,7 @@ namespace CobraCompiler.Parse
         private Statement Return()
         {
             Token keyword = _tokens.Previous();
-            Expression expr = Expression() ?? new LiteralExpression(null, DotNetCobraType.Unit);
+            Expression expr = Expression() ?? new LiteralExpression(null, DotNetCobraType.Unit, keyword);
             // Expect(TokenType.NewLine, "Expect newline after return statement");
             return new ReturnStatement(keyword, expr);
         }
@@ -628,12 +640,14 @@ namespace CobraCompiler.Parse
                 else if (Match(TokenType.LeftBracket))
                 {
                     List<Expression> indicies = new List<Expression>();
+
                     do
                     {
                         indicies.Add(Expression());
                     } while (Match(TokenType.Comma));
-                    expr = new IndexExpression(expr, indicies);
-                    Expect(TokenType.RightBracket, "Expect ']' after indices");
+
+                    Token closingBrace = Expect(TokenType.RightBracket, "Expect ']' after indices");
+                    expr = new IndexExpression(closingBrace, expr, indicies);
                 }
                 else
                 {
@@ -646,13 +660,13 @@ namespace CobraCompiler.Parse
 
         private Expression Primary()
         {
-            if (Match(TokenType.False)) return new LiteralExpression(false, DotNetCobraType.Bool);
-            if (Match(TokenType.True)) return new LiteralExpression(true, DotNetCobraType.Bool);
-            if (Match(TokenType.Null)) return new LiteralExpression(null, DotNetCobraType.Null);
+            if (Match(TokenType.False)) return new LiteralExpression(false, DotNetCobraType.Bool, _tokens.Previous());
+            if (Match(TokenType.True)) return new LiteralExpression(true, DotNetCobraType.Bool, _tokens.Previous());
+            if (Match(TokenType.Null)) return new LiteralExpression(null, DotNetCobraType.Null, _tokens.Previous());
 
-            if (Match(TokenType.Integer)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Int);
-            if (Match(TokenType.Decimal)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Float);
-            if (Match(TokenType.String)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Str);
+            if (Match(TokenType.Integer)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Int, _tokens.Previous());
+            if (Match(TokenType.Decimal)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Float, _tokens.Previous());
+            if (Match(TokenType.String)) return new LiteralExpression(_tokens.Previous().Literal, DotNetCobraType.Str, _tokens.Previous());
             if (Check(TokenType.LeftBracket)) return ListLiteral();
 
             if (Match(TokenType.Identifier))
@@ -662,9 +676,10 @@ namespace CobraCompiler.Parse
 
             if (Match(TokenType.LeftParen))
             {
+                Token openParen = _tokens.Previous();
                 Expression expr = Expression();
-                Expect(TokenType.RightParen, "Expect ')' after expression.");
-                return new GroupingExpression(expr);
+                Token closingParen = Expect(TokenType.RightParen, "Expect ')' after expression.");
+                return new GroupingExpression(openParen, expr, closingParen);
             }
 
             if (Match(TokenType.NewLine))
@@ -698,15 +713,16 @@ namespace CobraCompiler.Parse
         {
             List<Expression> elements = new List<Expression>();
 
-            Expect(TokenType.LeftBracket, "Expect '[' at beginning of list literal");
+            Token openingBrace = Expect(TokenType.LeftBracket, "Expect '[' at beginning of list literal");
+
             do
             {
                 elements.Add(Expression());
             } while (Match(TokenType.Comma));
 
-            Expect(TokenType.RightBracket, "Expect closing ']' at end of list literal");
+            Token closingBrace = Expect(TokenType.RightBracket, "Expect closing ']' at end of list literal");
 
-            return new ListLiteralExpression(elements);
+            return new ListLiteralExpression(openingBrace, elements, closingBrace);
         }
 
         private Token Expect(TokenType type, String message, bool ignoreNewline=false)

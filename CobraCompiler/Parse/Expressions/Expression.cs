@@ -1,10 +1,15 @@
-﻿using CobraCompiler.Parse.PrettyPrint;
+﻿using System;
+using CobraCompiler.Parse.PrettyPrint;
+using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Expressions
 {
     abstract class Expression
     {
+        public abstract Token FirstToken { get; }
+        public abstract Token LastToken { get; }
+
         private CobraType _type;
         public CobraType Type
         {

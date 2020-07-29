@@ -9,6 +9,9 @@ namespace CobraCompiler.Parse.Expressions
 {
     class PropertyDefinitionExpression: Expression
     {
+        public override Token FirstToken => Identifier;
+        public override Token LastToken => Type.LastToken;
+
         public readonly Token Identifier;
         public readonly TypeInitExpression Type;
 

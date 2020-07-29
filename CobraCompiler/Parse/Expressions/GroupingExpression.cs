@@ -1,14 +1,20 @@
 ﻿using CobraCompiler.Parse.PrettyPrint;
+using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Parse.Expressions
 {
     class GroupingExpression: Expression
     {
+        public override Token FirstToken { get; }
+        public override Token LastToken { get; }
+
         public readonly Expression Inner;
 
-        public GroupingExpression(Expression inner)
+        public GroupingExpression(Token openParen, Expression inner, Token closeParen)
         {
+            FirstToken = openParen;
             Inner = inner;
+            LastToken = closeParen;
         }
 
         public override T Accept<T>(IExpressionVisitor<T> expressionVisitor)

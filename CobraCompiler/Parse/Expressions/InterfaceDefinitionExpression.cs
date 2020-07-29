@@ -13,15 +13,17 @@ namespace CobraCompiler.Parse.Expressions
         private static int _counter = 0;
 
         public readonly IReadOnlyList<PropertyDefinitionExpression> Properties;
+        public override Token FirstToken { get; }
 
-        public InterfaceDefinitionExpression(Token bracket, IEnumerable<PropertyDefinitionExpression> properties) : base(GenIdentifier(bracket.Line), new TypeInitExpression[]{})
+        public InterfaceDefinitionExpression(Token bracket, IEnumerable<PropertyDefinitionExpression> properties, Token closingBracket) : base(GenIdentifier(bracket), new TypeInitExpression[]{}, closingBracket)
         {
+            FirstToken = bracket;
             Properties = new List<PropertyDefinitionExpression>(properties);
         }
 
-        private static Token[] GenIdentifier(int lineNumber)
+        private static Token[] GenIdentifier(Token bracket)
         {
-            return new [] { new Token(TokenType.Identifier, $"@Interface_{_counter++}", null, lineNumber)};
+            return new [] { bracket.InsertBefore(TokenType.Identifier, $"@Interface_{_counter++}", null) };
         }
     }
 }

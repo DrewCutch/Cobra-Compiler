@@ -5,6 +5,9 @@ namespace CobraCompiler.Parse.Expressions
 {
     class AssignExpression : Expression
     {
+        public override Token FirstToken => Target.FirstToken;
+        public override Token LastToken => Value.LastToken;
+
         public readonly Expression Target;
         public readonly Expression Value;
 
