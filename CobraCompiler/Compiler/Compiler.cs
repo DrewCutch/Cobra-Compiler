@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using CobraCompiler.Assemble;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse;
@@ -24,10 +25,30 @@ namespace CobraCompiler.Compiler
 
         public void Compile(Project project)
         {
+            Stopwatch totalTimer = new Stopwatch();
+            
+            Stopwatch timer = new Stopwatch();
+
+            totalTimer.Start();
+            timer.Start();
             IReadOnlyList<ScannedModule> scannedModules = Scan(project);
+            ErrorLogger.WriteWithColor($"Scanned {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+            
+            timer.Restart();
             IReadOnlyList<ParsedModule> parsedModules = Parse(scannedModules);
+            ErrorLogger.WriteWithColor($"Parsed {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+
+            timer.Restart();
             CheckedProject checkedProject = Check(project, parsedModules);
+            ErrorLogger.WriteWithColor($"Checked {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+
+            timer.Restart();
             Assemble(checkedProject);
+            ErrorLogger.WriteWithColor($"Assembled {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+            timer.Stop();
+
+            ErrorLogger.WriteWithColor($"Compiled {project.Name} in {totalTimer.Elapsed.TotalSeconds} seconds", ConsoleColor.Green);
+            totalTimer.Stop();
         }
 
         private List<ScannedModule> Scan(Project project)
