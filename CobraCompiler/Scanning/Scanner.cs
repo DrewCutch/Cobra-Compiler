@@ -8,38 +8,43 @@ using CobraCompiler.ErrorLogging;
 
 namespace CobraCompiler.Scanning
 {
-    class Scanner
+    public class Scanner
     {
-        private readonly FileReader _fileReader;
+        private readonly SourceReader _sourceReader;
         private readonly ErrorLogger _errorLogger;
 
-        public Scanner(FileReader fileReader, ErrorLogger errorLogger)
+        public Scanner(SourceReader sourceReader, ErrorLogger errorLogger)
         {
-            _fileReader = fileReader;
+            _sourceReader = sourceReader;
             _errorLogger = errorLogger;
         }
 
         public List<Token> GetTokens()
         {
             List<Token> tokens = new List<Token>();
-            int lineNumber = 0;
 
-            foreach (string line in _fileReader.Lines())
+            string path = _sourceReader.Path;
+            int lineNumber = 1;
+
+            foreach (string line in _sourceReader.Lines())
             {
                 StringNibbler lineNibbler = new StringNibbler(line);
                 String currentLexeme = "";
 
                 while (lineNibbler.HasNext())
                 {
-                    TokenType? nextTokenType = null;
+                    int charIndex = lineNibbler.Pos;
+                    TokenType ? nextTokenType = null;
                     try
                     {
-                        while ((nextTokenType =
-                                   getTokenType(currentLexeme.ToString(), lineNibbler.Peek(), lineNumber)) == null)
+                        while ((nextTokenType = getTokenType(currentLexeme, lineNibbler.Peek(), new SourceLocation(path, lineNumber, charIndex), tokens.LastOrDefault())) == null)
                         {
-                            currentLexeme += lineNibbler.Pop();
-                            if(!IsPotentialStrLiteral(currentLexeme))
-                                currentLexeme = currentLexeme.Trim();
+                            char nextChar = lineNibbler.Pop();
+
+                            if (nextChar != ' ' && nextChar != '\t' || IsPotentialStrLiteral(currentLexeme))
+                                currentLexeme += nextChar;
+                            
+                            charIndex += 1;
 
                             if (currentLexeme == "//")
                                 goto endOfLine; // Stop scanning this line
@@ -56,25 +61,40 @@ namespace CobraCompiler.Scanning
 
                     if (nextTokenType is TokenType _nextTokenType)
                     {
-                        tokens.Add(new Token(_nextTokenType, currentLexeme, getValue(_nextTokenType, currentLexeme), lineNumber));
+                        Token next = new Token(_nextTokenType, currentLexeme, getValue(_nextTokenType, currentLexeme),
+                            new SourceLocation(path, lineNumber, charIndex - currentLexeme.Length), tokens.LastOrDefault());
+                        if(tokens.Count > 0) 
+                            tokens.Last().Next = next;
+
+                        tokens.Add(next);
+
                         currentLexeme = "";
                     }
                 }
 
                 if (currentLexeme.Length > 0)
-                    _errorLogger.Log(new ScanningException(currentLexeme, lineNumber));
+                    _errorLogger.Log(new ScanningException(new Token(TokenType.Invalid, currentLexeme, null, new SourceLocation(path, lineNumber, lineNibbler.Pos), tokens.LastOrDefault())));
 
                 endOfLine:
 
-                tokens.Add(new Token(TokenType.NewLine, "", null, lineNumber));
+                Token newLine = new Token(TokenType.NewLine, "", null, new SourceLocation(path, lineNumber, lineNibbler.Pos), tokens.LastOrDefault());
+                if (tokens.Count > 0)
+                    tokens.Last().Next = newLine;
+
+                tokens.Add(newLine);
+
                 lineNumber++;
             }
 
-            tokens.Add(new Token(TokenType.Eof, "", null, lineNumber));
+            Token endOfFile = new Token(TokenType.Eof, "", null, new SourceLocation(path, lineNumber, 0), tokens.LastOrDefault());
+            if (tokens.Count > 0)
+                tokens.Last().Next = endOfFile;
+
+            tokens.Add(endOfFile);
             return tokens;
         }
 
-        private TokenType? getTokenType(string lexeme, char next, int lineNumber)
+        private TokenType? getTokenType(string lexeme, char next, SourceLocation sourceLocation, Token lastToken)
         {
             switch (lexeme)
             {
@@ -220,7 +240,7 @@ namespace CobraCompiler.Scanning
                     if (isAlphanumeric(lexeme) && !isAlphanumeric(next) && !isInteger(lexeme))
                         return TokenType.Identifier;
                     if(lexeme.Length > 0 && (next == '\0' || (next == ' ' && !IsPotentialStrLiteral(lexeme))))
-                        throw new ScanningException(lexeme, lineNumber);
+                        throw new ScanningException(new Token(TokenType.Invalid, lexeme, null, sourceLocation, lastToken));
                     return null;
             }
         }
@@ -232,12 +252,12 @@ namespace CobraCompiler.Scanning
 
         private bool isAlphanumeric(string str)
         {
-            return str.All(Char.IsLetterOrDigit) && str.Length > 0;
+            return str.Replace("_", string.Empty).All(Char.IsLetterOrDigit) && str.Length > 0;
         }
 
         private bool isAlphanumeric(char chr)
         {
-            return Char.IsLetterOrDigit(chr);
+            return Char.IsLetterOrDigit(chr) || chr == '_';
         }
 
         private bool isFloat(string str)

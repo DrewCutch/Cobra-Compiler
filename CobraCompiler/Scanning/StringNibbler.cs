@@ -4,12 +4,12 @@ namespace CobraCompiler.Scanning
 {
     class StringNibbler
     {
-        private int _pos;
+        public int Pos { get; private set; }
         public readonly string Str;
 
         public StringNibbler(string str)
         {
-            _pos = 0;
+            Pos = 0;
             Str = str;
         }
 
@@ -20,7 +20,7 @@ namespace CobraCompiler.Scanning
         public char Pop()
         {
             if (HasNext())
-                return Str[_pos++];
+                return Str[Pos++];
             return '\0';
         }
 
@@ -29,15 +29,15 @@ namespace CobraCompiler.Scanning
         /// </summary>
         public char Peek()
         {
-            if(_pos < Str.Length)
-                return Str[_pos];
+            if(Pos < Str.Length)
+                return Str[Pos];
             return '\0';
         }
 
 
         public Boolean HasNext()
         {
-            return _pos < Str.Length;
+            return Pos < Str.Length;
         }
     }
 }

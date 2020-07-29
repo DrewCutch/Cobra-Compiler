@@ -7,26 +7,13 @@ using System.Threading.Tasks;
 
 namespace CobraCompiler.Scanning
 {
-    class FileReader
+    public class FileReader: SourceReader
     {
-        private string Path;
+        public string Path { get; }
 
         public FileReader(string filePath)
         {
             Path = filePath;
-        }
-
-        public string GetLine(int n)
-        {
-            using (StreamReader sr = File.OpenText(Path))
-            {
-                for (int i = 0; i < n && !sr.EndOfStream; i++)
-                {
-                    sr.ReadLine();
-                }
-
-                return sr.ReadLine();
-            }
         }
 
         public IEnumerable<string> Lines()
