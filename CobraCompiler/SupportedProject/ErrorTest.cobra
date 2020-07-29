@@ -1,0 +1,28 @@
+﻿func errors(){
+	var bad: int = "hello"
+
+	printInt("bad")
+
+	printInt(1, 2)
+
+	if(5 + 10 - 3){
+		printStr("not valid if statement!")
+	}
+
+	var powered: int = doMultiple["hello"](double, 1, 5)
+
+	var badType: bad = 10
+
+	var defineTwice: int = 5
+	var defineTwice: int = 10
+
+	var n: int = notdefined
+
+	var invalidOp: int = 5 + true
+
+	var badCall: int = defineTwice()
+
+	var badMember: int = badCall.member
+
+	return "incorrect return type"
+}

@@ -92,6 +92,7 @@
     <Compile Include="Parse\Expressions\InterfaceDefinitionExpression.cs" />
     <Compile Include="Scanning\SourceLocation.cs" />
     <Compile Include="Scanning\SourceReader.cs" />
+    <Compile Include="TypeCheck\Exceptions\InvalidConditionTypeException.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidGenericArgumentException.cs" />
     <Compile Include="Parse\Expressions\ListLiteralExpression.cs" />
     <Compile Include="Parse\Expressions\PropertyDefinitionExpression.cs" />
@@ -159,7 +160,7 @@
     <Compile Include="TypeCheck\Operators\DotNetBinaryOperator.cs" />
     <Compile Include="TypeCheck\Operators\IDotNetOperator.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidAssignmentException.cs" />
-    <Compile Include="TypeCheck\Exceptions\InvalidOperationException.cs" />
+    <Compile Include="TypeCheck\Exceptions\InvalidCallException.cs" />
     <Compile Include="TypeCheck\Operators\IOperator.cs" />
     <Compile Include="TypeCheck\Operators\UnaryOperator.cs" />
     <Compile Include="TypeCheck\TypeChecker.cs" />
@@ -185,6 +186,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="SupportedProject\ErrorTest.cobra" />
     <None Include="SupportedProject\ListTools.cobra" />
     <None Include="SupportedProject\SupportedProject.cobraproj" />
   </ItemGroup>

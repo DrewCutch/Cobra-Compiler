@@ -23,12 +23,12 @@ func fib(until: int): int{
 	return 0
 }
 
-func doMultiple(function: f[int, int], times: int): int{
-	var sum: int = 1
+func doMultiple[T](f: f[T, T], initial: T, times: int): T{
+	var sum: T = initial
 	var count: int = 0
 
 	while(count < times){
-		sum = function(sum)
+		sum = f(sum)
 		count = count + 1
 	}
 
@@ -49,6 +49,7 @@ func printTimes(phrase: str, times: int){
 
 	return
 }
+
 
 type t1 = int | bool
 type t2 = str | float
@@ -96,6 +97,7 @@ type Istr = {
 	toStr: f[str]
 	toStr: f[str, str]
 }
+
 
 type sperson = person & Istr
 
@@ -151,7 +153,7 @@ func testVecs(){
 	var a: vec2D = Vector2D(5, 5)
 	var b: vec2D = Vector2D(2, 0 - 1)
 
-	var c: vec2D = addVec(a, b)
+	var c: vec2D = addVec(a,b)
 
 	printStr("resulting vector:")
 	printInt(c.x)
@@ -166,6 +168,19 @@ func add(a: int, b: int, c: int): int{
 
 func add(a: int, b: int): int{
 	return a + b
+}
+
+func testA(a: int): str{
+	if(a > 0)
+		return "positive"
+	
+	return "negative"
+}
+
+func testB(a: str): bool{
+	printStr(a)
+
+	return true
 }
 
 func main(): int{
@@ -200,7 +215,7 @@ func main(): int{
 	//sum = function(10, 10)
 	printInt(sum)
 
-	var powered: int = doMultiple(double, 5)
+	var powered: int = doMultiple[int](double, 1, 5)
 	printInt(powered)
 
 	if(sum > a){
@@ -235,10 +250,11 @@ func main(): int{
 	var smallest: int = ListTools.minInt(squares)
 	printInt(smallest)
 
+	var result: bool = ListTools.compose[int, str, bool](5, testA, testB)
 
 	var i: int = 0
 	while(i < 10){
-		printInt(squares[i])
+	//	printInt(squares[i])
 		i = i + 1
 	}
 
@@ -250,6 +266,9 @@ func main(): int{
 	var unionList: [int | bool] = [1, true, 5, 2, false, false]
 	var boolList: [bool] = [true, true, false]
 	var strList: [str] = ["hello", "world"]
+
+	//var strListItem: str = strList.Get(0)
+	// strList[1] = "drew"
 	
 	var listList: [[int]] = [[1,2,3], [4,5,6]]
 
