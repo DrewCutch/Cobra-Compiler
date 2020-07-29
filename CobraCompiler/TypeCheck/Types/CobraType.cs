@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CobraCompiler.TypeCheck.Types
@@ -123,6 +124,22 @@ namespace CobraCompiler.TypeCheck.Types
                 _symbols[symbol] = type;
         }
 
+        public virtual CobraType GetIndexGetter(IEnumerable<CobraType> indexTypes)
+        {
+            throw new NotImplementedException();
+
+        }
+
+        public virtual CobraType GetIndexSetter(IEnumerable<CobraType> indexTypes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual void DefineIndex(IEnumerable<CobraType> indexTypes, CobraType valueType)
+        {
+            throw new NotImplementedException();
+        }
+
         public virtual bool CanCastTo(CobraType other)
         {
             return Equals(other) || GetCommonParent(other).Equals(other);
@@ -153,6 +170,11 @@ namespace CobraCompiler.TypeCheck.Types
                 commonType = commonType.GetCommonParent(type, unionize);
 
             return commonType;
+        }
+
+        public override string ToString()
+        {
+            return Identifier;
         }
     }
 }
