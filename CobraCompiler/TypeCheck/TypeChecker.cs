@@ -28,8 +28,9 @@ namespace CobraCompiler.TypeCheck
             _scopes = new Queue<Scope>();
 
             _globalScope = new GlobalScope();
-            foreach (DotNetCobraType builtinCobraType in DotNetCobraType.DotNetCobraTypes)
+            foreach (DotNetCobraType builtinCobraType in DotNetCobraType.DotNetCobraTypes) { 
                 _globalScope.DefineType(builtinCobraType.Identifier, builtinCobraType);
+            }
             foreach (CobraGeneric builtinCobraGeneric in DotNetCobraGeneric.BuiltInCobraGenerics)
                 _globalScope.DefineGeneric(builtinCobraGeneric.Identifier, builtinCobraGeneric);
             foreach (DotNetBinaryOperator op in DotNetBinaryOperator.OpCodeDotNetBinaryOperators)
@@ -123,6 +124,21 @@ namespace CobraCompiler.TypeCheck
 
             if (statement is FuncDeclarationStatement funcDeclaration)
             {
+                if (funcDeclaration.TypeArguments.Count > 0)
+                {
+                    Scope genericScope = new Scope(CurrentScope, funcDeclaration);
+                    int i = 0;
+                    foreach (Token typeArg in funcDeclaration.TypeArguments)
+                    {
+                        genericScope.DefineType(typeArg.Lexeme, new GenericTypeParamPlaceholder(typeArg.Lexeme, i));
+                        i++;
+                    }
+
+                    scope.AddSubScope(genericScope);
+
+                    scope = genericScope;
+                }
+
                 CobraType returnType = funcDeclaration.ReturnType == null
                     ? DotNetCobraType.Unit
                     : scope.GetType(funcDeclaration.ReturnType);
@@ -140,6 +156,11 @@ namespace CobraCompiler.TypeCheck
                 CobraGenericInstance funcType = FuncCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
 
                 scope.AddSubScope(funcScope);
+
+                // Pop the temporary generic scope
+                if (funcDeclaration.TypeArguments.Count > 0)
+                    scope = scope.Parent;
+
                 scope.Declare(funcDeclaration.Name.Lexeme, funcType, true);
 
                 _scopes.Enqueue(funcScope);
@@ -330,14 +351,41 @@ namespace CobraCompiler.TypeCheck
         {
             CobraType collectionType = expr.Collection.Accept(this);
 
-            foreach (Expression index in expr.Indicies)
+            List<CobraType> typeParams = new List<CobraType>();
+            foreach (Expression expression in expr.Indicies)
             {
-                index.Accept(this);
+                CobraType exprType = expression.Accept(this);
+                if(exprType is CobraTypeCobraType typeType && typeType.CobraType is CobraType simpleType)
+                    typeParams.Add(simpleType);
+                else
+                    throw new InvalidGenericArgumentException(expression);
             }
 
+            if (collectionType is CobraGenericInstance genericInstance)
+            {
+                expr.Type = genericInstance.ReplacePlaceholders(typeParams);
+                return expr.Type;
+            }
+
+            if (collectionType is CobraTypeCobraType metaType && metaType.CobraType is CobraGeneric generic)
+            {
+                expr.Type = generic.CreateGenericInstance(typeParams);
+                return new CobraTypeCobraType(expr.Type);
+            }
+
+            throw new NotImplementedException();
+
+            /*
+            CobraType collectionType = expr.Collection.Accept(this);
+            List<CobraType> indexTypes = expr.Indicies.Select(index => index.Accept(this)).ToList();
+
+
             IOperator getOperator = CurrentScope.GetOperator(Operation.Get, collectionType, DotNetCobraType.Int);
-            
+
+            expr.Type = getOperator.ResultType;
+
             return getOperator.ResultType;
+            */
         }
 
         public CobraType Visit(ListLiteralExpression expr)

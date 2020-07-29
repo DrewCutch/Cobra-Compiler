@@ -11,7 +11,6 @@
         CompareLessEqual,
         CompareNotEqual,
         Devide,
-        Get,
         Multiply,
         Subtract
     }

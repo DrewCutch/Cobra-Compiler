@@ -168,6 +168,17 @@ namespace CobraCompiler.Parse
         private Statement FuncDeclaration()
         {
             Token name = Expect(TokenType.Identifier, "Expect function name.");
+            List<Token> typeParams = new List<Token>();
+
+            if (Match(TokenType.LeftBracket))
+            {
+                do
+                {
+                    typeParams.Add(Expect(TokenType.Identifier, "Expect type parameter name in generic definition"));
+                } while (Match(TokenType.Comma));
+
+                Expect(TokenType.RightBracket, "Expect closing brace after type parameter list");
+            }
 
             Expect(TokenType.LeftParen, "Expect '(' after function name.");
 
@@ -191,7 +202,7 @@ namespace CobraCompiler.Parse
 
             Match(TokenType.NewLine);
 
-            return new FuncDeclarationStatement(name, paramDeclarations, returnType, Statement());
+            return new FuncDeclarationStatement(name, typeParams, paramDeclarations, returnType, Statement());
         }
 
         private Statement InitDeclaration()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -16,6 +17,7 @@ namespace CobraCompiler.Assemble
         private readonly ModuleBuilder _moduleBuilder;
         private readonly Dictionary<string, Type> _typeAlias;
         private readonly Dictionary<CobraType, Type> _types;
+        private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _currentGenerics;
         private readonly Dictionary<CobraType, Dictionary<string, Dictionary<CobraType, MemberInfo>>> _typeMembers;
         private readonly Dictionary<string, GenericTypeAssembler> _genericInstanceGenerators;
 
@@ -25,6 +27,7 @@ namespace CobraCompiler.Assemble
             _moduleBuilder = moduleBuilder;
             _typeAlias = new Dictionary<string, Type>();
             _types = new Dictionary<CobraType, Type>();
+            _currentGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
             _typeMembers = new Dictionary<CobraType, Dictionary<string, Dictionary<CobraType, MemberInfo>>>();
             _genericInstanceGenerators = new Dictionary<string, GenericTypeAssembler>();
         }
@@ -39,8 +42,26 @@ namespace CobraCompiler.Assemble
             _types[cobraType] = type;
         }
 
+        public void PushCurrentGenerics(Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics)
+        {
+            generics.ToList().ForEach(x => _currentGenerics.Add(x.Key, x.Value));
+        }
+
+        public void PopGenerics(Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics)
+        {
+            generics.ToList().ForEach(x => _currentGenerics.Remove(x.Key));
+        }
+
+        public void ClearCurrentGenerics()
+        {
+            _currentGenerics.Clear();
+        }
+
         public Type GetType(CobraType cobraType)
         {
+            if(cobraType is GenericTypeParamPlaceholder placeholder)
+                return _currentGenerics[placeholder];
+
             if (cobraType is CobraGenericInstance genericInstance && genericInstance.Base is ITypeGenerator typeGen)
                 return typeGen.GetType(_moduleBuilder, genericInstance.TypeParams.Select(GetType).ToArray());
 

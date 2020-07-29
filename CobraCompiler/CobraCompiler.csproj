@@ -90,6 +90,7 @@
     <Compile Include="Parse\Expressions\IExpressionVisitorWithContext.cs" />
     <Compile Include="Parse\Expressions\IndexExpression.cs" />
     <Compile Include="Parse\Expressions\InterfaceDefinitionExpression.cs" />
+    <Compile Include="TypeCheck\Exceptions\InvalidGenericArgumentException.cs" />
     <Compile Include="Parse\Expressions\ListLiteralExpression.cs" />
     <Compile Include="Parse\Expressions\PropertyDefinitionExpression.cs" />
     <Compile Include="Parse\Expressions\TypeInitExpression.cs" />
@@ -120,6 +121,7 @@
     <Compile Include="TypeCheck\Operators\Operation.cs" />
     <Compile Include="TypeCheck\Operators\Operator.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeBase.cs" />
+    <Compile Include="TypeCheck\Types\CobraTypeCobraType.cs" />
     <Compile Include="TypeCheck\Types\FuncCobraGeneric.cs" />
     <Compile Include="TypeCheck\Types\FuncGenericInstance.cs" />
     <Compile Include="TypeCheck\Types\IntersectionInstanceType.cs" />

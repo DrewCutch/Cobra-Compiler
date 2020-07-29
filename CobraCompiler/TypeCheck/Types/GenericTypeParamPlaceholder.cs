@@ -2,9 +2,11 @@
 {
     class GenericTypeParamPlaceholder: CobraType
     {
-        public GenericTypeParamPlaceholder(string identifier) : base(identifier)
-        {
+        public readonly int Index;
 
+        public GenericTypeParamPlaceholder(string identifier, int index) : base(identifier)
+        {
+            Index = index;
         }
 
         public override bool Equals(object obj)

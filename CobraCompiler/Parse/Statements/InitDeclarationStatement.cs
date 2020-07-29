@@ -10,7 +10,7 @@ namespace CobraCompiler.Parse.Statements
 {
     class InitDeclarationStatement: FuncDeclarationStatement
     {
-        public InitDeclarationStatement(Token keyWord, IReadOnlyList<ParamDeclarationStatement> @params, Statement body): base(keyWord, @params, null, body)
+        public InitDeclarationStatement(Token keyWord, IReadOnlyList<ParamDeclarationStatement> @params, Statement body): base(keyWord, new List<Token>(), @params, null, body)
         { }
     }
 }

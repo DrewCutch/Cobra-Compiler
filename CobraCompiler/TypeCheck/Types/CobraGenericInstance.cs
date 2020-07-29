@@ -15,6 +15,23 @@ namespace CobraCompiler.TypeCheck.Types
             Base = @base;
         }
 
+        public CobraGenericInstance ReplacePlaceholders(List<CobraType> typeArguments)
+        {
+            List<CobraType> typeParams = new List<CobraType>();
+
+            foreach (CobraType typeParam in TypeParams)
+            {
+                if(typeParam is GenericTypeParamPlaceholder placeholder)
+                    typeParams.Add(typeArguments[placeholder.Index]);
+                else if(typeParam is CobraGenericInstance genericInstance)
+                    typeParams.Add(genericInstance.ReplacePlaceholders(typeArguments));
+                else
+                    typeParams.Add(typeParam);
+            }
+
+            return Base.CreateGenericInstance(typeParams);
+        }
+
         public override bool Equals(Object other)
         {
             CobraGenericInstance otherInstance = other as CobraGenericInstance;

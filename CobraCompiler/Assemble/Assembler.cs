@@ -104,25 +104,37 @@ namespace CobraCompiler.Assemble
                     DefineInterface(definedType, mb);
             }
 
-            foreach (Scope subScope in scope.SubScopes)
+            Queue<Scope> subScopes = new Queue<Scope>(scope.SubScopes);
+
+            while (subScopes.Count > 0)
             {
-                if (subScope is FuncScope funcScope)
+                Scope subScope = subScopes.Dequeue();
+
+                switch (subScope)
                 {
-                    FuncAssembler funcAssembler = funcAssemblerFactory.CreateFuncAssembler(funcScope);
-                    MethodBase builder = funcAssembler.AssembleDefinition();
-                    assemblers.Add(funcAssembler);
+                    case FuncScope funcScope:
+                    {
+                        FuncAssembler funcAssembler = funcAssemblerFactory.CreateFuncAssembler(funcScope);
+                        MethodBase builder = funcAssembler.AssembleDefinition();
+                        assemblers.Add(funcAssembler);
                     
-                    _methodStore.AddMethodInfo(scope.Name + "." + funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
-                    _methodStore.AddMethodInfo(funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
-                }
+                        _methodStore.AddMethodInfo(scope.Name + "." + funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
+                        _methodStore.AddMethodInfo(funcScope.FuncDeclaration.Name.Lexeme, funcScope.FuncType, builder);
+                        break;
+                    }
+                    case ClassScope classScope:
+                    {
+                        ClassAssembler classAssembler = new ClassAssembler(classScope, _typeStore, _methodStore, _assemblyBuilder, _moduleBuilder);
+                        TypeBuilder builder = classAssembler.AssembleDefinition();
 
-                if (subScope is ClassScope classScope)
-                {
-                    ClassAssembler classAssembler = new ClassAssembler(classScope, _typeStore, _methodStore, _assemblyBuilder, _moduleBuilder);
-                    TypeBuilder builder = classAssembler.AssembleDefinition();
-
-                    _typeStore.AddType(classScope.ThisType, builder);
-                    assemblers.Add(classAssembler);
+                        _typeStore.AddType(classScope.ThisType, builder);
+                        assemblers.Add(classAssembler);
+                        break;
+                    }
+                    case Scope plainScope:
+                        foreach (Scope scopeSubScope in plainScope.SubScopes)
+                            subScopes.Enqueue(scopeSubScope);
+                        break;
                 }
             }
             

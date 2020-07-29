@@ -110,6 +110,8 @@ namespace CobraCompiler.Parse.Scopes
 
         public void DefineGeneric(string identifier, CobraGeneric generic)
         {
+            CobraTypeCobraType metaType = new CobraTypeCobraType(generic);
+            _vars[identifier] = metaType;
             _generics[identifier] = generic;
         }
 
@@ -128,6 +130,8 @@ namespace CobraCompiler.Parse.Scopes
 
         public virtual void DefineType(string identifier, CobraType cobraType)
         {
+            CobraTypeCobraType metaType = new CobraTypeCobraType(cobraType);
+            _vars[identifier] = metaType;
             _types[identifier] = cobraType;
         }
 

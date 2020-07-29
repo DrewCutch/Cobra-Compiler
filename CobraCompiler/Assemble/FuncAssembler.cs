@@ -40,6 +40,8 @@ namespace CobraCompiler.Assemble
 
         private readonly MethodStore _methodStore;
 
+        private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _funcGenerics;
+
         public FuncAssembler(FuncScope funcScope, TypeStore typeStore, MethodStore methodStore, TypeBuilder typeBuilder, AssemblyBuilder assemblyBuilder, MethodAttributes methodAttributes)
         {
             _funcScope = funcScope;
@@ -49,26 +51,30 @@ namespace CobraCompiler.Assemble
             _assemblyBuilder = assemblyBuilder;
             _methodAttributes = methodAttributes;
             _scopeCrawler = new ScopeCrawler(funcScope);
+            _funcGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
         }
 
         public MethodBase AssembleDefinition()
         {
             FuncDeclarationStatement funcDeclaration = _funcScope.FuncDeclaration;
 
-            Type[] paramTypes = _funcScope.Params.Select(param => _typeStore.GetType(param.Item2)).ToArray();
+            MethodBase methodBase = funcDeclaration is InitDeclarationStatement
+                ? CreateConstructorBuilder(funcDeclaration)
+                : CreateMethodBuilder(funcDeclaration);
+
             Type returnType = _funcScope.ReturnType != null ? _typeStore.GetType(_funcScope.ReturnType) : null;
 
-            MethodBase methodBase = funcDeclaration is InitDeclarationStatement
-                ? CreateConstructorBuilder(paramTypes, funcDeclaration)
-                : CreateMethodBuilder(paramTypes, returnType, funcDeclaration);
-
             _localManager = new LocalManager(_funcScope, _il, returnType);
+
+            _typeStore.PopGenerics(_funcGenerics);
 
             return methodBase;
         }
 
-        private MethodBase CreateConstructorBuilder(Type[] paramTypes, FuncDeclarationStatement funcDeclaration)
+        private MethodBase CreateConstructorBuilder(FuncDeclarationStatement funcDeclaration)
         {
+            Type[] paramTypes = _funcScope.Params.Select(param => _typeStore.GetType(param.Item2)).ToArray();
+
             ConstructorBuilder builder = _typeBuilder.DefineConstructor(_methodAttributes,CallingConventions.HasThis, paramTypes);
 
             for (int i = 0; i < funcDeclaration.Params.Count; i++)
@@ -83,9 +89,30 @@ namespace CobraCompiler.Assemble
             return builder;
         }
 
-        private MethodBase CreateMethodBuilder(Type[] paramTypes, Type returnType, FuncDeclarationStatement funcDeclaration)
+        private MethodBase CreateMethodBuilder(FuncDeclarationStatement funcDeclaration)
         {
-            MethodBuilder methodBuilder = _typeBuilder.DefineMethod(funcDeclaration.Name.Lexeme, _methodAttributes, returnType, paramTypes);
+            MethodBuilder methodBuilder = _typeBuilder.DefineMethod(funcDeclaration.Name.Lexeme, _methodAttributes);
+
+            if (funcDeclaration.TypeArguments.Count > 0)
+            {
+                GenericTypeParameterBuilder[] genericParams = methodBuilder.DefineGenericParameters(funcDeclaration.TypeArguments.Select(arg => arg.Lexeme).ToArray());
+                GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
+                for (int i = 0; i < funcDeclaration.TypeArguments.Count; i++)
+                {
+                    _typeStore.AddType(_funcScope.GetType(new TypeInitExpression(new[] { funcDeclaration.TypeArguments[i] }, new TypeInitExpression[] { }, null)), genericParams[i]);
+                    placeholders[i] = new GenericTypeParamPlaceholder(funcDeclaration.TypeArguments[i].Lexeme, i);
+                    _funcGenerics[placeholders[i]] = genericParams[i];
+                }
+
+
+                _typeStore.PushCurrentGenerics(_funcGenerics);
+            }
+
+            Type[] paramTypes = _funcScope.Params.Select(param => _typeStore.GetType(param.Item2)).ToArray();
+            Type returnType = _funcScope.ReturnType != null ? _typeStore.GetType(_funcScope.ReturnType) : null;
+
+            methodBuilder.SetReturnType(returnType);
+            methodBuilder.SetParameters(paramTypes);
 
             if (funcDeclaration.Name.Lexeme == "main")
                 _assemblyBuilder.SetEntryPoint(methodBuilder);
@@ -100,12 +127,15 @@ namespace CobraCompiler.Assemble
 
         public void Assemble()
         {
+            _typeStore.PushCurrentGenerics(_funcGenerics);
             _scopeCrawler.Reset();
         
             AssembleStatement(_funcScope.FuncDeclaration.Body, _typeBuilder);
 
             if(_funcScope.FuncDeclaration is InitDeclarationStatement)
                 _il.Emit(OpCodes.Ret);
+
+            _typeStore.PopGenerics(_funcGenerics);
         }
 
         private void AssembleStatement(Statement statement, TypeBuilder typeBuilder)
@@ -222,14 +252,14 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(CallExpression expr, ParentExpressionAssemblyContext context)
         {
-            //Used for overload resolution TODO: improve performance
+            //Used for overload resolution
             List<CobraType> sig = new List<CobraType>();
             foreach (Expression arg in expr.Arguments)
-                sig.Add(TypeChecker.GetExpressionType(arg, CurrentScope));
+                sig.Add(arg.Type);
 
-            sig.Add(TypeChecker.GetExpressionType(expr, CurrentScope));
+            sig.Add(expr.Type);
 
-            CobraGenericInstance expected = DotNetCobraGeneric.FuncType.CreateGenericInstance(sig);
+            CobraType expected = DotNetCobraGeneric.FuncType.CreateGenericInstance(sig);
 
             ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(calling: true, expected: expected));
             for (int i = 0; i < expr.Arguments.Count; i++)
@@ -239,6 +269,15 @@ namespace CobraCompiler.Assemble
 
             if (calleeContext is MethodBuilderExpressionAssemblyContext methodExpressionContext)
             {
+                if (methodExpressionContext.Method.IsGenericMethodDefinition)
+                {
+                    MethodInfo genericMethod = (MethodInfo) methodExpressionContext.Method;
+                    genericMethod = genericMethod.MakeGenericMethod();
+                    //TypeBuilder.GetMethod(typeof(int), genericMethod.);
+
+                    throw new NotImplementedException();
+                }
+
                 switch (methodExpressionContext.Method)
                 {
                     case ConstructorInfo constructorInfo:
@@ -253,7 +292,10 @@ namespace CobraCompiler.Assemble
             }
             else
             {
-                _il.Emit(OpCodes.Callvirt, _typeStore.GetType(calleeContext.Type).GetMethod("Invoke") ?? throw new InvalidOperationException());
+                Type type = _typeStore.GetType(calleeContext.Type);
+                type.GetGenericTypeDefinition();
+                MethodInfo methodInfo = type.ContainsGenericParameters ?  TypeBuilder.GetMethod(type, type.GetGenericTypeDefinition().GetMethod("Invoke")): type.GetMethod("Invoke");
+                _il.Emit(OpCodes.Callvirt, methodInfo);
             }
             
 
@@ -263,9 +305,19 @@ namespace CobraCompiler.Assemble
             return new ExpressionAssemblyContext(returnType);
         }
 
-        public ExpressionAssemblyContext Visit(IndexExpression expr, ParentExpressionAssemblyContext arg)
+        public ExpressionAssemblyContext Visit(IndexExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext collectionContext = expr.Collection.Accept(this, new ParentExpressionAssemblyContext());
+            ExpressionAssemblyContext collectionContext = expr.Collection.Accept(this, new ParentExpressionAssemblyContext(expected: expr.Collection.Type, calling:context.ImmediatelyCalling));
+
+            if (expr.Type is CobraGenericInstance genericInstance && collectionContext is MethodBuilderExpressionAssemblyContext methodContext)
+            {
+                MethodInfo genericMethodInfo = (MethodInfo) methodContext.Method; 
+                return new MethodBuilderExpressionAssemblyContext(expr.Type, genericMethodInfo.MakeGenericMethod(
+                    expr.Indicies.Select(e => _typeStore.GetType((CobraType)((CobraTypeCobraType) e.Type).CobraType)).ToArray()));
+            }
+            else
+                throw new NotImplementedException();
+            
             List<CobraType> indexTypes = new List<CobraType>();
 
             foreach (Expression index in expr.Indicies)
@@ -273,7 +325,12 @@ namespace CobraCompiler.Assemble
                 indexTypes.Add(index.Accept(this, new ParentExpressionAssemblyContext()).Type);
             }
 
-            BinaryOperator getOp = CurrentScope.GetGenericBinaryOperator(Operation.Get, collectionContext.Type, DotNetCobraType.Int) ?? throw new NotImplementedException();
+            if (context.Assigning)
+            {
+                throw new NotImplementedException();
+            }
+
+            BinaryOperator getOp = CurrentScope.GetGenericBinaryOperator(Operation.Add, collectionContext.Type, DotNetCobraType.Int) ?? throw new NotImplementedException();
 
             MethodInfo get = _methodStore.GetMethodInfo(getOp) as MethodInfo;
 
@@ -285,7 +342,7 @@ namespace CobraCompiler.Assemble
 
             _il.Emit(OpCodes.Callvirt, get);
 
-            CobraType returnType = CurrentScope.GetOperator(Operation.Get, collectionContext.Type, DotNetCobraType.Int).ResultType;
+            CobraType returnType = CurrentScope.GetOperator(Operation.Add, collectionContext.Type, DotNetCobraType.Int).ResultType;
 
             return new ExpressionAssemblyContext(returnType);
         }
@@ -403,7 +460,7 @@ namespace CobraCompiler.Assemble
                     return new ExpressionAssemblyContext(_namespace.GetType(expr.Name.Lexeme));
 
                 Token resolvedToken = new Token(TokenType.Identifier, _namespace.ResolveName(expr.Name.Lexeme), null,
-                    expr.Name.Line);
+                    expr.Name.SourceLocation, null);
 
                 return Visit(new VarExpression(resolvedToken), context);
             }

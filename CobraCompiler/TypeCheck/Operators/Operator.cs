@@ -15,7 +15,6 @@ namespace CobraCompiler.TypeCheck.Operators
             {Operation.CompareLessEqual, "op_LessThanOrEqual"},
             {Operation.CompareNotEqual, "op_Inequality"},
             {Operation.Devide, "op_Division"},
-            {Operation.Get, "get_Item" },
             {Operation.Multiply, "op_Multiply"},
             {Operation.Subtract, "op_Subtraction"}
         };
@@ -29,8 +28,6 @@ namespace CobraCompiler.TypeCheck.Operators
         {
             switch (tokenType)
             {
-                case TokenType.LeftBracket:
-                    return Operation.Get;
                 case TokenType.Minus:
                     return Operation.Subtract;
                 case TokenType.Plus:
