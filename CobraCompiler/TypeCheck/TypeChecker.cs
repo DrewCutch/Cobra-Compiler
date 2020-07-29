@@ -274,6 +274,7 @@ namespace CobraCompiler.TypeCheck
 
             if (!assignType.CanCastTo(varType))
                 throw new InvalidAssignmentException(varType.Identifier, assignType?.Identifier, -1); //TODO: make line number correct
+            expr.Type = varType;
 
             return varType;
         }
@@ -290,6 +291,8 @@ namespace CobraCompiler.TypeCheck
 
             IOperator op = CurrentScope.GetOperator(Operator.GetOperation(expr.Op.Type), leftType, rightType);
 
+            expr.Type = op.ResultType;
+
             return op.ResultType;
         }
 
@@ -299,6 +302,8 @@ namespace CobraCompiler.TypeCheck
             List<CobraType> paramTypes = expr.Arguments.Select(arg => arg.Accept(this)).ToList();
 
             if (calleeType.IsCallable(paramTypes))
+            {
+                expr.Type = calleeType.CallReturn(paramTypes);
                 return calleeType.CallReturn(paramTypes);
 
             if (calleeType is FuncGenericInstance func)
@@ -345,6 +350,11 @@ namespace CobraCompiler.TypeCheck
             }
 
             return DotNetCobraGeneric.ListType.CreateGenericInstance(new[] {elementsCommonType});
+            CobraType listType = DotNetCobraGeneric.ListType.CreateGenericInstance(new[] { elementsCommonType });
+
+            expr.Type = listType;
+
+            return listType;
         }
 
         public CobraType Visit(LiteralExpression expr)
@@ -366,6 +376,8 @@ namespace CobraCompiler.TypeCheck
 
             IOperator op = CurrentScope.GetOperator(Operator.GetOperation(expr.Op.Type), null, operand);
 
+            expr.Type = op.ResultType;
+
             return op.ResultType;
         }
 
@@ -376,20 +388,29 @@ namespace CobraCompiler.TypeCheck
             if (objType is NamespaceType namespaceType)
             {
                 if (namespaceType.HasType(expr.Name.Lexeme))
+                {
+                    expr.Type = namespaceType.GetType(expr.Name.Lexeme);
                     return namespaceType.GetType(expr.Name.Lexeme);
+                }
 
                 string resolvedName = namespaceType.ResolveName(expr.Name.Lexeme);
                 if(!CurrentScope.IsDefined(resolvedName))
                     throw new VarNotDefinedException(resolvedName, expr.Name.Line);
 
-                return CurrentScope.GetVarType(resolvedName);
+                CobraType varType = CurrentScope.GetVarType(resolvedName);
+                
+                expr.Type = varType;
+                return varType;
             }
 
             if (!objType.HasSymbol(expr.Name.Lexeme))
                 throw new InvalidMemberException(objType.Identifier, expr.Name.Lexeme, expr.Name.Line);
 
-            return objType.GetSymbol(expr.Name.Lexeme);
-            throw new NotImplementedException();
+
+            CobraType symbolType = objType.GetSymbol(expr.Name.Lexeme);
+
+            expr.Type = symbolType;
+            return symbolType;
         }
 
         public CobraType Visit(GroupingExpression expr)
@@ -402,7 +423,10 @@ namespace CobraCompiler.TypeCheck
             if(!CurrentScope.IsDefined(expr.Name.Lexeme))
                 throw new VarNotDefinedException(expr.Name.Lexeme, expr.Name.Line);
 
-            return CurrentScope.GetVarType(expr.Name.Lexeme);
+            CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
+            expr.Type = varType;
+
+            return varType;
         }
     }
 
