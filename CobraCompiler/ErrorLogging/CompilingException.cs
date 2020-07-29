@@ -4,13 +4,21 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Scanning;
 
 namespace CobraCompiler.ErrorLogging
 {
-    abstract class CompilingException : Exception
+    public abstract class CompilingException : Exception
     {
-        public abstract int LineNumber { get; }
+        public abstract Token FirstToken { get; }
+        public abstract Token LastToken { get; }
+
         public abstract bool isWarning { get; }
+
+        protected CompilingException(string lexeme, SourceLocation location)
+        {
+
+        }
 
         protected CompilingException()
         {

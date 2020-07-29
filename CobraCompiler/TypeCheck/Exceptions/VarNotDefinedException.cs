@@ -1,11 +1,24 @@
-﻿namespace CobraCompiler.TypeCheck.Exceptions
+﻿using CobraCompiler.Parse.Expressions;
+using CobraCompiler.Scanning;
+
+namespace CobraCompiler.TypeCheck.Exceptions
 {
     class VarNotDefinedException: TypingException
     {
-        public override bool isWarning => false;
-        public VarNotDefinedException(string varName, int lineNumber) : base($"{varName} is not defined", lineNumber)
-        {
+        public override Token FirstToken { get; }
+        public override Token LastToken { get; }
 
+        public override bool isWarning => false;
+        public VarNotDefinedException(VarExpression varExpression) : base($"{varExpression.Name.Lexeme} is not defined")
+        {
+            FirstToken = varExpression.Name;
+            LastToken = varExpression.Name;
+        }
+
+        public VarNotDefinedException(GetExpression getExpression, string resolvedName) : base($"{resolvedName} is not defined")
+        {
+            FirstToken = getExpression.FirstToken;
+            LastToken = getExpression.LastToken;
         }
     }
 }

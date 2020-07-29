@@ -1,19 +1,27 @@
-﻿using CobraCompiler.Scanning;
+﻿using CobraCompiler.Parse.Expressions;
+using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.TypeCheck.Exceptions
 {
     class OperatorNotDefinedException: TypingException
     {
+        public override Token FirstToken { get; }
+        public override Token LastToken { get; }
+
         public override bool isWarning => false;
-        public OperatorNotDefinedException(Token op, CobraType lhs, CobraType rhs) : 
-            base($"Operator {op.Lexeme} not defined for {lhs.Identifier} and {rhs.Identifier}", op.Line)
+        public OperatorNotDefinedException(BinaryExpression binary) : 
+            base($"Operator {binary.Op.Lexeme} not defined for {binary.Left.Type} and {binary.Right.Type}")
         {
+            FirstToken = binary.FirstToken;
+            LastToken = binary.LastToken;
         }
 
-        public OperatorNotDefinedException(Token op, CobraType operand) :
-            base($"Operator {op.Lexeme} not defined for {operand.Identifier}", op.Line)
+        public OperatorNotDefinedException(UnaryExpression unary) :
+            base($"Operator {unary.Op.Lexeme} not defined for {unary.Right.Type}")
         {
+            FirstToken = unary.FirstToken;
+            LastToken = unary.LastToken;
         }
     }
 }

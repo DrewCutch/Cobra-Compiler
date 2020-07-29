@@ -37,7 +37,7 @@ namespace CobraCompiler.Scanning
                     TokenType ? nextTokenType = null;
                     try
                     {
-                        while ((nextTokenType = getTokenType(currentLexeme, lineNibbler.Peek(), new SourceLocation(path, lineNumber, charIndex), tokens.LastOrDefault())) == null)
+                        while ((nextTokenType = getTokenType(currentLexeme, lineNibbler.Peek(), new SourceLocation(path, lineNumber, charIndex - currentLexeme.Length), tokens.LastOrDefault())) == null)
                         {
                             char nextChar = lineNibbler.Pop();
 

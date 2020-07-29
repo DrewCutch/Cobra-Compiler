@@ -3,17 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Scanning;
 
 namespace CobraCompiler.ErrorLogging
 {
     class ScanningException: CompilingException
     {
-        public override int LineNumber { get; }
+        public override Token FirstToken { get; }
+        public override Token LastToken { get; }
         public override bool isWarning => false;
 
-        public ScanningException(String lexeme, int lineNumber) : base($"Invalid token: \"{lexeme}\"")
+        public ScanningException(Token token) : base($"Invalid token: \"{token.Lexeme}\"")
         {
-            LineNumber = lineNumber;
+            FirstToken = token;
+            LastToken = token;
         }
     }
 }

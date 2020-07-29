@@ -1,10 +1,18 @@
-﻿namespace CobraCompiler.TypeCheck.Exceptions
+﻿using CobraCompiler.Parse.Expressions;
+using CobraCompiler.Scanning;
+
+namespace CobraCompiler.TypeCheck.Exceptions
 {
     class InvalidAssignmentException: TypingException
     {
+        public override Token FirstToken { get; }
+        public override Token LastToken { get; }
+
         public override bool isWarning => false;
-        public InvalidAssignmentException(string expectedType, string rightType, int lineNumber) : base($"Cannot assign {rightType} to var of type {expectedType}", lineNumber)
+        public InvalidAssignmentException(AssignExpression assignExpression) : base($"Cannot assign {assignExpression.Value.Type} to var of type {assignExpression.Target.Type}")
         {
+            FirstToken = assignExpression.FirstToken;
+            LastToken = assignExpression.LastToken;
         }
     }
 }

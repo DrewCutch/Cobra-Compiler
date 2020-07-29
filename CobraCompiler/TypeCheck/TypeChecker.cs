@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Compiler;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Types;
-using InvalidOperationException = CobraCompiler.TypeCheck.Exceptions.InvalidOperationException;
 
 namespace CobraCompiler.TypeCheck
 {
@@ -219,7 +221,7 @@ namespace CobraCompiler.TypeCheck
                     {
                         missingElements.Add($"({requiredSymbol.Key}: {requiredSymbol.Value.Identifier})");
                     }
-                    _errorLogger.Log(new InvalidTypeImplementationException(classScope.ClassDeclaration.Name.Lexeme, classScope.ClassDeclaration.Type.IdentifierStr, missingElements, classScope.ClassDeclaration.Name.Line)); 
+                    _errorLogger.Log(new InvalidTypeImplementationException(classScope.ClassDeclaration, classScope.ClassDeclaration.Type, missingElements)); 
                 }
             }
         }
@@ -232,20 +234,20 @@ namespace CobraCompiler.TypeCheck
                 {
                     case VarDeclarationStatement varDeclaration:
                         if (!CurrentScope.IsTypeDefined(varDeclaration.TypeInit))
-                            throw new TypeNotDefinedException(varDeclaration.TypeInit.Identifier.First());
+                            throw new TypeNotDefinedException(varDeclaration.TypeInit);
 
                         if (CurrentScope.IsDeclared(varDeclaration.Name.Lexeme))
-                            throw new VarAlreadyDeclaredException(varDeclaration.Name);
+                            throw new VarAlreadyDeclaredException(varDeclaration);
 
                         CurrentScope.Declare(varDeclaration.Name.Lexeme, varDeclaration.TypeInit);
                         varDeclaration.Assignment?.Accept(this);
                         break;
                     case ParamDeclarationStatement paramDeclaration:
                         if (!CurrentScope.IsTypeDefined(paramDeclaration.TypeInit))
-                            throw new TypeNotDefinedException(paramDeclaration.TypeInit.Identifier.First());
+                            throw new TypeNotDefinedException(paramDeclaration.TypeInit);
 
                         if (CurrentScope.IsDeclared(paramDeclaration.Name.Lexeme))
-                            throw new VarAlreadyDeclaredException(paramDeclaration.Name);
+                            throw new VarAlreadyDeclaredException(paramDeclaration);
 
                         CurrentScope.Declare(paramDeclaration.Name.Lexeme, paramDeclaration.TypeInit);
                         break;
@@ -255,15 +257,19 @@ namespace CobraCompiler.TypeCheck
                     case ReturnStatement returnStatement:
                         CobraType returnStatementType = returnStatement.Value.Accept(this);
                         if (!returnStatementType.CanCastTo(CurrentScope.GetReturnType()))
-                            throw new InvalidReturnTypeException(returnStatement.Keyword,
-                                returnStatementType, CurrentScope.GetReturnType());
+                            throw new InvalidReturnTypeException(returnStatement.Value, CurrentScope.GetReturnType());
                         break;
                     case ImportStatement importStatement:
                         CobraType importType = importStatement.Import.Accept(this);
                         if (!(importType is NamespaceType))
-                            throw new InvalidImportException(importType.Identifier, importStatement.Keyword.Line);
+                            throw new InvalidImportException(importStatement);
 
                         CurrentScope.Declare(((GetExpression) importStatement.Import).Name.Lexeme, importType);
+                        break;
+                    case IConditionalExpression conditionalExpression:
+                        CobraType conditionType = conditionalExpression.Condition.Accept(this);
+                        if (!conditionType.CanCastTo(DotNetCobraType.Bool))
+                            throw new InvalidConditionTypeException(conditionalExpression.Condition);
                         break;
                     //default:
                     //    throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");
@@ -294,7 +300,8 @@ namespace CobraCompiler.TypeCheck
             CobraType assignType = expr.Value.Accept(this);
 
             if (!assignType.CanCastTo(varType))
-                throw new InvalidAssignmentException(varType.Identifier, assignType?.Identifier, -1); //TODO: make line number correct
+                throw new InvalidAssignmentException(expr);
+
             expr.Type = varType;
 
             return varType;
@@ -307,7 +314,7 @@ namespace CobraCompiler.TypeCheck
 
             if (!CurrentScope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), leftType, rightType))
             {
-                throw new OperatorNotDefinedException(expr.Op, leftType, rightType);
+                throw new OperatorNotDefinedException(expr);
             }
 
             IOperator op = CurrentScope.GetOperator(Operator.GetOperation(expr.Op.Type), leftType, rightType);
@@ -326,12 +333,13 @@ namespace CobraCompiler.TypeCheck
             {
                 expr.Type = calleeType.CallReturn(paramTypes);
                 return calleeType.CallReturn(paramTypes);
+            }
 
             if (calleeType is FuncGenericInstance func)
             {
                 if (func.TypeParams.Count - 1 != expr.Arguments.Count)
                 {
-                    throw new IncorrectArgumentCountException(expr.Paren, expectedArgs: func.TypeParams.Count - 1, providedArgs: expr.Arguments.Count);
+                    throw new IncorrectArgumentCountException(expr, func.TypeParams.Count - 1);
                 }
 
                 for (int i = 0; i < func.TypeParams.Count - 1; i++)
@@ -339,12 +347,12 @@ namespace CobraCompiler.TypeCheck
                     if (!paramTypes[i].CanCastTo(func.TypeParams[i]))
                     {
                         CobraType test = expr.Arguments[i].Accept(this);
-                        throw new InvalidArgumentException(expr.Paren, func.TypeParams[i].Identifier, test.Identifier);
+                        throw new InvalidArgumentException(expr.Arguments[i], func.TypeParams[i].Identifier);
                     }
                 }
             }
             
-            throw new InvalidOperationException(expr.Paren.Line);
+            throw new InvalidCallException(expr);
         }
 
         public CobraType Visit(IndexExpression expr)
@@ -397,7 +405,6 @@ namespace CobraCompiler.TypeCheck
                 elementsCommonType = elementsCommonType.GetCommonParent(element.Accept(this));
             }
 
-            return DotNetCobraGeneric.ListType.CreateGenericInstance(new[] {elementsCommonType});
             CobraType listType = DotNetCobraGeneric.ListType.CreateGenericInstance(new[] { elementsCommonType });
 
             expr.Type = listType;
@@ -420,7 +427,7 @@ namespace CobraCompiler.TypeCheck
             CobraType operand = expr.Right.Accept(this);
 
             if (!CurrentScope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), null, operand))
-                throw new OperatorNotDefinedException(expr.Op, operand);
+                throw new OperatorNotDefinedException(expr);
 
             IOperator op = CurrentScope.GetOperator(Operator.GetOperation(expr.Op.Type), null, operand);
 
@@ -443,7 +450,7 @@ namespace CobraCompiler.TypeCheck
 
                 string resolvedName = namespaceType.ResolveName(expr.Name.Lexeme);
                 if(!CurrentScope.IsDefined(resolvedName))
-                    throw new VarNotDefinedException(resolvedName, expr.Name.Line);
+                    throw new VarNotDefinedException(expr, resolvedName);
 
                 CobraType varType = CurrentScope.GetVarType(resolvedName);
                 
@@ -452,7 +459,7 @@ namespace CobraCompiler.TypeCheck
             }
 
             if (!objType.HasSymbol(expr.Name.Lexeme))
-                throw new InvalidMemberException(objType.Identifier, expr.Name.Lexeme, expr.Name.Line);
+                throw new InvalidMemberException(expr);
 
 
             CobraType symbolType = objType.GetSymbol(expr.Name.Lexeme);
@@ -469,7 +476,7 @@ namespace CobraCompiler.TypeCheck
         public CobraType Visit(VarExpression expr)
         {
             if(!CurrentScope.IsDefined(expr.Name.Lexeme))
-                throw new VarNotDefinedException(expr.Name.Lexeme, expr.Name.Line);
+                throw new VarNotDefinedException(expr);
 
             CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
             expr.Type = varType;

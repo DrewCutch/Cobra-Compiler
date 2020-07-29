@@ -1,13 +1,12 @@
 ﻿using CobraCompiler.ErrorLogging;
+using CobraCompiler.Scanning;
 
 namespace CobraCompiler.TypeCheck.Exceptions
 {
     abstract class TypingException : CompilingException
     {
-        public override int LineNumber { get; }
-        protected TypingException(string message, int lineNumber): base(message)
+        protected TypingException(string message): base(message)
         {
-            LineNumber = lineNumber;
         }
     }
 }
