@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CobraCompiler
 {
-    enum TokenType
+    public enum TokenType
     {
         // Single-character tokens. 
         Ampersand, Bar,
