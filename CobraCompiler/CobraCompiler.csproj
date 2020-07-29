@@ -90,6 +90,8 @@
     <Compile Include="Parse\Expressions\IExpressionVisitorWithContext.cs" />
     <Compile Include="Parse\Expressions\IndexExpression.cs" />
     <Compile Include="Parse\Expressions\InterfaceDefinitionExpression.cs" />
+    <Compile Include="Scanning\SourceLocation.cs" />
+    <Compile Include="Scanning\SourceReader.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidGenericArgumentException.cs" />
     <Compile Include="Parse\Expressions\ListLiteralExpression.cs" />
     <Compile Include="Parse\Expressions\PropertyDefinitionExpression.cs" />
