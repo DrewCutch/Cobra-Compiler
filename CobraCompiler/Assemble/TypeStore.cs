@@ -65,6 +65,19 @@ namespace CobraCompiler.Assemble
             if (cobraType is CobraGenericInstance genericInstance && genericInstance.Base is ITypeGenerator typeGen)
                 return typeGen.GetType(_moduleBuilder, genericInstance.TypeParams.Select(GetType).ToArray());
 
+            if (cobraType is CobraGenericInstance genInst)
+            {
+                foreach (CobraType key in _types.Keys)
+                {
+                    if(!(key is CobraGenericInstance otherGenericInstance) || otherGenericInstance.Base != genInst.Base)
+                        continue;
+
+                    Type Generic = _types[key];
+
+                    return Generic.MakeGenericType(genInst.TypeParams.Select(GetType).ToArray());
+                }
+            }
+
             return _types[cobraType];
         }
 

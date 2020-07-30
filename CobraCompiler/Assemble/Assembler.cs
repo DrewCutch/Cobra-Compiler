@@ -79,7 +79,7 @@ namespace CobraCompiler.Assemble
 
             _methodStore.AddMethodInfo("printStr", FuncCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Str, DotNetCobraType.Unit }), printStrInfo);
             _methodStore.AddMethodInfo("printInt", FuncCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Unit }), printIntInfo);
-            _methodStore.AddMethodInfo("get_Item", GenericOperator.DotNetGenericOperators[0].GetGenericFuncType(), listGetInfo);
+            //_methodStore.AddMethodInfo("get_Item", GenericOperator.DotNetGenericOperators[0].GetGenericFuncType(), listGetInfo);
 
             foreach (DefinedModule module in definedModules)
             {
@@ -100,7 +100,7 @@ namespace CobraCompiler.Assemble
 
             foreach (CobraType definedType in scope.DefinedTypes)
             {
-                if (!(definedType is CobraGenericInstance))
+                if (!(definedType is CobraGenericInstance genericInstance) || genericInstance.HasPlaceholders())
                     DefineInterface(definedType, mb);
             }
 
@@ -143,9 +143,34 @@ namespace CobraCompiler.Assemble
 
         public TypeBuilder DefineInterface(CobraType cobraType, ModuleBuilder mb)
         {
-            TypeBuilder typeBuilder = mb.DefineType(cobraType.Identifier, TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
+            string identifier = cobraType is CobraGenericInstance genInst
+                ? genInst.Base.Identifier
+                : cobraType.Identifier;
+
+            TypeBuilder typeBuilder = mb.DefineType(identifier, TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
+
+            Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
+
+            if (cobraType is CobraGenericInstance genericInstance)
+            {
+                GenericTypeParameterBuilder[] genericParams = typeBuilder.DefineGenericParameters(genericInstance.TypeParams.Select(param => param.Identifier).ToArray());
+                GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
+
+                for (int i = 0; i < genericInstance.TypeParams.Count; i++)
+                {
+                    //_typeStore.AddType(_funcScope.GetType(new TypeInitExpression(new[] { funcDeclaration.TypeArguments[i] }, new TypeInitExpression[] { }, null)), genericParams[i]);
+
+                    placeholders[i] = new GenericTypeParamPlaceholder(genericInstance.TypeParams[i].Identifier, i);
+                    generics[placeholders[i]] = genericParams[i];
+                }
+
+
+                _typeStore.PushCurrentGenerics(generics);
+            }
+
             _typeStore.AddType(cobraType, typeBuilder);
 
+            
             foreach (KeyValuePair<string, CobraType> symbol in cobraType.Symbols)
             {
                 if (symbol.Value.IsCallable())
@@ -175,6 +200,8 @@ namespace CobraCompiler.Assemble
             }
 
             typeBuilder.CreateType();
+
+            _typeStore.PopGenerics(generics);
 
             return typeBuilder;
         }
