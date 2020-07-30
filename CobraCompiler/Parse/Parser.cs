@@ -260,13 +260,26 @@ namespace CobraCompiler.Parse
         private Statement TypeDeclaration()
         {
             Token name = Expect(TokenType.Identifier, "Expect type name.");
+
+            List<Token> typeParams = new List<Token>();
+
+            if (Match(TokenType.LeftBracket))
+            {
+                do
+                {
+                    typeParams.Add(Expect(TokenType.Identifier, "Expect type parameter name in generic definition"));
+                } while (Match(TokenType.Comma));
+
+                Expect(TokenType.RightBracket, "Expect closing brace after type parameter list");
+            }
+
             Expect(TokenType.Equal, "Expect assignment after type declaration.");
 
             TypeInitExpression typeInit = TypeInit();
 
             Expect(TokenType.NewLine, "Expect new line after type declaration.");
 
-            return new TypeDeclarationStatement(name, typeInit);
+            return new TypeDeclarationStatement(name,typeParams,  typeInit);
         }
 
         private ParamDeclarationStatement ParamDeclaration()

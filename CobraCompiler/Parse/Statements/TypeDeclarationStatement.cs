@@ -11,11 +11,14 @@ namespace CobraCompiler.Parse.Statements
     class TypeDeclarationStatement: Statement
     {
         public readonly Token Name;
+        public readonly IReadOnlyList<Token> TypeArguments;
+
         public readonly TypeInitExpression Type;
 
-        public TypeDeclarationStatement(Token name, TypeInitExpression type)
+        public TypeDeclarationStatement(Token name, IReadOnlyList<Token> typeArguments, TypeInitExpression type)
         {
             Name = name;
+            TypeArguments = typeArguments;
             Type = type;
         }
     }
