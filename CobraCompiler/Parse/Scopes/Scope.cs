@@ -14,11 +14,8 @@ namespace CobraCompiler.Parse.Scopes
         protected readonly Dictionary<string, CobraType> _types;
         public HashSet<CobraType> DefinedTypes => new HashSet<CobraType>(_types.Values);
 
-        protected readonly Dictionary<string, CobraGeneric> _generics;
-        public HashSet<CobraGeneric> DefinedGenerics => new HashSet<CobraGeneric>(_generics.Values);
-
         protected readonly Dictionary<(Operation, CobraType, CobraType), IOperator> _operators;
-        protected readonly Dictionary<(Operation, CobraTypeBase, CobraTypeBase), GenericOperator> _genericOperators;
+        protected readonly Dictionary<(Operation, CobraType, CobraType), GenericOperator> _genericOperators;
 
         protected readonly List<Scope> _subScopes;
 
@@ -35,12 +32,13 @@ namespace CobraCompiler.Parse.Scopes
             _vars = new Dictionary<string, CobraType>();
             _types = new Dictionary<string, CobraType>();
 
-            _generics = new Dictionary<string, CobraGeneric>();
             _operators = new Dictionary<(Operation, CobraType, CobraType), IOperator>();
-            _genericOperators = new Dictionary<(Operation, CobraTypeBase, CobraTypeBase), GenericOperator>();
+            _genericOperators = new Dictionary<(Operation, CobraType, CobraType), GenericOperator>();
 
             _subScopes = new List<Scope>();
         }
+
+
 
         public virtual CobraType GetType(TypeInitExpression typeInit, CobraType selfHint=null)
         {
@@ -48,7 +46,7 @@ namespace CobraCompiler.Parse.Scopes
                 return GetSimpleType(typeInit, selfHint);
 
             List<CobraType> paramTypes = typeInit.GenericParams.Select(param => GetType(param)).ToList();
-            CobraGeneric generic = GetGeneric(typeInit.IdentifierStrWithoutParams);
+            CobraGeneric generic = (CobraGeneric) GetSimpleType(typeInit.IdentifierStrWithoutParams);
 
             return generic.CreateGenericInstance(paramTypes);
         }
@@ -59,8 +57,6 @@ namespace CobraCompiler.Parse.Scopes
             if (selfHint is CobraGenericInstance genericInstance)
             {
                 CobraGeneric genericInterface = genericInstance.Base;
-                _generics[interfaceDefinitionExpression.IdentifierStr] = genericInterface;
-                _generics[genericInterface.Identifier] = genericInterface;
 
                 _types[genericInterface.Identifier] = selfHint;
 
@@ -97,12 +93,25 @@ namespace CobraCompiler.Parse.Scopes
             return Parent?.GetSimpleType(typeInit);
         }
 
+        protected virtual CobraType GetSimpleType(string typeIdentifier, CobraType selfHint = null)
+        {
+            if (typeIdentifier == null)
+                return null;
+
+            if (_types.ContainsKey(typeIdentifier))
+                return _types[typeIdentifier];
+
+            return Parent?.GetSimpleType(typeIdentifier, selfHint);
+        }
+
+
+
         public virtual bool IsTypeDefined(TypeInitExpression typeInit)
         {
             if (!typeInit.IsGenericInstance)
                 return IsTypeDefined(typeInit.IdentifierStr);
 
-            bool allTypesDefined = IsGenericDefined(typeInit.IdentifierStrWithoutParams);
+            bool allTypesDefined = IsTypeDefined(typeInit.IdentifierStrWithoutParams);
 
             foreach (TypeInitExpression typeParam in typeInit.GenericParams)
             {
@@ -115,26 +124,6 @@ namespace CobraCompiler.Parse.Scopes
         protected virtual bool IsTypeDefined(string identifier)
         {
             return _types.ContainsKey(identifier) || (Parent != null && Parent.IsTypeDefined(identifier));
-        }
-
-        public CobraGeneric GetGeneric(string identifier)
-        {
-            if (_generics.ContainsKey(identifier))
-                return _generics[identifier];
-
-            return Parent?.GetGeneric(identifier);
-        }
-
-        public void DefineGeneric(string identifier, CobraGeneric generic)
-        {
-            CobraTypeCobraType metaType = new CobraTypeCobraType(generic);
-            _vars[identifier] = metaType;
-            _generics[identifier] = generic;
-        }
-
-        protected virtual bool IsGenericDefined(string identifier)
-        {
-            return _generics.ContainsKey(identifier) ||  (Parent?.IsGenericDefined(identifier) ?? false);
         }
 
         public CobraType GetVarType(string identifier)
@@ -178,11 +167,6 @@ namespace CobraCompiler.Parse.Scopes
             return _vars.ContainsKey(var);
         }
 
-        public CobraGenericInstance GetGenericInstance(string identifier, IReadOnlyList<CobraType> typeParameters)
-        {
-            return GetGeneric(identifier).CreateGenericInstance(typeParameters);
-        }
-
         public void AddSubScope(Scope scope)
         {
             _subScopes.Add(scope);
@@ -195,11 +179,11 @@ namespace CobraCompiler.Parse.Scopes
 
         public IOperator GetOperator(Operation op, CobraType lhs, CobraType rhs)
         {
-            CobraTypeBase lhsBase = lhs;
+            CobraType lhsBase = lhs;
             if (lhs is CobraGenericInstance lhsGeneric)
                 lhsBase = lhsGeneric.Base;
 
-            CobraTypeBase rhsBase = rhs;
+            CobraType rhsBase = rhs;
             if (rhs is CobraGenericInstance rhsGeneric)
                 rhsBase = rhsGeneric;
 
@@ -214,11 +198,11 @@ namespace CobraCompiler.Parse.Scopes
 
         public BinaryOperator? GetGenericBinaryOperator(Operation op, CobraType lhs, CobraType rhs)
         {
-            CobraTypeBase lhsBase = lhs;
+            CobraType lhsBase = lhs;
             if (lhs is CobraGenericInstance lhsGeneric)
                 lhsBase = lhsGeneric.Base;
 
-            CobraTypeBase rhsBase = rhs;
+            CobraType rhsBase = rhs;
             if (rhs is CobraGenericInstance rhsGeneric)
                 rhsBase = rhsGeneric;
 

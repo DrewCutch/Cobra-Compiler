@@ -13,7 +13,7 @@ namespace CobraCompiler.TypeCheck.Types
 
         private readonly GenericTypeAssembler _typeAssembler;
 
-        public LangCobraGeneric(string identifier, int numberOfParams, GenericTypeAssembler instanceGenerator) : base(identifier, numberOfParams)
+        public LangCobraGeneric(string identifier, int numberOfParams, GenericTypeAssembler instanceGenerator) : base(identifier, GenerateTypeParamPlaceholders(numberOfParams))
         {
             _typeAssembler = instanceGenerator;
             _typeCache = new Dictionary<List<Type>, Type>(new ListByElementComparer<Type>());

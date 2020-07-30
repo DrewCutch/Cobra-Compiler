@@ -5,7 +5,7 @@ namespace CobraCompiler.TypeCheck.Types
 {
     class FuncGenericInstance: CobraGenericInstance
     {
-        public FuncGenericInstance(string identifier, IEnumerable<CobraType> typeParams) : base(identifier, typeParams, DotNetCobraGeneric.FuncType)
+        public FuncGenericInstance(string identifier, IReadOnlyList<CobraType> typeParams) : base(identifier, typeParams, DotNetCobraGeneric.FuncType)
         {
             AddCallSig(typeParams.ToList());
         }

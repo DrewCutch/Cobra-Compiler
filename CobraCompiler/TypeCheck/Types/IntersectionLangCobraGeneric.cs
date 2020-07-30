@@ -29,7 +29,7 @@ namespace CobraCompiler.TypeCheck.Types
             {
                 if (typeParam is UnionInstanceType union)
                 {
-                    types.AddRange(ApplyAssociativeProperty(union.TypeParams));
+                    types.AddRange(ApplyAssociativeProperty(union.OrderedTypeParams));
                 }
                 else
                 {

@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace CobraCompiler.TypeCheck.Types
 {
     class CobraGenericInstance: CobraType
     {
-        public readonly IReadOnlyList<CobraType> TypeParams;
+        public readonly IReadOnlyList<CobraType> OrderedTypeParams;
+        public readonly Dictionary<GenericTypeParamPlaceholder, CobraType> TypeParams;
         public readonly CobraGeneric Base;
 
-        public CobraGenericInstance(string identifier, IEnumerable<CobraType> typeParams, CobraGeneric @base) : base(identifier)
+        public CobraGenericInstance(string identifier, IReadOnlyList<CobraType> typeParams, CobraGeneric @base) : base(identifier)
         {
-            TypeParams = new List<CobraType>(typeParams);
+            OrderedTypeParams = new List<CobraType>(typeParams);
+            TypeParams = @base.CreateTypeParamMap(typeParams);
             Base = @base;
         }
 
@@ -19,7 +23,7 @@ namespace CobraCompiler.TypeCheck.Types
         {
             List<CobraType> typeParams = new List<CobraType>();
 
-            foreach (CobraType typeParam in TypeParams)
+            foreach (CobraType typeParam in OrderedTypeParams)
             {
                 if(typeParam is GenericTypeParamPlaceholder placeholder)
                     typeParams.Add(typeArguments[placeholder.Index]);
@@ -32,15 +36,22 @@ namespace CobraCompiler.TypeCheck.Types
             return Base.CreateGenericInstance(typeParams);
         }
 
-        public bool HasPlaceholders()
-        {
-            foreach (CobraType typeParam in TypeParams)
-            {
-                if (typeParam is GenericTypeParamPlaceholder placeholder)
-                    return true;
-            }
+        public bool HasPlaceholders() => OrderedTypeParams.Any(param => param is GenericTypeParamPlaceholder);
 
-            return false;
+        public override CobraType GetSymbol(string symbol)
+        {
+            CobraType baseSymbol = Base.GetSymbol(symbol);
+
+            if (baseSymbol is GenericTypeParamPlaceholder typeParam)
+                return TypeParams[typeParam];
+
+            if (baseSymbol is CobraGeneric genericSymbol)
+                return genericSymbol.CreateGenericInstance(TypeParams);
+
+            if (baseSymbol == null)
+                return base.GetSymbol(symbol);
+
+            return baseSymbol;
         }
 
         public override bool Equals(Object other)
@@ -61,7 +72,7 @@ namespace CobraCompiler.TypeCheck.Types
         {
             int hashCode = Identifier.GetHashCode();
 
-            foreach (CobraType cobraType in TypeParams)
+            foreach (CobraType cobraType in OrderedTypeParams)
             {
                 hashCode = hashCode * 31 + (cobraType == null ? 0 : cobraType.GetHashCode());
             }

@@ -8,9 +8,9 @@ namespace CobraCompiler.TypeCheck.Types
 {
     class CobraTypeCobraType: CobraType
     {
-        public readonly CobraTypeBase CobraType;
+        public readonly CobraType CobraType;
 
-        public CobraTypeCobraType(CobraTypeBase cobraType) : base(cobraType.Identifier + "Type")
+        public CobraTypeCobraType(CobraType cobraType) : base(cobraType.Identifier + "Type")
         {
             CobraType = cobraType;
         }

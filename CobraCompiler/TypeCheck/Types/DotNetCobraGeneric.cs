@@ -10,7 +10,7 @@ namespace CobraCompiler.TypeCheck.Types
     class DotNetCobraGeneric : CobraGeneric, ITypeGenerator
     {
         public static DotNetCobraGeneric FuncType = new FuncCobraGeneric();
-        public static DotNetCobraGeneric ListType = new DotNetCobraGeneric("list", 1, typeof(List<>).MakeGenericType);
+        public static DotNetCobraGeneric ListType = new DotNetCobraGeneric("list", 1, typeof(List<>).MakeGenericType, typeof(List<>));
         
         public static CobraGeneric[] BuiltInCobraGenerics;
 
@@ -28,9 +28,27 @@ namespace CobraCompiler.TypeCheck.Types
 
         public readonly GenericInstanceGenerator InstanceGenerator;
 
-        public DotNetCobraGeneric(string identifier, int numberOfParams, GenericInstanceGenerator instanceGenerator) : base(identifier, numberOfParams)
+        private Type _type;
+
+        public DotNetCobraGeneric(string identifier, int numberOfParams, GenericInstanceGenerator instanceGenerator, Type type = null) : base(identifier, GenerateTypeParamPlaceholders(numberOfParams))
         {
             InstanceGenerator = instanceGenerator;
+            _type = type;
+
+            if (_type != null)
+                DefineSymbols();
+        }
+
+        private void DefineSymbols()
+        {
+            PropertyInfo[] properties = _type.GetProperties();
+
+            foreach (PropertyInfo property in properties)
+            {
+                DotNetCobraType propertyType = DotNetCobraType.FromType(property.PropertyType);
+                if (propertyType != null)
+                    DefineSymbol(property.Name, propertyType);
+            }
         }
 
         public Type GetType(ModuleBuilder mb, params Type[] typeArgs)
@@ -41,25 +59,6 @@ namespace CobraCompiler.TypeCheck.Types
         public override CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
         {
             CobraGenericInstance instance = base.CreateGenericInstance(typeParams);
-
-            Type[] typeArgs = new Type[typeParams.Count];
-            for(int i = 0; i < typeParams.Count; i++)
-            {
-                if (typeParams[i] is DotNetCobraType dotNetType)
-                    typeArgs[i] = dotNetType.Type;
-                else
-                    return instance;
-            }
-
-            Type instanceType = GetType(null, typeArgs);
-            PropertyInfo[] properties = instanceType.GetProperties();
-
-            foreach (PropertyInfo property in properties)
-            {
-                DotNetCobraType propertyType = DotNetCobraType.FromType(property.PropertyType);
-                if(propertyType != null)
-                    instance.DefineSymbol(property.Name, propertyType);
-            }
 
             return instance;
         }

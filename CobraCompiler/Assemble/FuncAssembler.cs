@@ -300,7 +300,7 @@ namespace CobraCompiler.Assemble
             
 
             if (calleeContext.Type is CobraGenericInstance funcInstance)
-                returnType = funcInstance.TypeParams.Last();
+                returnType = funcInstance.OrderedTypeParams.Last();
 
             return new ExpressionAssemblyContext(returnType);
         }
@@ -318,6 +318,7 @@ namespace CobraCompiler.Assemble
             else
                 throw new NotImplementedException();
             
+            /*
             List<CobraType> indexTypes = new List<CobraType>();
 
             foreach (Expression index in expr.Indicies)
@@ -345,6 +346,7 @@ namespace CobraCompiler.Assemble
             CobraType returnType = CurrentScope.GetOperator(Operation.Add, collectionContext.Type, DotNetCobraType.Int).ResultType;
 
             return new ExpressionAssemblyContext(returnType);
+            */
         }
 
         public ExpressionAssemblyContext Visit(ListLiteralExpression expr, ParentExpressionAssemblyContext context)
@@ -353,7 +355,7 @@ namespace CobraCompiler.Assemble
 
             Type listType = _typeStore.GetType(type);
 
-            CobraType elementType = (type as CobraGenericInstance).TypeParams[0];
+            CobraType elementType = (type as CobraGenericInstance).OrderedTypeParams[0];
             ConstructorInfo listCtor;
             MethodInfo addMethod;
 

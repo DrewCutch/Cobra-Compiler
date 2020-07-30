@@ -63,7 +63,7 @@ namespace CobraCompiler.Assemble
                 return _currentGenerics[placeholder];
 
             if (cobraType is CobraGenericInstance genericInstance && genericInstance.Base is ITypeGenerator typeGen)
-                return typeGen.GetType(_moduleBuilder, genericInstance.TypeParams.Select(GetType).ToArray());
+                return typeGen.GetType(_moduleBuilder, genericInstance.OrderedTypeParams.Select(GetType).ToArray());
 
             if (cobraType is CobraGenericInstance genInst)
             {
@@ -74,8 +74,10 @@ namespace CobraCompiler.Assemble
 
                     Type Generic = _types[key];
 
-                    return Generic.MakeGenericType(genInst.TypeParams.Select(GetType).ToArray());
+                    return Generic.MakeGenericType(genInst.OrderedTypeParams.Select(GetType).ToArray());
                 }
+
+                return _types[genInst.Base].MakeGenericType(genInst.OrderedTypeParams.Select(GetType).ToArray());
             }
 
             return _types[cobraType];
@@ -131,13 +133,6 @@ namespace CobraCompiler.Assemble
             if (!(type is TypeBuilder))
                 return type.GetMember(memberName).FirstOrDefault();
 
-            //List<MemberInfo> members = new List<MemberInfo>();
-            //if(_typeMembers.ContainsKey(cobraType) && _typeMembers[cobraType].ContainsKey(memberName))
-                //members.AddRange(_typeMembers[cobraType][memberName].ToArray());
-
-            //foreach (CobraType parent in cobraType.Parents)
-            //    members.AddRange(GetMemberInfo(parent, memberName));
-
             if(!(memberType is FuncGenericInstance func))
                 return _typeMembers[cobraType][memberName].Values.First();
 
@@ -151,7 +146,7 @@ namespace CobraCompiler.Assemble
                 bool matches = true;
 
                 for (int i = 0; i < func.TypeParams.Count; i++)
-                    if (!func.TypeParams[i].CanCastTo(keyFunc.TypeParams[i]))
+                    if (!func.OrderedTypeParams[i].CanCastTo(keyFunc.OrderedTypeParams[i]))
                     {
                         matches = false;
                         break;

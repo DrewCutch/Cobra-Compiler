@@ -4,7 +4,7 @@ namespace CobraCompiler.TypeCheck.Types
 {
     class UnionInstanceType: CobraGenericInstance
     {
-        public UnionInstanceType(string identifier, IEnumerable<CobraType> typeParams) : base(identifier, typeParams, UnionLangCobraGeneric.UnionGeneric)
+        public UnionInstanceType(string identifier, IReadOnlyList<CobraType> typeParams) : base(identifier, typeParams, UnionLangCobraGeneric.UnionGeneric)
         {
             CobraType commonParent = GetCommonParent(typeParams, unionize:false);
             foreach (KeyValuePair<string, CobraType> symbol in commonParent.Symbols)
@@ -17,8 +17,8 @@ namespace CobraCompiler.TypeCheck.Types
         {
             if (other is UnionInstanceType otherUnion)
             {
-                HashSet<CobraType> myTypes = new HashSet<CobraType>(TypeParams);
-                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.TypeParams);
+                HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeParams);
+                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.OrderedTypeParams);
 
                 return myTypes.IsSubsetOf(otherTypes);
             }
@@ -31,11 +31,11 @@ namespace CobraCompiler.TypeCheck.Types
             if (Equals(other))
                 return this;
 
-            HashSet<CobraType> myTypes = new HashSet<CobraType>(TypeParams);
+            HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeParams);
 
             if (other is UnionInstanceType otherUnion)
             {
-                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.TypeParams);
+                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.OrderedTypeParams);
                 myTypes.UnionWith(otherTypes);
 
                 return UnionLangCobraGeneric.UnionGeneric.CreateGenericInstance(new List<CobraType>(myTypes));

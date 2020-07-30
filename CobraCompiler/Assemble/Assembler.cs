@@ -100,7 +100,7 @@ namespace CobraCompiler.Assemble
 
             foreach (CobraType definedType in scope.DefinedTypes)
             {
-                if (!(definedType is CobraGenericInstance genericInstance) || genericInstance.HasPlaceholders())
+                if((definedType is CobraGeneric generic && generic.HasFixedParamCount) || !(definedType is CobraGenericInstance))
                     DefineInterface(definedType, mb);
             }
 
@@ -151,16 +151,14 @@ namespace CobraCompiler.Assemble
 
             Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
 
-            if (cobraType is CobraGenericInstance genericInstance)
+            if (cobraType is CobraGeneric generic)
             {
-                GenericTypeParameterBuilder[] genericParams = typeBuilder.DefineGenericParameters(genericInstance.TypeParams.Select(param => param.Identifier).ToArray());
+                GenericTypeParameterBuilder[] genericParams = typeBuilder.DefineGenericParameters(generic.TypeParams.Select(param => param.Identifier).ToArray());
                 GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
 
-                for (int i = 0; i < genericInstance.TypeParams.Count; i++)
+                for (int i = 0; i < generic.TypeParams.Count; i++)
                 {
-                    //_typeStore.AddType(_funcScope.GetType(new TypeInitExpression(new[] { funcDeclaration.TypeArguments[i] }, new TypeInitExpression[] { }, null)), genericParams[i]);
-
-                    placeholders[i] = new GenericTypeParamPlaceholder(genericInstance.TypeParams[i].Identifier, i);
+                    placeholders[i] = new GenericTypeParamPlaceholder(generic.TypeParams[i].Identifier, i);
                     generics[placeholders[i]] = genericParams[i];
                 }
 

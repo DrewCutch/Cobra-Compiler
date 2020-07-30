@@ -10,11 +10,11 @@ namespace CobraCompiler.TypeCheck.Operators
         };
 
         public readonly Operation Operation;
-        public readonly CobraTypeBase Rhs;
-        public readonly CobraTypeBase Lhs;
+        public readonly CobraType Rhs;
+        public readonly CobraType Lhs;
         public readonly Func<CobraType, CobraType, CobraType> ReturnTypeResolver;
 
-        public GenericOperator(Operation operation, CobraTypeBase lhs, CobraTypeBase rhs,
+        public GenericOperator(Operation operation, CobraType lhs, CobraType rhs,
             Func<CobraType, CobraType, CobraType> returnTypeResolver)
         {
             Operation = operation;

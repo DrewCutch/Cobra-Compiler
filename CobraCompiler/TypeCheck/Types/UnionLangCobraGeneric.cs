@@ -22,7 +22,7 @@ namespace CobraCompiler.TypeCheck.Types
             return new UnionInstanceType(unionName, normalizedTypes);
         }
 
-        private List<CobraType> ApplyAssociativeProperty(IReadOnlyList<CobraType> typeParams)
+        private List<CobraType> ApplyAssociativeProperty(IEnumerable<CobraType> typeParams)
         {
             List<CobraType> types = new List<CobraType>();
 
@@ -30,7 +30,7 @@ namespace CobraCompiler.TypeCheck.Types
             {
                 if (typeParam is UnionInstanceType union)
                 {
-                    types.AddRange(ApplyAssociativeProperty(union.TypeParams));
+                    types.AddRange(ApplyAssociativeProperty(union.OrderedTypeParams));
                 }
                 else
                 {

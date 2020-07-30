@@ -33,9 +33,11 @@ namespace CobraCompiler.TypeCheck
             _globalScope = new GlobalScope();
             foreach (DotNetCobraType builtinCobraType in DotNetCobraType.DotNetCobraTypes) { 
                 _globalScope.DefineType(builtinCobraType.Identifier, builtinCobraType);
+
             }
             foreach (CobraGeneric builtinCobraGeneric in DotNetCobraGeneric.BuiltInCobraGenerics)
-                _globalScope.DefineGeneric(builtinCobraGeneric.Identifier, builtinCobraGeneric);
+                _globalScope.DefineType(builtinCobraGeneric.Identifier, builtinCobraGeneric);
+
             foreach (DotNetBinaryOperator op in DotNetBinaryOperator.OpCodeDotNetBinaryOperators)
                 _globalScope.DefineOperator(op.Operator.Operation, op.Operator.Lhs, op.Operator.Rhs, op);
             foreach (GenericOperator genericOperator in GenericOperator.DotNetGenericOperators)
@@ -185,8 +187,6 @@ namespace CobraCompiler.TypeCheck
             {
                 scope = PushGenericScope(typeDeclaration, typeDeclaration.TypeArguments, scope);
 
-                CobraGeneric generic = new CobraGeneric(typeDeclaration.Name.Lexeme, typeDeclaration.TypeArguments.Count);
-
                 List<GenericTypeParamPlaceholder> typeParams = new List<GenericTypeParamPlaceholder>();
                 int i = 0;
                 foreach (Token typeArgument in typeDeclaration.TypeArguments)
@@ -195,7 +195,9 @@ namespace CobraCompiler.TypeCheck
                     i++;
                 }
 
-                newType = generic.CreateGenericInstance(typeParams);
+                CobraGeneric generic = new CobraGeneric(typeDeclaration.Name.Lexeme, typeParams);
+
+                newType = generic;
             }
             else
             {
@@ -206,11 +208,8 @@ namespace CobraCompiler.TypeCheck
 
             // Pop the temporary generic scope
             if (typeDeclaration.TypeArguments.Count > 0)
-            {
-                scope.Parent.DefineGeneric(typeDeclaration.Name.Lexeme, scope.GetGeneric(typeDeclaration.Name.Lexeme));
                 scope = scope.Parent;
-            }
-            
+
             scope.DefineType(typeDeclaration.Name.Lexeme, type);
         }
 
@@ -384,10 +383,10 @@ namespace CobraCompiler.TypeCheck
 
                 for (int i = 0; i < func.TypeParams.Count - 1; i++)
                 {
-                    if (!paramTypes[i].CanCastTo(func.TypeParams[i]))
+                    if (!paramTypes[i].CanCastTo(func.OrderedTypeParams[i]))
                     {
                         CobraType test = expr.Arguments[i].Accept(this);
-                        throw new InvalidArgumentException(expr.Arguments[i], func.TypeParams[i].Identifier);
+                        throw new InvalidArgumentException(expr.Arguments[i], func.OrderedTypeParams[i].Identifier);
                     }
                 }
             }
@@ -408,7 +407,7 @@ namespace CobraCompiler.TypeCheck
                 else
                     throw new InvalidGenericArgumentException(expression);
             }
-
+            
             if (collectionType is CobraGenericInstance genericInstance)
             {
                 expr.Type = genericInstance.ReplacePlaceholders(typeParams);
