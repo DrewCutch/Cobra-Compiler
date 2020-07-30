@@ -6,13 +6,7 @@ namespace CobraCompiler.TypeCheck.Types
 {
     class CobraType: CobraTypeBase
     {
-        private readonly Dictionary<string, CobraType> _symbols;
-
-        public IReadOnlyDictionary<string, CobraType> Symbols => _symbols;
-
-        public IReadOnlyCollection<CobraType> Parents => _parents;
-
-        private readonly HashSet<CobraType> _parents;
+        
 
         public IReadOnlyList<IReadOnlyList<CobraType>> CallSigs => _callSigs;
 
@@ -20,27 +14,12 @@ namespace CobraCompiler.TypeCheck.Types
 
         public CobraType(string identifier): base(identifier)
         {
-            _symbols = new Dictionary<string, CobraType>();
-            _parents = new HashSet<CobraType>();
             _callSigs = new List<List<CobraType>>();
         }
 
         public CobraType(string identifier, params CobraType[] parents) : base(identifier)
         {
-            _symbols = new Dictionary<string, CobraType>();
-            _parents = new HashSet<CobraType>(parents);
             _callSigs = new List<List<CobraType>>();
-        }
-
-        protected void AddParent(CobraType parent)
-        {
-            foreach (KeyValuePair<string, CobraType> symbol in parent.Symbols)
-                DefineSymbol(symbol.Key, symbol.Value);
-
-            foreach (List<CobraType> callSig in parent._callSigs)
-                AddCallSig(callSig);
-
-            _parents.Add(parent);
         }
 
         public bool IsCallable()
@@ -93,59 +72,23 @@ namespace CobraCompiler.TypeCheck.Types
             _callSigs.Add(sig);
         }
 
-        public virtual bool HasSymbol(string symbol)
-        {
-            return GetSymbol(symbol) != null;
-        }
-
-        private bool DeclaresSymbol(string symbol)
-        {
-            return _symbols.ContainsKey(symbol);
-        }
-
-        public virtual CobraType GetSymbol(string symbol)
-        {
-            if(_symbols.ContainsKey(symbol))
-                return _symbols[symbol];
-
-            foreach (CobraType parent in _parents)
-                if (parent.HasSymbol(symbol))
-                    return parent.GetSymbol(symbol);
-
-            return null;
-        }
-
-        public virtual void DefineSymbol(string symbol, CobraType type, bool overload = false)
-        {
-            if (DeclaresSymbol(symbol) && overload)
-                _symbols[symbol] =
-                    IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(_symbols[symbol], type);
-            else
-                _symbols[symbol] = type;
-        }
-
-        public virtual CobraType GetIndexGetter(IEnumerable<CobraType> indexTypes)
-        {
-            throw new NotImplementedException();
-
-        }
-
-        public virtual CobraType GetIndexSetter(IEnumerable<CobraType> indexTypes)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual void DefineIndex(IEnumerable<CobraType> indexTypes, CobraType valueType)
-        {
-            throw new NotImplementedException();
-        }
-
         public virtual bool CanCastTo(CobraType other)
         {
             return Equals(other) || GetCommonParent(other).Equals(other);
         }
 
-        public virtual CobraType GetCommonParent(CobraType other, bool unionize=true)
+        protected void AddParent(CobraType parent)
+        {
+            foreach (KeyValuePair<string, CobraType> symbol in parent.Symbols)
+                DefineSymbol(symbol.Key, symbol.Value);
+
+            foreach (List<CobraType> callSig in parent._callSigs)
+                AddCallSig(callSig);
+
+            _parents.Add(parent);
+        }
+
+        public virtual CobraType GetCommonParent(CobraType other, bool unionize = true)
         {
             if (Equals(other))
                 return this;
@@ -156,8 +99,8 @@ namespace CobraCompiler.TypeCheck.Types
             if (_parents.Count == 1)
                 return _parents.First().GetCommonParent(other);
 
-            if(unionize)
-                return UnionLangCobraGeneric.UnionGeneric.CreateGenericInstance(new List<CobraType>(new CobraType[] {this, other}));
+            if (unionize)
+                return UnionLangCobraGeneric.UnionGeneric.CreateGenericInstance(new List<CobraType>(new CobraType[] { this, other }));
 
             return DotNetCobraType.Object;
         }

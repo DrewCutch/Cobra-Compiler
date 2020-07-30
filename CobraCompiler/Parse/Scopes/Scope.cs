@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.TypeCheck.Operators;
@@ -14,6 +15,7 @@ namespace CobraCompiler.Parse.Scopes
         public HashSet<CobraType> DefinedTypes => new HashSet<CobraType>(_types.Values);
 
         protected readonly Dictionary<string, CobraGeneric> _generics;
+        public HashSet<CobraGeneric> DefinedGenerics => new HashSet<CobraGeneric>(_generics.Values);
 
         protected readonly Dictionary<(Operation, CobraType, CobraType), IOperator> _operators;
         protected readonly Dictionary<(Operation, CobraTypeBase, CobraTypeBase), GenericOperator> _genericOperators;
@@ -40,10 +42,10 @@ namespace CobraCompiler.Parse.Scopes
             _subScopes = new List<Scope>();
         }
 
-        public virtual CobraType GetType(TypeInitExpression typeInit, string self="")
+        public virtual CobraType GetType(TypeInitExpression typeInit, CobraType selfHint=null)
         {
             if (!typeInit.IsGenericInstance)
-                return GetSimpleType(typeInit, self);
+                return GetSimpleType(typeInit, selfHint);
 
             List<CobraType> paramTypes = typeInit.GenericParams.Select(param => GetType(param)).ToList();
             CobraGeneric generic = GetGeneric(typeInit.IdentifierStrWithoutParams);
@@ -51,11 +53,26 @@ namespace CobraCompiler.Parse.Scopes
             return generic.CreateGenericInstance(paramTypes);
         }
 
-        private CobraType CreateInterface(InterfaceDefinitionExpression interfaceDefinitionExpression, string self = "")
+        private CobraType CreateInterface(InterfaceDefinitionExpression interfaceDefinitionExpression, CobraType selfHint)
         {
-            CobraType interfaceType = new CobraType(interfaceDefinitionExpression.IdentifierStr);
-            _types[interfaceDefinitionExpression.IdentifierStr] = interfaceType;
-            _types[self] = interfaceType;
+            CobraType interfaceType;
+            if (selfHint is CobraGenericInstance genericInstance)
+            {
+                CobraGeneric genericInterface = genericInstance.Base;
+                _generics[interfaceDefinitionExpression.IdentifierStr] = genericInterface;
+                _generics[genericInterface.Identifier] = genericInterface;
+
+                _types[genericInterface.Identifier] = selfHint;
+
+                interfaceType = genericInstance;
+            }
+            else
+            {
+                _types[interfaceDefinitionExpression.IdentifierStr] = selfHint;
+                _types[selfHint.Identifier] = selfHint;
+
+                interfaceType = selfHint;
+            }
 
             foreach (PropertyDefinitionExpression property in interfaceDefinitionExpression.Properties)
             {
@@ -66,7 +83,7 @@ namespace CobraCompiler.Parse.Scopes
             return interfaceType;
         }
 
-        protected virtual CobraType GetSimpleType(TypeInitExpression typeInit, string self = "")
+        protected virtual CobraType GetSimpleType(TypeInitExpression typeInit, CobraType selfHint = null)
         {
             if (typeInit.IdentifierStr == null)
                 return null;
@@ -75,7 +92,7 @@ namespace CobraCompiler.Parse.Scopes
                 return _types[typeInit.IdentifierStr];
 
             if (typeInit is InterfaceDefinitionExpression interfaceDefinition)
-                return CreateInterface(interfaceDefinition, self);
+                return CreateInterface(interfaceDefinition, selfHint);
 
             return Parent?.GetSimpleType(typeInit);
         }

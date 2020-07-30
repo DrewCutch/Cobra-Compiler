@@ -32,6 +32,17 @@ namespace CobraCompiler.TypeCheck.Types
             return Base.CreateGenericInstance(typeParams);
         }
 
+        public bool HasPlaceholders()
+        {
+            foreach (CobraType typeParam in TypeParams)
+            {
+                if (typeParam is GenericTypeParamPlaceholder placeholder)
+                    return true;
+            }
+
+            return false;
+        }
+
         public override bool Equals(Object other)
         {
             CobraGenericInstance otherInstance = other as CobraGenericInstance;

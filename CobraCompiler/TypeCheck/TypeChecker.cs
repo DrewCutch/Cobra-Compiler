@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
@@ -125,54 +126,10 @@ namespace CobraCompiler.TypeCheck
             }
 
             if (statement is FuncDeclarationStatement funcDeclaration)
-            {
-                if (funcDeclaration.TypeArguments.Count > 0)
-                {
-                    Scope genericScope = new Scope(CurrentScope, funcDeclaration);
-                    int i = 0;
-                    foreach (Token typeArg in funcDeclaration.TypeArguments)
-                    {
-                        genericScope.DefineType(typeArg.Lexeme, new GenericTypeParamPlaceholder(typeArg.Lexeme, i));
-                        i++;
-                    }
-
-                    scope.AddSubScope(genericScope);
-
-                    scope = genericScope;
-                }
-
-                CobraType returnType = funcDeclaration.ReturnType == null
-                    ? DotNetCobraType.Unit
-                    : scope.GetType(funcDeclaration.ReturnType);
-
-                if (funcDeclaration is InitDeclarationStatement)
-                    returnType = CurrentScope.GetType((CurrentScope as ClassScope).ClassDeclaration.Type);
-
-                FuncScope funcScope = new FuncScope(scope, funcDeclaration,
-                    funcDeclaration.Params.Select(param => (param.Name.Lexeme, scope.GetType(param.TypeInit))),
-                    returnType);
-
-                List<CobraType> typeArgs = funcDeclaration.Params.Select(param => scope.GetType(param.TypeInit)).ToList();
-                typeArgs.Add(funcScope.ReturnType);
-
-                CobraGenericInstance funcType = FuncCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
-
-                scope.AddSubScope(funcScope);
-
-                // Pop the temporary generic scope
-                if (funcDeclaration.TypeArguments.Count > 0)
-                    scope = scope.Parent;
-
-                scope.Declare(funcDeclaration.Name.Lexeme, funcType, true);
-
-                _scopes.Enqueue(funcScope);
-            }
+                DeclareFunc(funcDeclaration, scope);
 
             if (statement is TypeDeclarationStatement typeDeclaration)
-            {
-                CobraType type = scope.GetType(typeDeclaration.Type, typeDeclaration.Name.Lexeme);
-                scope.DefineType(typeDeclaration.Name.Lexeme, type);
-            }
+                DeclareType(typeDeclaration, scope);
 
             if (statement is BlockStatement blockStatement)
             {
@@ -187,6 +144,89 @@ namespace CobraCompiler.TypeCheck
                 DefineWithStatement(scope, conditional.Then);
                 DefineWithStatement(scope, conditional.Else);
             }
+        }
+
+        private void DeclareFunc(FuncDeclarationStatement funcDeclaration, Scope scope)
+        {
+            if (funcDeclaration.TypeArguments.Count > 0)
+                scope = PushGenericScope(funcDeclaration, funcDeclaration.TypeArguments, scope);
+
+            CobraType returnType = funcDeclaration.ReturnType == null
+                ? DotNetCobraType.Unit
+                : scope.GetType(funcDeclaration.ReturnType);
+
+            if (funcDeclaration is InitDeclarationStatement)
+                returnType = CurrentScope.GetType((CurrentScope as ClassScope).ClassDeclaration.Type);
+
+            FuncScope funcScope = new FuncScope(scope, funcDeclaration,
+                funcDeclaration.Params.Select(param => (param.Name.Lexeme, scope.GetType(param.TypeInit))),
+                returnType);
+
+            List<CobraType> typeArgs = funcDeclaration.Params.Select(param => scope.GetType(param.TypeInit)).ToList();
+            typeArgs.Add(funcScope.ReturnType);
+
+            CobraGenericInstance funcType = FuncCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
+
+            scope.AddSubScope(funcScope);
+
+            // Pop the temporary generic scope
+            if (funcDeclaration.TypeArguments.Count > 0)
+                scope = scope.Parent;
+
+            scope.Declare(funcDeclaration.Name.Lexeme, funcType, true);
+
+            _scopes.Enqueue(funcScope);
+        }
+
+        private void DeclareType(TypeDeclarationStatement typeDeclaration, Scope scope)
+        {
+            CobraType newType;
+            if (typeDeclaration.TypeArguments.Count > 0)
+            {
+                scope = PushGenericScope(typeDeclaration, typeDeclaration.TypeArguments, scope);
+
+                CobraGeneric generic = new CobraGeneric(typeDeclaration.Name.Lexeme, typeDeclaration.TypeArguments.Count);
+
+                List<GenericTypeParamPlaceholder> typeParams = new List<GenericTypeParamPlaceholder>();
+                int i = 0;
+                foreach (Token typeArgument in typeDeclaration.TypeArguments)
+                {
+                    typeParams.Add(new GenericTypeParamPlaceholder(typeArgument.Lexeme, i));
+                    i++;
+                }
+
+                newType = generic.CreateGenericInstance(typeParams);
+            }
+            else
+            {
+                newType = new CobraType(typeDeclaration.Name.Lexeme);
+            }
+
+            CobraType type = scope.GetType(typeDeclaration.Type, newType);
+
+            // Pop the temporary generic scope
+            if (typeDeclaration.TypeArguments.Count > 0)
+            {
+                scope.Parent.DefineGeneric(typeDeclaration.Name.Lexeme, scope.GetGeneric(typeDeclaration.Name.Lexeme));
+                scope = scope.Parent;
+            }
+            
+            scope.DefineType(typeDeclaration.Name.Lexeme, type);
+        }
+
+        private Scope PushGenericScope(Statement body, IEnumerable<Token> typeArguments, Scope scope)
+        {
+            Scope genericScope = new Scope(CurrentScope, body);
+            int i = 0;
+            foreach (Token typeArg in typeArguments)
+            {
+                genericScope.DefineType(typeArg.Lexeme, new GenericTypeParamPlaceholder(typeArg.Lexeme, i));
+                i++;
+            }
+
+            scope.AddSubScope(genericScope);
+
+            return genericScope;
         }
 
         private void CheckTypes(Scope scope)

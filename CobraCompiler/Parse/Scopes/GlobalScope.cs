@@ -20,7 +20,7 @@ namespace CobraCompiler.Parse.Scopes
             return _types.ContainsKey(identifier) || Type.GetType(identifier) != null;
         }
 
-        protected override CobraType GetSimpleType(TypeInitExpression typeInit, string self="")
+        protected override CobraType GetSimpleType(TypeInitExpression typeInit, CobraType selfHint = null)
         {
             if (typeInit.IdentifierStr == null)
                 return null;
