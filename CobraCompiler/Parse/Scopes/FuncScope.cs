@@ -10,13 +10,14 @@ namespace CobraCompiler.Parse.Scopes
     {
         public readonly IReadOnlyList<(string, CobraType)> Params;
         public readonly CobraType ReturnType;
-        public FuncDeclarationStatement FuncDeclaration => (FuncDeclarationStatement) Body;
+        public FuncDeclarationStatement FuncDeclaration { get; }
         public readonly CobraType FuncType;
 
-        public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType) : base(parentScope, funcDeclaration)
+        public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType) : base(parentScope, funcDeclaration.Body)
         {
             Params = new List<(string, CobraType)>(parameters);
             ReturnType = returnType;
+            FuncDeclaration = funcDeclaration;
 
             List<CobraType> funcTypeArgs = Params.Select(x => x.Item2).ToList();
             funcTypeArgs.Add(returnType);

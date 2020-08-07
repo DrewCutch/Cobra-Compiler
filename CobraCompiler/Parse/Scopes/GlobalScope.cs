@@ -11,7 +11,7 @@ namespace CobraCompiler.Parse.Scopes
 {
     class GlobalScope: Scope
     {
-        public GlobalScope() : base(null, null)
+        public GlobalScope() : base(null, (Statement)null)
         {
         }
 

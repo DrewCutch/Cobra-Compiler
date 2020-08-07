@@ -19,7 +19,7 @@ namespace CobraCompiler.TypeCheck.Types
             Base = @base;
         }
 
-        public CobraGenericInstance ReplacePlaceholders(List<CobraType> typeArguments)
+        public CobraGenericInstance ReplacePlaceholders(IReadOnlyList<CobraType> typeArguments)
         {
             List<CobraType> typeParams = new List<CobraType>();
 
@@ -44,6 +44,9 @@ namespace CobraCompiler.TypeCheck.Types
 
             if (baseSymbol is GenericTypeParamPlaceholder typeParam)
                 return TypeParams[typeParam];
+
+            if (baseSymbol is CobraGenericInstance genericInstance)
+                return genericInstance.ReplacePlaceholders(OrderedTypeParams);
 
             if (baseSymbol is CobraGeneric genericSymbol)
                 return genericSymbol.CreateGenericInstance(TypeParams);

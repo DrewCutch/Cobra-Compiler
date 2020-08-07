@@ -8,6 +8,7 @@ using CobraCompiler.Compiler;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
+using CobraCompiler.Parse.Scopes.ScopeReturn;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck.Exceptions;
@@ -72,8 +73,7 @@ namespace CobraCompiler.TypeCheck
 
             foreach (ParsedModule module in modules)
             {
-                BlockStatement baseBlock = new BlockStatement(module.Statements);
-                ModuleScope moduleScope = new ModuleScope(_globalScope, baseBlock, module.FullName);
+                ModuleScope moduleScope = new ModuleScope(_globalScope, module.Statements.ToArray(), module.FullName);
                 
                 _globalScope.AddSubScope(moduleScope);
                 moduleScopes.Add(moduleScope);
@@ -90,7 +90,23 @@ namespace CobraCompiler.TypeCheck
                 _scopes.Dequeue();
             }
 
+            CheckReturns(_globalScope);
+
             return _globalScope;
+        }
+
+        private void CheckReturns(Scope scope)
+        {
+            if (scope is FuncScope funcScope && !(funcScope.FuncDeclaration is InitDeclarationStatement))
+            {
+                if (!scope.Returns && funcScope.ReturnType != DotNetCobraType.Unit)
+                    _errorLogger.Log(new MissingReturnException(funcScope.FuncDeclaration.Name, funcScope.ReturnType));
+            }
+
+            foreach (Scope subScope in scope.SubScopes)
+            {
+                CheckReturns(subScope);
+            }
         }
 
         private void CheckScope(Scope scope)
@@ -109,12 +125,11 @@ namespace CobraCompiler.TypeCheck
         private void DefineTypes(Scope scope)
         {
             List<Statement> statements = new List<Statement>();
-            if(scope.Body is BlockStatement blockBody)
-                statements.AddRange(blockBody.Body);
-            else if (scope.Body is FuncDeclarationStatement funcDeclarationBody)
-                statements.Add(funcDeclarationBody.Body);
-            else
-                statements.Add(scope.Body);
+
+            //if (scope.Body[0] is FuncDeclarationStatement funcDeclarationBody)
+            //    statements.Add(funcDeclarationBody.Body);
+            //else
+                statements.AddRange(scope.Body);
 
 
             foreach (Statement statement in statements)
@@ -126,13 +141,7 @@ namespace CobraCompiler.TypeCheck
         private void DefineWithStatement(Scope scope, Statement statement)
         {
             if (statement is ClassDeclarationStatement classDeclaration)
-            {
-                ClassScope classScope = new ClassScope(scope, classDeclaration);
-
-                scope.AddSubScope(classScope);
-
-                _scopes.Enqueue(classScope);
-            }
+                DeclareClass(classDeclaration, scope);
 
             if (statement is FuncDeclarationStatement funcDeclaration)
                 DeclareFunc(funcDeclaration, scope);
@@ -142,16 +151,31 @@ namespace CobraCompiler.TypeCheck
 
             if (statement is BlockStatement blockStatement)
             {
-                Scope blockScope = new Scope(scope, blockStatement);
+                Scope blockScope = new Scope(scope, blockStatement.Body.ToArray());
 
                 scope.AddSubScope(blockScope);
                 _scopes.Enqueue(blockScope);
+
+                scope.AddReturnExpression(new ScopeReturnBindExpression(blockScope));
             }
 
             if (statement is IConditionalExpression conditional)
             {
-                DefineWithStatement(scope, conditional.Then);
-                DefineWithStatement(scope, conditional.Else);
+                Scope thenScope = new Scope(scope, conditional.Then);
+                scope.AddSubScope(thenScope);
+                _scopes.Enqueue(thenScope);
+
+                if (conditional.Else != null)
+                {
+                    Scope elseScope = new Scope(scope, conditional.Else);
+                    scope.AddSubScope(elseScope);
+                    _scopes.Enqueue(elseScope);
+
+                    scope.AddReturnExpression(new ScopeReturnAndExpression(
+                            new ScopeReturnBindExpression(thenScope),
+                            new ScopeReturnBindExpression(elseScope)
+                        ));
+                }
             }
         }
 
@@ -262,18 +286,17 @@ namespace CobraCompiler.TypeCheck
         {
             List<Statement> statements = new List<Statement>();
 
-            if (scope.Body is BlockStatement blockBody)
-                statements.AddRange(blockBody.Body);
-            else if (scope.Body is FuncDeclarationStatement funcDeclarationBody)
-                statements.AddRange(funcDeclarationBody.Params);
-            else
-                statements.Add(scope.Body);
+            //if (scope.Body[0] is FuncDeclarationStatement funcDeclarationBody)
+            //    statements.AddRange(funcDeclarationBody.Params);
+            //else
+            if(scope is FuncScope funcScope)
+                statements.AddRange(funcScope.FuncDeclaration.Params);
+            statements.AddRange(scope.Body);
 
             foreach (Statement statement in statements)
             {
                 Check(statement);
             }
-
 
             if (scope is ClassScope classScope)
             {

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Parse.Expressions;
+using CobraCompiler.Parse.Scopes.ScopeReturn;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Types;
@@ -20,11 +21,30 @@ namespace CobraCompiler.Parse.Scopes
         protected readonly List<Scope> _subScopes;
 
         public IReadOnlyList<Scope> SubScopes => _subScopes;
-        public readonly Statement Body;
+        public readonly Statement[] Body;
 
         public readonly Scope Parent;
 
+        private ScopeReturnOrExpression _returns;
+        public bool Returns => _returns.Returns;
+
         public Scope(Scope parentScope, Statement body)
+        {
+            Parent = parentScope;
+            Body = new []{body};
+
+            _vars = new Dictionary<string, CobraType>();
+            _types = new Dictionary<string, CobraType>();
+
+            _operators = new Dictionary<(Operation, CobraType, CobraType), IOperator>();
+            _genericOperators = new Dictionary<(Operation, CobraType, CobraType), GenericOperator>();
+
+            _subScopes = new List<Scope>();
+
+            _returns = new ScopeReturnOrExpression(new ScopeReturnConstant(false));
+        }
+
+        public Scope(Scope parentScope, Statement[] body)
         {
             Parent = parentScope;
             Body = body;
@@ -36,9 +56,19 @@ namespace CobraCompiler.Parse.Scopes
             _genericOperators = new Dictionary<(Operation, CobraType, CobraType), GenericOperator>();
 
             _subScopes = new List<Scope>();
+
+            _returns = new ScopeReturnOrExpression(new ScopeReturnConstant(false));
         }
 
+        public virtual void AddReturn()
+        {
+            _returns.AddOperand(new ScopeReturnConstant(true));
+        }
 
+        public void AddReturnExpression(ScopeReturnExpression expr)
+        {
+            _returns.AddOperand(expr);
+        }
 
         public virtual CobraType GetType(TypeInitExpression typeInit, CobraType selfHint=null)
         {
@@ -149,7 +179,7 @@ namespace CobraCompiler.Parse.Scopes
         public virtual void Declare(string var, CobraType type, bool overload = false)
         {
             if(IsDefined(var) && overload) 
-                _vars[var] = IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(_vars[var], type);
+                _vars[var] = IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(GetVarType(var), type);
             else
                 _vars[var] = type;
         }
