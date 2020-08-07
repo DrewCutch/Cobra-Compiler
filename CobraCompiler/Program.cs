@@ -43,9 +43,9 @@ namespace CobraCompiler
 
             try
             {
-                compiler.Compile(project);
+                CompilationResults results = compiler.Compile(project);
             }
-            catch (CompilerException ce)
+            catch (CompilerException)
             {
                 if (!options.Flags.HasFlag(CompilerFlags.HideErrors))
                     errorLogger.DisplayErrors();

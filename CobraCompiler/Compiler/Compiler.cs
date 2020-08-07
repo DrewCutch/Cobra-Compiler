@@ -12,7 +12,7 @@ using CobraCompiler.TypeCheck;
 
 namespace CobraCompiler.Compiler
 {
-    class Compiler
+    public class Compiler
     {
         public readonly CompilationOptions Options;
         public readonly ErrorLogger ErrorLogger;
@@ -23,7 +23,7 @@ namespace CobraCompiler.Compiler
             ErrorLogger = errorLogger;
         }
 
-        public void Compile(Project project)
+        public CompilationResults Compile(Project project)
         {
             Stopwatch totalTimer = new Stopwatch();
             
@@ -32,23 +32,30 @@ namespace CobraCompiler.Compiler
             totalTimer.Start();
             timer.Start();
             IReadOnlyList<ScannedModule> scannedModules = Scan(project);
-            ErrorLogger.WriteWithColor($"Scanned {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+            double scanDuration = timer.Elapsed.TotalSeconds;
+            ErrorLogger.WriteWithColor($"Scanned {project.Name} in {scanDuration} seconds\n", ConsoleColor.Green);
             
             timer.Restart();
             IReadOnlyList<ParsedModule> parsedModules = Parse(scannedModules);
-            ErrorLogger.WriteWithColor($"Parsed {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+            double parseDuration = timer.Elapsed.TotalSeconds;
+            ErrorLogger.WriteWithColor($"Parsed {project.Name} in {parseDuration} seconds\n", ConsoleColor.Green);
 
             timer.Restart();
             CheckedProject checkedProject = Check(project, parsedModules);
-            ErrorLogger.WriteWithColor($"Checked {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+            double typeCheckDuration = timer.Elapsed.TotalSeconds;
+            ErrorLogger.WriteWithColor($"Checked {project.Name} in {typeCheckDuration} seconds\n", ConsoleColor.Green);
 
             timer.Restart();
             Assemble(checkedProject);
-            ErrorLogger.WriteWithColor($"Assembled {project.Name} in {timer.Elapsed.TotalSeconds} seconds\n", ConsoleColor.Green);
+            double assemblyDuration = timer.Elapsed.TotalSeconds;
+            ErrorLogger.WriteWithColor($"Assembled {project.Name} in {assemblyDuration} seconds\n", ConsoleColor.Green);
             timer.Stop();
 
-            ErrorLogger.WriteWithColor($"Compiled {project.Name} in {totalTimer.Elapsed.TotalSeconds} seconds", ConsoleColor.Green);
+            double totalDuration = totalTimer.Elapsed.TotalSeconds;
+            ErrorLogger.WriteWithColor($"Compiled {project.Name} in {totalDuration} seconds", ConsoleColor.Green);
             totalTimer.Stop();
+
+            return new CompilationResults(scanDuration, parseDuration, typeCheckDuration, assemblyDuration, totalDuration);
         }
 
         private List<ScannedModule> Scan(Project project)
