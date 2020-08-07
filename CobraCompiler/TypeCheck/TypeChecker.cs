@@ -95,8 +95,15 @@ namespace CobraCompiler.TypeCheck
 
         private void CheckScope(Scope scope)
         {
-            DefineTypes(scope);
-            CheckTypes(scope);
+            try
+            {
+                DefineTypes(scope);
+                CheckTypes(scope);
+            }
+            catch (TypingException typingException)
+            {
+                _errorLogger.Log(typingException);
+            }
         }
 
         private void DefineTypes(Scope scope)
@@ -148,6 +155,21 @@ namespace CobraCompiler.TypeCheck
             }
         }
 
+        private void DeclareClass(ClassDeclarationStatement classDeclaration, Scope scope)
+        {
+            if (classDeclaration.TypeArguments.Count > 0)
+                scope = PushGenericScope(classDeclaration, classDeclaration.TypeArguments, scope);
+
+            ClassScope classScope = new ClassScope(scope, classDeclaration);
+            
+            scope.AddSubScope(classScope);
+
+            if (classDeclaration.TypeArguments.Count > 0)
+                scope = scope.Parent;
+
+            _scopes.Enqueue(classScope);
+        }
+
         private void DeclareFunc(FuncDeclarationStatement funcDeclaration, Scope scope)
         {
             if (funcDeclaration.TypeArguments.Count > 0)
@@ -160,9 +182,17 @@ namespace CobraCompiler.TypeCheck
             if (funcDeclaration is InitDeclarationStatement)
                 returnType = CurrentScope.GetType((CurrentScope as ClassScope).ClassDeclaration.Type);
 
-            FuncScope funcScope = new FuncScope(scope, funcDeclaration,
-                funcDeclaration.Params.Select(param => (param.Name.Lexeme, scope.GetType(param.TypeInit))),
-                returnType);
+            
+            List<(string, CobraType)> funcParams = new List<(string, CobraType)>();
+            foreach (ParamDeclarationStatement param in funcDeclaration.Params)
+            {
+                if (!scope.IsTypeDefined(param.TypeInit))
+                    throw new TypeNotDefinedException(param.TypeInit);
+
+                funcParams.Add((param.Name.Lexeme, scope.GetType(param.TypeInit)));
+            }
+            
+            FuncScope funcScope = new FuncScope(scope, funcDeclaration, funcParams, returnType);
 
             List<CobraType> typeArgs = funcDeclaration.Params.Select(param => scope.GetType(param.TypeInit)).ToList();
             typeArgs.Add(funcScope.ReturnType);
@@ -215,7 +245,7 @@ namespace CobraCompiler.TypeCheck
 
         private Scope PushGenericScope(Statement body, IEnumerable<Token> typeArguments, Scope scope)
         {
-            Scope genericScope = new Scope(CurrentScope, body);
+            Scope genericScope = new GenericScope(CurrentScope, body);
             int i = 0;
             foreach (Token typeArg in typeArguments)
             {
@@ -267,58 +297,52 @@ namespace CobraCompiler.TypeCheck
 
         private void Check(Statement statement)
         {
-            try
+            switch (statement)
             {
-                switch (statement)
-                {
-                    case VarDeclarationStatement varDeclaration:
-                        if (!CurrentScope.IsTypeDefined(varDeclaration.TypeInit))
-                            throw new TypeNotDefinedException(varDeclaration.TypeInit);
+                case VarDeclarationStatement varDeclaration:
+                    if (!CurrentScope.IsTypeDefined(varDeclaration.TypeInit))
+                        throw new TypeNotDefinedException(varDeclaration.TypeInit);
 
-                        if (CurrentScope.IsDeclared(varDeclaration.Name.Lexeme))
-                            throw new VarAlreadyDeclaredException(varDeclaration);
+                    if (CurrentScope.IsDeclared(varDeclaration.Name.Lexeme))
+                        throw new VarAlreadyDeclaredException(varDeclaration);
 
-                        CurrentScope.Declare(varDeclaration.Name.Lexeme, varDeclaration.TypeInit);
-                        varDeclaration.Assignment?.Accept(this);
-                        break;
-                    case ParamDeclarationStatement paramDeclaration:
-                        if (!CurrentScope.IsTypeDefined(paramDeclaration.TypeInit))
-                            throw new TypeNotDefinedException(paramDeclaration.TypeInit);
+                    CurrentScope.Declare(varDeclaration.Name.Lexeme, varDeclaration.TypeInit);
+                    varDeclaration.Assignment?.Accept(this);
+                    break;
+                case ParamDeclarationStatement paramDeclaration:
+                    if (!CurrentScope.IsTypeDefined(paramDeclaration.TypeInit))
+                        throw new TypeNotDefinedException(paramDeclaration.TypeInit);
 
-                        if (CurrentScope.IsDeclared(paramDeclaration.Name.Lexeme))
-                            throw new VarAlreadyDeclaredException(paramDeclaration);
+                    if (CurrentScope.IsDeclared(paramDeclaration.Name.Lexeme))
+                        throw new VarAlreadyDeclaredException(paramDeclaration);
 
-                        CurrentScope.Declare(paramDeclaration.Name.Lexeme, paramDeclaration.TypeInit);
-                        break;
-                    case ExpressionStatement expressionStatement:
-                        expressionStatement.Expression.Accept(this);
-                        break;
-                    case ReturnStatement returnStatement:
-                        CobraType returnStatementType = returnStatement.Value.Accept(this);
-                        if (!returnStatementType.CanCastTo(CurrentScope.GetReturnType()))
-                            throw new InvalidReturnTypeException(returnStatement.Value, CurrentScope.GetReturnType());
-                        break;
-                    case ImportStatement importStatement:
-                        CobraType importType = importStatement.Import.Accept(this);
-                        if (!(importType is NamespaceType))
-                            throw new InvalidImportException(importStatement);
+                    CurrentScope.Declare(paramDeclaration.Name.Lexeme, paramDeclaration.TypeInit);
+                    break;
+                case ExpressionStatement expressionStatement:
+                    expressionStatement.Expression.Accept(this);
+                    break;
+                case ReturnStatement returnStatement:
+                    CobraType returnStatementType = returnStatement.Value.Accept(this);
+                    if (!returnStatementType.CanCastTo(CurrentScope.GetReturnType()))
+                        throw new InvalidReturnTypeException(returnStatement.Value, CurrentScope.GetReturnType());
 
-                        CurrentScope.Declare(((GetExpression) importStatement.Import).Name.Lexeme, importType);
-                        break;
-                    case IConditionalExpression conditionalExpression:
-                        CobraType conditionType = conditionalExpression.Condition.Accept(this);
-                        if (!conditionType.CanCastTo(DotNetCobraType.Bool))
-                            throw new InvalidConditionTypeException(conditionalExpression.Condition);
-                        break;
-                    //default:
-                    //    throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");
-                }
+                    CurrentScope.AddReturn();
+                    break;
+                case ImportStatement importStatement:
+                    CobraType importType = importStatement.Import.Accept(this);
+                    if (!(importType is NamespaceType))
+                        throw new InvalidImportException(importStatement);
+
+                    CurrentScope.Declare(((GetExpression) importStatement.Import).Name.Lexeme, importType);
+                    break;
+                case IConditionalExpression conditionalExpression:
+                    CobraType conditionType = conditionalExpression.Condition.Accept(this);
+                    if (!conditionType.CanCastTo(DotNetCobraType.Bool))
+                        throw new InvalidConditionTypeException(conditionalExpression.Condition);
+                    break;
+                //default:
+                //    throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");
             }
-            catch (TypingException typingException)
-            {
-                _errorLogger.Log(typingException);
-            }
-            
         }
 
         public static CobraType GetExpressionType(Expression expr, Scope scope)
