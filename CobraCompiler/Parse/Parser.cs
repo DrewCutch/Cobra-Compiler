@@ -78,6 +78,19 @@ namespace CobraCompiler.Parse
         {
             Token name = Expect(TokenType.Identifier, "Expect class name.");
 
+            List<Token> typeParams = new List<Token>();
+
+            if (Match(TokenType.LeftBracket))
+            {
+                do
+                {
+                    typeParams.Add(Expect(TokenType.Identifier, "Expect type parameter name in class definition"));
+                } while (Match(TokenType.Comma));
+
+                Expect(TokenType.RightBracket, "Expect closing brace after type parameter list");
+            }
+
+
             TypeInitExpression type = null;
 
             if (Match(TokenType.Colon))
@@ -87,7 +100,7 @@ namespace CobraCompiler.Parse
 
             Match(TokenType.NewLine);
 
-            return new ClassDeclarationStatement(name, type, ClassBody());
+            return new ClassDeclarationStatement(name, typeParams, type, ClassBody());
         }
 
         private BlockStatement ClassBody()

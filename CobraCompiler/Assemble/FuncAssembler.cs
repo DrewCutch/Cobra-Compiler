@@ -64,7 +64,7 @@ namespace CobraCompiler.Assemble
 
             Type returnType = _funcScope.ReturnType != null ? _typeStore.GetType(_funcScope.ReturnType) : null;
 
-            _localManager = new LocalManager(_funcScope, _il, returnType);
+            _localManager = new LocalManager(_funcScope, _typeStore, _il, returnType);
 
             _typeStore.PopGenerics(_funcGenerics);
 
@@ -132,7 +132,7 @@ namespace CobraCompiler.Assemble
         
             AssembleStatement(_funcScope.FuncDeclaration.Body, _typeBuilder);
 
-            if(_funcScope.FuncDeclaration is InitDeclarationStatement)
+            if(_funcScope.FuncDeclaration is InitDeclarationStatement || !_funcScope.Returns)
                 _il.Emit(OpCodes.Ret);
 
             _typeStore.PopGenerics(_funcGenerics);
@@ -168,15 +168,30 @@ namespace CobraCompiler.Assemble
                     Label endElseLabel = _il.DefineLabel();
 
                     _il.Emit(OpCodes.Brfalse, elseLabel);
+
+                    _scopeCrawler.EnterScope();
                     AssembleStatement(ifStatement.Then, typeBuilder);
-                    _il.Emit(OpCodes.Br, endElseLabel);
+                    bool ifReturns = CurrentScope.Returns;
+
+                    if(!ifReturns)
+                        _il.Emit(OpCodes.Br, endElseLabel);
+
+                    _scopeCrawler.ExitScope();
+                
                     _il.MarkLabel(elseLabel);
                     if (ifStatement.Else != null)
                     {
+                        _scopeCrawler.EnterScope();
                         AssembleStatement(ifStatement.Else, typeBuilder);
+                        _scopeCrawler.ExitScope();
                     }
-                    _il.MarkLabel(endElseLabel);
-                    _il.Emit(OpCodes.Nop);
+
+                    if (!ifReturns)
+                    {
+                        _il.MarkLabel(endElseLabel);
+                        _il.Emit(OpCodes.Nop);
+                    }
+
                     break;
                 }   
                 case WhileStatement whileStatement:
@@ -194,12 +209,18 @@ namespace CobraCompiler.Assemble
                     whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext());
                     _il.Emit(OpCodes.Brfalse, endElseLabel);
                     _il.MarkLabel(bodyLabel); // Beginning of body
+
+                    _scopeCrawler.EnterScope();
                     AssembleStatement(whileStatement.Then, typeBuilder);
+                    _scopeCrawler.ExitScope();
+                    
                     _il.Emit(OpCodes.Br, whileLabel); // Return to condition
                     _il.MarkLabel(elseLabel);
                     if (whileStatement.Else != null)
                     {
+                        _scopeCrawler.EnterScope();
                         AssembleStatement(whileStatement.Else, typeBuilder);
+                        _scopeCrawler.ExitScope();
                     }
                     _il.MarkLabel(endElseLabel);
                     _il.Emit(OpCodes.Nop);
@@ -311,9 +332,20 @@ namespace CobraCompiler.Assemble
 
             if (expr.Type is CobraGenericInstance genericInstance && collectionContext is MethodBuilderExpressionAssemblyContext methodContext)
             {
-                MethodInfo genericMethodInfo = (MethodInfo) methodContext.Method; 
-                return new MethodBuilderExpressionAssemblyContext(expr.Type, genericMethodInfo.MakeGenericMethod(
-                    expr.Indicies.Select(e => _typeStore.GetType((CobraType)((CobraTypeCobraType) e.Type).CobraType)).ToArray()));
+                MethodBase genericMethodInfo = methodContext.Method;
+                Type[] typeArgs = expr.Indicies.Select(e => _typeStore.GetType(((CobraTypeCobraType) e.Type).CobraType)).ToArray();
+
+                if (genericMethodInfo is MethodInfo methodInfo)
+                {
+                    genericMethodInfo = methodInfo.MakeGenericMethod(typeArgs);
+                }
+
+                if (genericMethodInfo is ConstructorInfo constructorInfo)
+                {
+                    genericMethodInfo = TypeBuilder.GetConstructor(constructorInfo.DeclaringType.MakeGenericType(typeArgs), constructorInfo);
+                }
+
+                return new MethodBuilderExpressionAssemblyContext(expr.Type, genericMethodInfo);
             }
             else
                 throw new NotImplementedException();
@@ -417,10 +449,13 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(VarExpression expr, ParentExpressionAssemblyContext context)
         {
+            CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
+
+            if(varType is NamespaceType)
+                return new ExpressionAssemblyContext(varType);
 
             if (_methodStore.HasMethodBuilder(expr.Name.Lexeme))
             {
-                CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
                 string varId = expr.Name.Lexeme;
                 MethodBase method = _methodStore.GetMethodInfo(context.ExpectedType, varId);
 
@@ -447,15 +482,22 @@ namespace CobraCompiler.Assemble
                 Type[] types = { typeof(object), typeof(IntPtr) };
                 _il.Emit(OpCodes.Newobj, _typeStore.GetType(mbContext.Type).GetConstructor(types) ?? throw new InvalidOperationException());
             }
-            else if(!context.Assigning)
-                _localManager.LoadVar(_scopeCrawler.Current, expr.Name.Lexeme);
+            else if (!context.Assigning)
+            {
+                if (context.CallingMember && _typeStore.GetType(varType).IsValueType)
+                    _localManager.LoadVarAddress(_scopeCrawler.Current, expr.Name.Lexeme);
+                else
+                    _localManager.LoadVar(_scopeCrawler.Current, expr.Name.Lexeme);
+            }
+            else
+                _localManager.PrepStoreField(expr.Name.Lexeme);
 
-            return new ExpressionAssemblyContext(CurrentScope.GetVarType(expr.Name.Lexeme));
+            return new ExpressionAssemblyContext(varType);
         }
 
         public ExpressionAssemblyContext Visit(GetExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext());
+            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext(callingMember:context.ImmediatelyCalling));
             if (exprContext.Type is NamespaceType _namespace)
             {
                 if(_namespace.HasType(expr.Name.Lexeme))
@@ -474,7 +516,7 @@ namespace CobraCompiler.Assemble
             switch (member)
             {
                 case PropertyInfo prop:
-                    MethodInfo get = prop.GetGetMethod();
+                    MethodInfo get = ResolveGenericMethodInfo(varType, prop.GetGetMethod());
                     _il.Emit(OpCodes.Callvirt, get);
                     break;
                 case FieldInfo field:
@@ -484,6 +526,7 @@ namespace CobraCompiler.Assemble
                         return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme), field);
                     break;
                 case MethodInfo method:
+                    method = ResolveGenericMethodInfo(varType, method);
                     if (context.ImmediatelyCalling)
                         return new MethodBuilderExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme), method);
                     break;
@@ -492,6 +535,24 @@ namespace CobraCompiler.Assemble
             }
 
             return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme));
+        }
+
+        private MethodInfo ResolveGenericMethodInfo(Type type, MethodInfo methodInfo)
+        {
+            if (!type.IsConstructedGenericType)
+                return methodInfo;
+
+            bool includesTypeBuilder = false;
+            foreach (Type genericArgument in type.GetGenericArguments())
+            {
+                includesTypeBuilder = includesTypeBuilder || genericArgument is TypeBuilder || genericArgument is GenericTypeParameterBuilder;
+            }
+
+
+            if(includesTypeBuilder || !methodInfo.DeclaringType.IsConstructedGenericType)
+                return TypeBuilder.GetMethod(type, methodInfo);
+
+            return methodInfo;
         }
     }
 }

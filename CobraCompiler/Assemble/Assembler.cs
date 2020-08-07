@@ -101,7 +101,7 @@ namespace CobraCompiler.Assemble
             foreach (CobraType definedType in scope.DefinedTypes)
             {
                 if((definedType is CobraGeneric generic && generic.HasFixedParamCount) || !(definedType is CobraGenericInstance))
-                    DefineInterface(definedType, mb);
+                    DefineInterface(scope.Name, definedType, mb);
             }
 
             Queue<Scope> subScopes = new Queue<Scope>(scope.SubScopes);
@@ -141,13 +141,13 @@ namespace CobraCompiler.Assemble
             return new DefinedModule(assemblers, typeBuilder);
         }
 
-        public TypeBuilder DefineInterface(CobraType cobraType, ModuleBuilder mb)
+        public TypeBuilder DefineInterface(string @namespace, CobraType cobraType, ModuleBuilder mb)
         {
             string identifier = cobraType is CobraGenericInstance genInst
                 ? genInst.Base.Identifier
                 : cobraType.Identifier;
 
-            TypeBuilder typeBuilder = mb.DefineType(identifier, TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
+            TypeBuilder typeBuilder = mb.DefineType(@namespace + "." + identifier, TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
 
             Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
 
@@ -161,7 +161,6 @@ namespace CobraCompiler.Assemble
                     placeholders[i] = new GenericTypeParamPlaceholder(generic.TypeParams[i].Identifier, i);
                     generics[placeholders[i]] = genericParams[i];
                 }
-
 
                 _typeStore.PushCurrentGenerics(generics);
             }

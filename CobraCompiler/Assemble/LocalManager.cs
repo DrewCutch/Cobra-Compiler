@@ -2,10 +2,14 @@
 using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using CobraCompiler.Parse.Scopes;
+using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
 {
@@ -16,82 +20,125 @@ namespace CobraCompiler.Assemble
         };
 
         private readonly Dictionary<Scope, Dictionary<string, LocalBuilder>> _locals;
-        private readonly Dictionary<string, FieldBuilder> _fields;
+        private readonly TypeStore _typeStore;
 
         private readonly FuncScope _funcScope;
         private readonly ILGenerator _il;
 
-        private readonly ClassScope _classScope;
+        private readonly CobraType _classType;
+        private bool IsClassMethod => _classType != null;
 
-        public LocalManager(FuncScope funcScope, ILGenerator il, Type returnType)
+        public LocalManager(FuncScope funcScope, TypeStore typeStore, ILGenerator il, Type returnType)
         {
             _funcScope = funcScope;
             _locals = new Dictionary<Scope, Dictionary<string, LocalBuilder>>();
-            _fields = new Dictionary<string, FieldBuilder>();
+            _typeStore = typeStore;
             _il = il;
-            // TODO: Implement FieldStore
+
+            ClassScope classScope = GetParentClassScope(funcScope);
+            if(classScope != null)
+                _classType = classScope.ThisType;
+
             if(returnType != typeof(void))
                 DeclareVar(funcScope, "@ret", returnType);
         }
 
-        private bool IsClassField(string name) => _fields.ContainsKey(name);
+        private static ClassScope GetParentClassScope(Scope scope)
+        {
+            switch (scope.Parent)
+            {
+                case null:
+                    return null;
+                case ClassScope classScope:
+                    return classScope;
+                default:
+                    return GetParentClassScope(scope.Parent);
+            }
+        }
+
+        public void PrepStoreField(string name)
+        {
+            if(IsClassField(name))
+                _il.Emit(OpCodes.Ldarg_0);
+        }
+
+        private bool IsClassField(string name) => IsClassMethod && _typeStore.TypeMemberExists(_classType, name, _funcScope.GetVarType(name));
+
+        private FieldInfo GetClassField(string name)
+        {
+            if (!IsClassField(name))
+                return null;
+
+            FieldInfo fieldBuilder = (FieldInfo) _typeStore.GetMemberInfo(_classType, name, _funcScope.GetVarType(name));
+
+            return fieldBuilder;
+        }
+
+        public void LoadVarAddress(Scope scope, string name)
+        {
+            LoadVarCore(scope, name, true);
+        }
 
         public void LoadVar(Scope scope, string name)
+        {
+            LoadVarCore(scope, name, false);
+        }
+
+        private void LoadVarCore(Scope scope, string name, bool loadAddress)
         {
             int argPos = _funcScope.GetParamPosition(name);
             if (argPos != -1)
             {
-                if (argPos < LoadArgShortCodes.Length)
+                if(loadAddress)
+                    _il.Emit(OpCodes.Ldarga, argPos);
+                else if (argPos < LoadArgShortCodes.Length)
                     _il.Emit(LoadArgShortCodes[argPos]);
                 else
                     _il.Emit(OpCodes.Ldarg, argPos);
                 return;
             }
 
-            if (IsClassField(name))
-                LoadField(name);
-            else
-                LoadLocal(scope, name);
+            if (LocalExists(scope, name))
+                LoadLocal(scope, name, loadAddress);
+            else if (IsClassField(name))
+                LoadField(name, loadAddress);
         }
 
-        private void LoadField(string name)
+        private void LoadField(string name, bool loadAddress)
         {
             if(!IsClassField(name))
                 throw new ArgumentOutOfRangeException(nameof(name));
 
             _il.Emit(OpCodes.Ldarg_0);
-            _il.Emit(OpCodes.Ldfld, _fields[name]);
+            _il.Emit(loadAddress ? OpCodes.Ldflda : OpCodes.Ldfld, GetClassField(name));
         }
 
-        private void LoadLocal(Scope scope, string name)
+        private void LoadLocal(Scope scope, string name, bool loadAddress)
         {
             LocalBuilder local = GetLocal(scope, name);
             
-
             if (local != null)
-                _il.Emit(OpCodes.Ldloc, local);
+                _il.Emit(loadAddress ? OpCodes.Ldloca : OpCodes.Ldloc, local);
         }
 
         public void StoreVar(Scope scope, string name)
         {
             int argPos = _funcScope.GetParamPosition(name);
-            if (argPos == -1)
-            {
-                StoreLocal(scope, name);
-                return;
-            }
-
-            if (IsClassField(name))
-                StoreField(name);
-            else
+            
+            if(argPos != -1)
                 _il.Emit(OpCodes.Starg, argPos);
+
+            if(LocalExists(scope, name))
+                StoreLocal(scope, name);
+            else if(IsClassField(name))
+                StoreField(name);
         }
 
         private void StoreLocal(Scope scope, string name)
         {
             LocalBuilder local = GetLocal(scope, name);
 
-            if (local != null)
+            if (local != null) { }
                 _il.Emit(OpCodes.Stloc, local);
         }
 
@@ -100,9 +147,10 @@ namespace CobraCompiler.Assemble
             if(!IsClassField(name))
                 throw new ArgumentOutOfRangeException(nameof(name));
 
-            _il.Emit(OpCodes.Ldarg_0);
-            _il.Emit(OpCodes.Stfld, _fields[name]);
+            _il.Emit(OpCodes.Stfld, GetClassField(name));
         }
+
+        public bool LocalExists(Scope scope, string name) => GetLocal(scope, name) != null;
 
         public LocalBuilder GetLocal(Scope scope, string name)
         {

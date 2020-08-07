@@ -14,10 +14,22 @@ namespace CobraCompiler.Parse.Scopes
         public readonly ClassDeclarationStatement ClassDeclaration;
         public readonly CobraType ThisType;
 
-        public ClassScope(Scope parentScope, ClassDeclarationStatement classDeclaration) : base(parentScope, classDeclaration.Body)
+        public ClassScope(Scope parentScope, ClassDeclarationStatement classDeclaration) : base(parentScope, classDeclaration.Body.Body.ToArray())
         {
             ClassDeclaration = classDeclaration;
-            ThisType = new CobraType("this", parentScope.GetType(classDeclaration.Type));
+            if (classDeclaration.TypeArguments.Count > 0)
+            {
+                List<GenericTypeParamPlaceholder> typeParamPlaceholders = new List<GenericTypeParamPlaceholder>();
+                for (int i = 0; i < classDeclaration.TypeArguments.Count; i++)
+                {
+                    typeParamPlaceholders.Add(new GenericTypeParamPlaceholder(classDeclaration.TypeArguments[i].Lexeme, i));
+                }
+
+                ThisType = new CobraGeneric("this", typeParamPlaceholders);
+            }
+            else
+                ThisType = new CobraType("this", parentScope.GetType(classDeclaration.Type));
+
             Declare("this", ThisType);
         }
 

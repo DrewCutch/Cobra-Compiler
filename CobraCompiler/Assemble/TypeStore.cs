@@ -42,6 +42,14 @@ namespace CobraCompiler.Assemble
             _types[cobraType] = type;
         }
 
+        public void UpdateType(CobraType cobraType, Type type)
+        {
+            if(!_types.ContainsKey(cobraType))
+                throw new ArgumentException("Cannot update type not yet added to type store!", nameof(cobraType));
+
+            _types[cobraType] = type;
+        }
+
         public void PushCurrentGenerics(Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics)
         {
             generics.ToList().ForEach(x => _currentGenerics.Add(x.Key, x.Value));
@@ -126,15 +134,34 @@ namespace CobraCompiler.Assemble
             _typeMembers[type][memberName][memberType] = member;
         }
 
+        public bool TypeMemberExists(CobraType cobraType, string memberName, CobraType memberType) =>
+            GetMemberInfo(cobraType, memberName, memberType) != null;
+
         public MemberInfo GetMemberInfo(CobraType cobraType, string memberName, CobraType memberType)
         {
             Type type = GetType(cobraType);
 
-            if (!(type is TypeBuilder))
+            if (type.Module != _moduleBuilder)
                 return type.GetMember(memberName).FirstOrDefault();
 
-            if(!(memberType is FuncGenericInstance func))
-                return _typeMembers[cobraType][memberName].Values.First();
+
+            if (type.IsConstructedGenericType && cobraType is CobraGenericInstance cobraGenericInstance)
+            {
+                MemberInfo genericInfo = _typeMembers[cobraGenericInstance.Base][memberName].Values.FirstOrDefault();
+                TypeBuilder baseType = genericInfo.DeclaringType as TypeBuilder;
+                MemberInfo[] members = baseType.GetMembers();
+                
+                //TODO: this is probably wrong
+                return genericInfo;
+            }
+
+            if (!(memberType is FuncGenericInstance func))
+            {
+                if (!_typeMembers[cobraType].ContainsKey(memberName))
+                    return null;
+                
+                return _typeMembers[cobraType][memberName].Values.FirstOrDefault();
+            }
 
             foreach (CobraType key in _typeMembers[cobraType][memberName].Keys)
             {

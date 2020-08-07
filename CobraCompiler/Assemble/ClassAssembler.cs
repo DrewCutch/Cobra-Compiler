@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.TypeCheck.Types;
@@ -31,6 +32,8 @@ namespace CobraCompiler.Assemble
         private TypeBuilder _typeBuilder;
         private List<IAssemble> _members;
 
+        private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _classGenerics;
+
         private enum MethodType
         {
             Private,
@@ -44,16 +47,40 @@ namespace CobraCompiler.Assemble
             _methodStore = methodStore;
             _assemblyBuilder = assemblyBuilder;
             _moduleBuilder = moduleBuilder;
+            _classGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
         }
 
         public TypeBuilder AssembleDefinition()
         {
-            ClassDeclarationStatement declaration = _classScope.ClassDeclaration;
-            Type[] interfaces = { _typeStore.GetType(_classScope.GetType(declaration.Type)) };
+            ClassDeclarationStatement classDeclaration = _classScope.ClassDeclaration;
+
+            string @namespace = (_classScope.Parent as ModuleScope)?.Name ?? (_classScope.Parent.Parent as ModuleScope)?.Name;
+
             _typeBuilder =
-                _moduleBuilder.DefineType(declaration.Name.Lexeme, ClassAttributes, typeof(object), interfaces);
+                _moduleBuilder.DefineType(@namespace + "." + classDeclaration.Name.Lexeme, ClassAttributes, typeof(object));
+
+            if (classDeclaration.TypeArguments.Count > 0)
+            {
+                GenericTypeParameterBuilder[] genericParams = _typeBuilder.DefineGenericParameters(classDeclaration.TypeArguments.Select(arg => arg.Lexeme).ToArray());
+                GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
+                for (int i = 0; i < classDeclaration.TypeArguments.Count; i++)
+                {
+                    _typeStore.AddType(_classScope.GetType(new TypeInitExpression(new[] { classDeclaration.TypeArguments[i] }, new TypeInitExpression[] { }, null)), genericParams[i]);
+                    placeholders[i] = new GenericTypeParamPlaceholder(classDeclaration.TypeArguments[i].Lexeme, i);
+                    _classGenerics[placeholders[i]] = genericParams[i];
+                }
+
+
+                _typeStore.PushCurrentGenerics(_classGenerics);
+            }
+
+            Type[] interfaces = { _typeStore.GetType(_classScope.GetType(classDeclaration.Type)) };
+            foreach (Type @interface in interfaces)
+                _typeBuilder.AddInterfaceImplementation(@interface);
 
             AssembleDefinitions();
+
+            _typeStore.PopGenerics(_classGenerics);
 
             return _typeBuilder;
         }
@@ -75,9 +102,9 @@ namespace CobraCompiler.Assemble
             }
 
             // If the body is not a block statement that means the class consists of a single method
-            if (_classScope.Body is BlockStatement classBlock)
-                foreach (Statement statement in classBlock.Body)
-                    AssembleStatement(statement);
+            
+            foreach (Statement statement in _classScope.Body)
+                AssembleStatement(statement);
         }
 
         private FuncAssembler AssembleMethodDefinition(FuncScope funcScope)
@@ -104,10 +131,15 @@ namespace CobraCompiler.Assemble
 
         public void Assemble()
         {
+            _typeStore.PushCurrentGenerics(_classGenerics);
+
             foreach (IAssemble member in _members)
                 member.Assemble();
 
+            //_typeStore.UpdateType(_classScope.GetType(_classScope.ClassDeclaration.Type), _typeBuilder.CreateType());
+
             _typeBuilder.CreateType();
+            _typeStore.PopGenerics(_classGenerics);
         }
 
         private void AssembleStatement(Statement statement)
