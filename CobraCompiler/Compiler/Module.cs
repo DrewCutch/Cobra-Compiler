@@ -7,7 +7,7 @@ using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Compiler
 {
-    class Module
+    public class Module
     {
         public readonly string Name;
         public readonly string SystemPath;

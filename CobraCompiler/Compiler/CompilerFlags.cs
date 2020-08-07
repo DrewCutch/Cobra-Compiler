@@ -3,7 +3,7 @@
 namespace CobraCompiler.Compiler
 {
     [Flags]
-    enum CompilerFlags
+    public enum CompilerFlags
     {
         None = 0,
         Debug = PrintScan | PrintParse,

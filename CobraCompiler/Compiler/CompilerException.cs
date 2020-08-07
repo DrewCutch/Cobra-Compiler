@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CobraCompiler.Compiler
 {
-    class CompilerException : Exception
+    public class CompilerException : Exception
     {
         public CompilerException(string message) : base(message)
         {

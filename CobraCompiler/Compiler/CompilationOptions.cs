@@ -1,6 +1,6 @@
 ﻿namespace CobraCompiler.Compiler
 {
-    readonly struct CompilationOptions
+    public readonly struct CompilationOptions
     {
         public readonly string FilePath;
         public readonly CompilerFlags Flags;

@@ -10,7 +10,7 @@ using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Compiler
 {
-    class ProjectReader
+    public class ProjectReader
     {
         public readonly string Path;
         public readonly string ProjectFilePath;

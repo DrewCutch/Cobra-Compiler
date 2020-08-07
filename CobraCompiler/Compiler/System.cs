@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CobraCompiler.Compiler
 {
-    class System
+    public class System
     {
         public const string SystemPathDelimiter = ".";
 

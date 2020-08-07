@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CobraCompiler.Compiler
 {
-    class Project
+    public class Project
     {
         public readonly string Name;
         public readonly IReadOnlyList<System> Systems;
