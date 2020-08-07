@@ -8,9 +8,25 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>CobraCompiler</RootNamespace>
     <AssemblyName>CobraCompiler</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -37,9 +53,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -72,6 +85,7 @@
     <Compile Include="Class1.cs" />
     <Compile Include="Compiler\CheckedProject.cs" />
     <Compile Include="Compiler\CompilationOptions.cs" />
+    <Compile Include="Compiler\CompilationResults.cs" />
     <Compile Include="Compiler\Compiler.cs" />
     <Compile Include="Compiler\CompilerException.cs" />
     <Compile Include="Compiler\CompilerFlags.cs" />
@@ -90,6 +104,12 @@
     <Compile Include="Parse\Expressions\IExpressionVisitorWithContext.cs" />
     <Compile Include="Parse\Expressions\IndexExpression.cs" />
     <Compile Include="Parse\Expressions\InterfaceDefinitionExpression.cs" />
+    <Compile Include="Parse\Scopes\GenericScope.cs" />
+    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnAndExpression.cs" />
+    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnBindExpression.cs" />
+    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnConstant.cs" />
+    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnExpression.cs" />
+    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnOrExpression.cs" />
     <Compile Include="Scanning\SourceLocation.cs" />
     <Compile Include="Scanning\SourceReader.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidConditionTypeException.cs" />
@@ -120,6 +140,7 @@
     <Compile Include="TypeCheck\Exceptions\InvalidImportException.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidMemberException.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidTypeImplementationException.cs" />
+    <Compile Include="TypeCheck\Exceptions\MissingReturnException.cs" />
     <Compile Include="TypeCheck\Operators\GenericOperator.cs" />
     <Compile Include="TypeCheck\Operators\Operation.cs" />
     <Compile Include="TypeCheck\Operators\Operator.cs" />
@@ -185,13 +206,24 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
     <None Include="SupportedProject\ErrorTest.cobra" />
     <None Include="SupportedProject\ListTools.cobra" />
     <None Include="SupportedProject\SupportedProject.cobraproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SupportedProject\SupportedCode.cobra" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
