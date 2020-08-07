@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using CobraCompiler.Scanning;
 
-namespace CobraCompilerTest.Scanning
+namespace CobraCompilerTestFramework.Scanning
 {
     class StringSourceReader: SourceReader
     {

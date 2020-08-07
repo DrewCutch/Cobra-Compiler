@@ -1,0 +1,48 @@
+﻿func maxInt(nums: [int]): int{
+	return 0
+//	var i: int = 1
+//	var max: int = nums[0]
+//	while(i < nums.Count){
+//		if(nums[i] > max)
+//			max = nums[i]
+
+//		i = i + 1
+//	}
+//	return max
+}
+
+func minInt(nums: [int]): int{
+	return 0
+//	var i: int = 1
+//	var min: int = nums[0]
+//	while(i < nums.Count){
+//		if(nums[i] < min)
+//			min = nums[i]
+
+//		i = i + 1
+}
+
+//	return min
+//}
+
+
+//func map[T, U](list: [T], f: f[T, U]): U{
+//	var mapped: [U] = []
+//	var i: int = 1
+//	while(i < nums.Count){
+//		mapped.Add(f(list.Get(i)))
+
+//		i = i + 1
+//	}
+
+//	return mapped
+//}
+
+func doTwice[X](arg: X, f: f[X, X], g: f[X, X]): X{
+	return compose[X, X, X](arg, f, g)
+}
+
+func compose[X, Y, Z](arg: X, f: f[X, Y], g: f[Y, Z]): Z{
+	var intermediate: Y = f(arg)
+	return g(intermediate)
+}

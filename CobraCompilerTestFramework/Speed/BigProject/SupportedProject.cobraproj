@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project name="SupportedProject">
+  <SystemSet>
+      <System name="default" path ="">
+        <Module name="SupportedCode1" path="SupportedCode1.cobra"/>
+        <Module name="SupportedCode2" path="SupportedCode2.cobra"/>
+        <Module name="SupportedCode3" path="SupportedCode3.cobra"/>
+        <Module name="SupportedCode4" path="SupportedCode4.cobra"/>
+        <Module name="SupportedCode5" path="SupportedCode5.cobra"/>
+        <Module name="SupportedCode6" path="SupportedCode6.cobra"/>
+        <Module name="SupportedCode7" path="SupportedCode7.cobra"/>
+        <Module name="SupportedCode8" path="SupportedCode8.cobra"/>
+        <Module name="SupportedCode9" path="SupportedCode9.cobra"/>
+        <Module name="SupportedCode10" path="SupportedCode10.cobra"/>
+        <Module name="ListTools" path="ListTools.cobra"/>
+      </System>
+  </SystemSet>
+</Project>

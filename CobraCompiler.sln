@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobraCompiler", "CobraCompiler\CobraCompiler.csproj", "{EC6EF64D-93A3-425B-8A2F-F12EC4D00BAF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobraCompilerTest", "CobraCompilerTest\CobraCompilerTest.csproj", "{7BF65F54-A4D1-462D-8DA8-9FBB4B6B9F11}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobraCompilerTestFramework", "CobraCompilerTestFramework\CobraCompilerTestFramework.csproj", "{597B3EDB-1E5C-46A1-87D6-E695F7BA9FF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{EC6EF64D-93A3-425B-8A2F-F12EC4D00BAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC6EF64D-93A3-425B-8A2F-F12EC4D00BAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC6EF64D-93A3-425B-8A2F-F12EC4D00BAF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7BF65F54-A4D1-462D-8DA8-9FBB4B6B9F11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7BF65F54-A4D1-462D-8DA8-9FBB4B6B9F11}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7BF65F54-A4D1-462D-8DA8-9FBB4B6B9F11}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7BF65F54-A4D1-462D-8DA8-9FBB4B6B9F11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{597B3EDB-1E5C-46A1-87D6-E695F7BA9FF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{597B3EDB-1E5C-46A1-87D6-E695F7BA9FF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{597B3EDB-1E5C-46A1-87D6-E695F7BA9FF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{597B3EDB-1E5C-46A1-87D6-E695F7BA9FF1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

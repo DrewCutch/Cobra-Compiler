@@ -2,19 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 using CobraCompiler.ErrorLogging;
-using NUnit.Framework;
 using CobraCompiler.Scanning;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CobraCompilerTest.Scanning
+namespace CobraCompilerTestFramework.Scanning
 {
+    [TestClass]
     public class TokenTest
     {
-        [SetUp]
-        public void Setup()
-        {
-        }
-
-        [Test]
+        [TestMethod]
         public void TestStringifySingleToken()
         {
             string source = "var";
@@ -23,7 +19,7 @@ namespace CobraCompilerTest.Scanning
             Assert.AreEqual(source + '\n', Token.Stringify(tokens.ToArray()));
         }
 
-        [Test]
+        [TestMethod]
         public void TestStringifySingleLine()
         {
             string source = "var i: int";
@@ -32,7 +28,7 @@ namespace CobraCompilerTest.Scanning
             Assert.AreEqual(source + '\n', Token.Stringify(tokens.ToArray()));
         }
 
-        [Test]
+        [TestMethod]
         public void TestStringifyMultiLine()
         {
             string source = "var i: int = 10\n" +
@@ -43,7 +39,7 @@ namespace CobraCompilerTest.Scanning
             Assert.AreEqual(source + '\n', Token.Stringify(tokens.ToArray()));
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetWholeLineSingleToken()
         {
             string source = "var";
@@ -54,7 +50,7 @@ namespace CobraCompilerTest.Scanning
             Assert.AreEqual(source, Token.GetWholeLine(center));
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetWholeLineSingleLine()
         {
             string source = "var i: int";
@@ -65,7 +61,7 @@ namespace CobraCompilerTest.Scanning
             Assert.AreEqual(source, Token.GetWholeLine(center));
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetWholeLineMultiLine()
         {
             string source = "var i: int = 10\n" +

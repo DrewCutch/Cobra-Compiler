@@ -1,0 +1,451 @@
+﻿import SupportedProject.default.ListTools
+
+func sqrDist(x: int, y: int): int{
+	var dist: int = x * x + y * y
+	return dist
+}
+
+func fib(until: int): int{
+	if(until < 0){
+		printStr("Incorrect input!")
+		return 0
+	}
+	else if(until == 0){
+		return 0
+	}
+	else if(until == 1){
+		return 1
+	}
+	else{
+		var fibNum: int = fib(until - 2) + fib(until - 1)
+		return fibNum
+	}
+	return 0
+}
+
+func doMultiple[T](f: f[T, T], initial: T, times: int): T{
+	var sum: T = initial
+	var count: int = 0
+
+	while(count < times){
+		sum = f(sum)
+		count = count + 1
+	}
+
+	return sum
+}
+
+func double(n: int): int{
+	return n * 2
+}
+
+func printTimes(phrase: str, times: int){
+	var count: int = 0
+
+	while(count < times){
+		printStr(phrase)
+		count = count + 1
+	}
+
+	return
+}
+
+
+type t1 = int | bool
+type t2 = str | float
+type t3 = t1 | t2
+
+type node[T] = {
+	val: T
+	next: node[T]
+
+	setNext: f[node[T], unit]
+}
+
+class Node[T]: node[T]{
+	var val: T
+	var next: node[T]
+
+	init(val: T){
+		this.val = val
+	}
+
+	func setNext(next: node[T]){
+		this.next = next
+	}
+}
+
+type linkedList[T] = {
+	count: int
+
+	get: f[int, T]
+	add: f[T, unit]
+}
+
+
+type iterable[T] = {
+	done: bool
+	getNext: f[T]
+}
+
+class Iterator[T]: iterable[T]{
+	var done: bool
+
+	var getter: f[T, T]
+	var current: T
+	var i: int
+	var count: int
+
+	init(getter: f[T, T], count: int){
+		this.getter = getter
+		this.count = count
+		done = false
+	}
+
+	func getNext(): T{
+		var next: T = getter(this.current)
+		current = next
+		
+		i = i + 1
+		done = i > count - 1
+
+		return next
+	}
+}
+
+class LinkedList[T]: linkedList[T]{
+	var count: int
+	var head: node[T]
+	var root: node[T]
+
+	init(){
+		count = 0
+	}
+
+	func get(i: int): T{
+		if(i > count - 1){
+			return root.val
+		}
+
+		var counter: int = 0
+		var found: node[T] = root
+
+		while(counter < i){
+			found = found.next
+
+			counter = counter + 1
+		}
+
+		return found.val
+	}
+
+	func add(val: T){
+		var newNode: node[T] = Node[T](val)
+
+		if(count == 0){
+			root = newNode
+			head = newNode
+		}
+		else{
+			head.setNext(newNode)
+		}
+
+		head = newNode
+		count = count + 1
+	}
+}
+
+func mapLL[T, U](llist: linkedList[T], f: f[T, U]): linkedList[U]{
+	var newList: linkedList[U] = LinkedList[U]()
+
+	var i: int = 0
+
+	while(i < llist.count){
+		newList.add(f(llist.get(i)))
+		i = i + 1
+	}
+
+	return newList
+}
+
+func applyLL[T](llist: linkedList[T], f: f[T, unit]){
+	var i: int = 0
+	while(i < llist.count){
+		f(llist.get(i))
+		i = i + 1
+	}
+}
+
+func testLL(){
+	var llist: linkedList[int] = LinkedList[int]()
+
+	llist.add(1)
+	llist.add(5)
+	llist.add(3)
+
+	var doubled: linkedList[int] = mapLL[int, int](llist, double)
+
+	printIntLL(llist)
+	printIntLL(doubled)
+}
+
+func printIntLL(llist: linkedList[int]){
+	applyLL[int](llist, printInt)
+
+	return
+}
+
+type box[T] = {
+	val: T
+}
+
+class Box[T]: box[T]{
+	var val: T
+
+	init(val: T){
+		this.val = val
+	}
+}
+
+
+func boxVal[T](val: T): box[T]{
+	return Box[T](val)
+}
+
+func unboxVal[T](boxed: box[T]): T{
+	return boxed.val
+}
+
+func clamp(a: int, min: int, max: int): int{
+	if(a > max)
+		return max
+	else if(a < min)
+		return min
+	else
+		return a
+}
+
+type vec2D = {
+	x: int
+	y: int
+}
+
+class Vector2D: vec2D{
+	var x: int
+	var y: int
+
+	init(x: int, y: int){
+		this.x = x
+		this.y = y
+	}
+
+	func bad(){
+		x = 5
+	}
+}
+
+func addVec(a: vec2D, b: vec2D): vec2D{
+	return Vector2D(a.x + b.x, a.y + b.y)
+}
+
+func sqrMag(v: vec2D): int{
+	return v.x * v.x + v.y * v.y
+}
+
+func manMag(v: vec2D): int{
+	return v.x + v.y
+}
+
+func noReturn(thing: int){
+	printInt(thing)
+}
+
+type person = {
+	name: str
+	age: int
+	bestFriend: person
+
+	greet: f[str, unit]
+	meet: f[person, unit]
+	setBest: f[person, unit]
+	callBestie: f[unit]
+}
+
+type Istr = {
+	toStr: f[str]
+	toStr: f[str, str]
+}
+
+
+type sperson = person & Istr
+
+class Person: sperson {
+	var name: str
+	var age: int
+	var bestFriend: person
+
+	init(name: str, age: int){
+		this.name = name
+		this.age = age
+	}
+
+	func setBest(best: person){
+		this.bestFriend = best
+	}
+
+	func callBestie(){
+		printStr("calling: ")
+		printStr(this.bestFriend.name)
+	}
+
+	func greet(greeting: str){
+		printStr(this.name)
+		printStr(greeting)
+	}
+
+	func meet(other: person){
+		printStr(this.name)
+		printStr("meet")
+		printStr(other.name)
+	}
+
+	func toStr(): str{
+		return this.name
+	}
+
+	func toStr(arg: str): str{
+		return arg
+	}
+}
+
+
+func testVecs(){
+	var a: vec2D = Vector2D(5, 5)
+	var b: vec2D = Vector2D(2, 0 - 1)
+
+	var c: vec2D = addVec(a,b)
+
+	printStr("resulting vector:")
+	printInt(c.x)
+	printInt(c.y)
+}
+
+func add(a: int, b: int, c: int): int{
+	return a + b + c
+}
+
+func add(a: int, b: int): int{
+	return a + b
+}
+
+func testA(a: int): str{
+	if(a > 0)
+		return "positive"
+	
+	return "negative"
+}
+
+func testB(a: str): bool{
+	printStr(a)
+
+	return true
+}
+
+func main(): int{
+	testLL()
+	noReturn(10)
+
+	printInt(clamp(10, 0, 5))
+
+	var drew: person = Person("drew", 20)
+	var briti: sperson = Person("briti", 19)
+
+	var printable: Istr = briti
+
+	var dum: str = "dum"
+
+	printStr(printable.toStr())
+	printStr(printable.toStr(dum))
+
+	drew.setBest(briti)
+	drew.callBestie()
+
+	drew.meet(briti)
+
+	if("hello".Contains("o")){
+		printStr("hello contains o")
+	}
+
+	var a: int = (4 - 3) * (10 / 3)
+	a = a + 1
+	var b: int = 5
+	var sum: int = a + b
+
+	//var function: f[int, int, int] = add
+	//var function2: f[int, int, int] = function
+	//var function3: f[str, int, unit] = printTimes
+
+	//sum = function(10, 10)
+	printInt(sum)
+
+	var powered: int = doMultiple[int](double, 1, 5)
+	printInt(powered)
+
+	if(sum > a){
+		printStr("The sum is greater than a")
+	}
+	else if(sum < 2){
+		printStr("The sum is less than a")
+	}
+	else{
+		printStr("The sum is less than a")
+	}
+	var count: int = 0
+	while(count < 10){
+		printInt(fib(count))
+		count = count + 1
+	}
+	else{
+		printStr("I cannot count!")
+	}
+
+	printInt(sum)
+
+	printInt(sqrDist(3, 3))
+
+	printStr("Hello world!")
+
+	printTimes("Hello", 5)
+
+	var squares: [int] = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+	var size: int = squares.Count
+
+	var smallest: int = ListTools.minInt(squares)
+	printInt(smallest)
+
+	var result: bool = ListTools.compose[int, str, bool](5, testA, testB)
+
+	var i: int = 0
+	while(i < 10){
+		printInt(i)
+		i = i + 1
+	}
+
+	var u: t1 = 5
+	var u2: union[int, bool, str] = u
+	var u3: union[int, bool, union[str, float]]
+	var u4: union[int, bool, str, float] = u3
+
+	var unionList: [int | bool] = [1, true, 5, 2, false, false]
+	var boolList: [bool] = [true, true, false]
+	var strList: [str] = ["hello", "world"]
+
+	//var strListItem: str = strList.Get(0)
+	// strList[1] = "drew"
+	
+	var listList: [[int]] = [[1,2,3], [4,5,6]]
+
+	var u5: int|bool|float = 5
+
+	return 0
+}
