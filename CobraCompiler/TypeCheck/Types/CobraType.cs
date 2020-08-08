@@ -14,7 +14,19 @@ namespace CobraCompiler.TypeCheck.Types
         protected readonly Dictionary<string, CobraType> _symbols;
         public IReadOnlyDictionary<string, CobraType> Symbols => _symbols;
 
-        public IReadOnlyList<IReadOnlyList<CobraType>> CallSigs => _callSigs;
+        public IEnumerable<IReadOnlyList<CobraType>> CallSigs
+        {
+            get
+            {
+                foreach (List<CobraType> callSig in _callSigs)
+                    yield return callSig;
+
+                foreach (CobraType parent in _parents)
+                    foreach (IReadOnlyList<CobraType> parentCallSig in parent.CallSigs)
+                        yield return parentCallSig;
+
+            }
+        }
 
         private readonly List<List<CobraType>> _callSigs;
 
@@ -26,7 +38,7 @@ namespace CobraCompiler.TypeCheck.Types
             _callSigs = new List<List<CobraType>>();
         }
 
-        public CobraType(string identifier, IEnumerable<CobraType> parents)
+        public CobraType(string identifier, params CobraType[] parents)
         {
             Identifier = identifier;
             _symbols = new Dictionary<string, CobraType>();
@@ -35,13 +47,10 @@ namespace CobraCompiler.TypeCheck.Types
             _callSigs = new List<List<CobraType>>();
         }
 
-        public CobraType(string identifier, params CobraType[] parents)
+        
+        public void AddParent(CobraType parent)
         {
-            Identifier = identifier;
-            _symbols = new Dictionary<string, CobraType>();
-            _parents = new HashSet<CobraType>(parents);
-            _callSigs = new List<List<CobraType>>();
-            _callSigs = new List<List<CobraType>>();
+            _parents.Add(parent);
         }
 
         public virtual bool HasSymbol(string symbol)
@@ -77,7 +86,10 @@ namespace CobraCompiler.TypeCheck.Types
 
         public bool IsCallable()
         {
-            return _callSigs.Count > 0;
+            if (_callSigs.Count > 0)
+                return true;
+
+            return _parents.Any(parent => parent.IsCallable());
         }
 
         public bool IsCallable(params CobraType[] parameters) => IsCallable(parameters.ToList());
@@ -87,7 +99,10 @@ namespace CobraCompiler.TypeCheck.Types
             if (!IsCallable())
                 return false;
 
-            return CallReturn(parameters) != null;
+            if (CallReturn(parameters) != null)
+                return true;
+
+            return _parents.Any(parent => parent.CallReturn(parameters) != null);
         }
 
         public CobraType CallReturn(params CobraType[] parameters) => CallReturn(parameters.ToList());
@@ -115,6 +130,13 @@ namespace CobraCompiler.TypeCheck.Types
                     return sig.Last();
             }
 
+            foreach (CobraType parent in _parents)
+            {
+                CobraType callReturn = parent.CallReturn(parameters);
+                if (callReturn != null)
+                    return callReturn;
+            }
+
             return null;
         }
 
@@ -128,17 +150,6 @@ namespace CobraCompiler.TypeCheck.Types
         public virtual bool CanCastTo(CobraType other)
         {
             return Equals(other) || GetCommonParent(other).Equals(other);
-        }
-
-        protected void AddParent(CobraType parent)
-        {
-            foreach (KeyValuePair<string, CobraType> symbol in parent.Symbols)
-                DefineSymbol(symbol.Key, symbol.Value);
-
-            foreach (List<CobraType> callSig in parent._callSigs)
-                AddCallSig(callSig);
-
-            _parents.Add(parent);
         }
 
         public virtual CobraType GetCommonParent(CobraType other, bool unionize = true)
