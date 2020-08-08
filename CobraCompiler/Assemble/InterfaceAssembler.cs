@@ -100,5 +100,10 @@ namespace CobraCompiler.Assemble
 
             _typeStore.PopGenerics(_interfaceGenerics);
         }
+
+        public override string ToString()
+        {
+            return $"InterfaceAssembler({_cobraType.Identifier})";
+        }
     }
 }
