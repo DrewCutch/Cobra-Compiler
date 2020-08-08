@@ -65,6 +65,9 @@ namespace CobraCompiler.Assemble
         {
             _typeStore.PushCurrentGenerics(_interfaceGenerics);
 
+            foreach (CobraType parent in _cobraType.Parents)
+                _typeBuilder.AddInterfaceImplementation(_typeStore.GetType(parent));
+
             foreach (KeyValuePair<string, CobraType> symbol in _cobraType.Symbols)
             {
                 if (symbol.Value.IsCallable())

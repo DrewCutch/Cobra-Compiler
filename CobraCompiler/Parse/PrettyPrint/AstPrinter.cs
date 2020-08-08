@@ -91,7 +91,7 @@ namespace CobraCompiler.Parse.PrettyPrint
                         _printer.ExitNode();
                         break;
                     case TypeDeclarationStatement typeDeclaration:
-                        _printer.AddLeaf($"Type {typeDeclaration.Name.Lexeme} = {typeDeclaration.Type.IdentifierStr}", onLast);
+                        _printer.AddLeaf($"Type {typeDeclaration.Name.Lexeme} = IMPLEMENT TYPE PRINTING", onLast); // TODO: implement type printing
                         break;
                     case ClassDeclarationStatement classDeclaration:
                         _printer.AddNode($"Class {classDeclaration.Name.Lexeme}", onLast);

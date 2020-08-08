@@ -65,6 +65,7 @@
     <Compile Include="Assemble\ClassAssembler.cs" />
     <Compile Include="Assemble\DefinedModule.cs" />
     <Compile Include="Assemble\IAssemble.cs" />
+    <Compile Include="Assemble\InterfaceAssembler.cs" />
     <Compile Include="Assemble\LangTypeAssemblers\IntersectionAssembler.cs" />
     <Compile Include="Assemble\LangTypeAssemblers\LangTypeAssembler.cs" />
     <Compile Include="Assemble\LangTypeAssemblers\UnionAssembler.cs" />

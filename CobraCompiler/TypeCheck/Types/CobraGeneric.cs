@@ -16,6 +16,11 @@ namespace CobraCompiler.TypeCheck.Types
         {
             _typeParams = new List<GenericTypeParamPlaceholder>(typeParams);
         }
+        public CobraGeneric(string identifier, IEnumerable<GenericTypeParamPlaceholder> typeParams, IEnumerable<CobraType> parents) : base(identifier, parents)
+        {
+            _typeParams = new List<GenericTypeParamPlaceholder>(typeParams);
+        }
+
 
         public CobraGenericInstance CreateGenericInstance(Dictionary<GenericTypeParamPlaceholder, CobraType> typeArguments)
         {

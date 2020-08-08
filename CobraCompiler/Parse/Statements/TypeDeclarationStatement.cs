@@ -13,13 +13,15 @@ namespace CobraCompiler.Parse.Statements
         public readonly Token Name;
         public readonly IReadOnlyList<Token> TypeArguments;
 
-        public readonly TypeInitExpression Type;
+        public readonly IReadOnlyList<TypeInitExpression> Parents;
+        public readonly InterfaceDefinitionExpression Interface;
 
-        public TypeDeclarationStatement(Token name, IReadOnlyList<Token> typeArguments, TypeInitExpression type)
+        public TypeDeclarationStatement(Token name, IReadOnlyList<Token> typeArguments, IEnumerable<TypeInitExpression> parents, InterfaceDefinitionExpression interfaceBody)
         {
             Name = name;
             TypeArguments = typeArguments;
-            Type = type;
+            Parents = new List<TypeInitExpression>(parents);
+            Interface = interfaceBody;
         }
     }
 }

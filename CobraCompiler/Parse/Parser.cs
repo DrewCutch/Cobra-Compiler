@@ -286,13 +286,25 @@ namespace CobraCompiler.Parse
                 Expect(TokenType.RightBracket, "Expect closing brace after type parameter list");
             }
 
-            Expect(TokenType.Equal, "Expect assignment after type declaration.");
+            List<TypeInitExpression> parents = new List<TypeInitExpression>();
+            if (Match(TokenType.Colon))
+            {
+                do
+                {
+                    parents.Add(SimpleTypeInit());
+                } while (Match(TokenType.Comma));
+            }
 
-            TypeInitExpression typeInit = TypeInit();
+            InterfaceDefinitionExpression interfaceDefinition = null;
+            if (Match(TokenType.LeftBrace))
+            {
+
+                interfaceDefinition = InterfaceDefinition();
+            }
 
             Expect(TokenType.NewLine, "Expect new line after type declaration.");
 
-            return new TypeDeclarationStatement(name,typeParams,  typeInit);
+            return new TypeDeclarationStatement(name, typeParams, parents, interfaceDefinition);
         }
 
         private ParamDeclarationStatement ParamDeclaration()

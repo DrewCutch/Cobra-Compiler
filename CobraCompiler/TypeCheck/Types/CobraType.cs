@@ -26,6 +26,15 @@ namespace CobraCompiler.TypeCheck.Types
             _callSigs = new List<List<CobraType>>();
         }
 
+        public CobraType(string identifier, IEnumerable<CobraType> parents)
+        {
+            Identifier = identifier;
+            _symbols = new Dictionary<string, CobraType>();
+            _parents = new HashSet<CobraType>(parents);
+            _callSigs = new List<List<CobraType>>();
+            _callSigs = new List<List<CobraType>>();
+        }
+
         public CobraType(string identifier, params CobraType[] parents)
         {
             Identifier = identifier;

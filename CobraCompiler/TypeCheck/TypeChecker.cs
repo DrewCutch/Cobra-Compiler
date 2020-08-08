@@ -236,35 +236,51 @@ namespace CobraCompiler.TypeCheck
 
         private void DeclareType(TypeDeclarationStatement typeDeclaration, Scope scope)
         {
-            CobraType newType;
+            List<GenericTypeParamPlaceholder> typeParams = new List<GenericTypeParamPlaceholder>();
             if (typeDeclaration.TypeArguments.Count > 0)
             {
                 scope = PushGenericScope(typeDeclaration, typeDeclaration.TypeArguments, scope);
 
-                List<GenericTypeParamPlaceholder> typeParams = new List<GenericTypeParamPlaceholder>();
                 int i = 0;
                 foreach (Token typeArgument in typeDeclaration.TypeArguments)
                 {
                     typeParams.Add(new GenericTypeParamPlaceholder(typeArgument.Lexeme, i));
                     i++;
                 }
-
-                CobraGeneric generic = new CobraGeneric(typeDeclaration.Name.Lexeme, typeParams);
-
-                newType = generic;
             }
-            else
+
+            bool isGenericType = typeParams.Count > 0;
+
+            List<CobraType> parents = new List<CobraType>();
+            foreach (TypeInitExpression parent in typeDeclaration.Parents)
             {
-                newType = new CobraType(typeDeclaration.Name.Lexeme);
+                if(!scope.IsTypeDefined(parent))
+                    throw new TypeNotDefinedException(parent);
+
+                parents.Add(scope.GetType(parent));
             }
 
-            CobraType type = scope.GetType(typeDeclaration.Type, newType);
+            CobraType newType = isGenericType ? 
+                new CobraGeneric(typeDeclaration.Name.Lexeme, typeParams, parents) : 
+                new CobraType(typeDeclaration.Name.Lexeme, parents);
+
+            if(isGenericType)
+                scope.Parent.DefineType(typeDeclaration.Name.Lexeme, newType);
+            else
+                scope.DefineType(typeDeclaration.Name.Lexeme, newType);
+
+            foreach (PropertyDefinitionExpression property in typeDeclaration.Interface?.Properties ?? new List<PropertyDefinitionExpression>())
+            {
+                if(!scope.IsTypeDefined(property.Type))
+                    throw new TypeNotDefinedException(property.Type);
+
+                CobraType propType = scope.GetType(property.Type);
+                newType.DefineSymbol(property.Identifier.Lexeme, propType, propType is FuncGenericInstance);
+            }
 
             // Pop the temporary generic scope
-            if (typeDeclaration.TypeArguments.Count > 0)
+            if (isGenericType)
                 scope = scope.Parent;
-
-            scope.DefineType(typeDeclaration.Name.Lexeme, type);
         }
 
         private Scope PushGenericScope(Statement body, IEnumerable<Token> typeArguments, Scope scope)
