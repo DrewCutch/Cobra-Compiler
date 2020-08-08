@@ -98,11 +98,21 @@ namespace CobraCompiler.Assemble
 
             List<IAssemble> assemblers = new List<IAssemble>();
 
+            List<InterfaceAssembler> typeAssemblers = new List<InterfaceAssembler>();
             foreach (CobraType definedType in scope.DefinedTypes)
             {
-                if((definedType is CobraGeneric generic && generic.HasFixedParamCount) || !(definedType is CobraGenericInstance))
-                    DefineInterface(scope.Name, definedType, mb);
+                if ((definedType is CobraGeneric generic && generic.HasFixedParamCount) ||
+                    !(definedType is CobraGenericInstance))
+                {
+                    InterfaceAssembler typeAssembler = new InterfaceAssembler(scope.Name, definedType, _typeStore, mb);
+                    typeAssembler.AssembleDefinition();
+
+                    typeAssemblers.Add(typeAssembler);
+                }
             }
+
+            foreach (InterfaceAssembler assembler in typeAssemblers)
+                assembler.Assemble();
 
             Queue<Scope> subScopes = new Queue<Scope>(scope.SubScopes);
 
@@ -139,68 +149,6 @@ namespace CobraCompiler.Assemble
             }
             
             return new DefinedModule(assemblers, typeBuilder);
-        }
-
-        public TypeBuilder DefineInterface(string @namespace, CobraType cobraType, ModuleBuilder mb)
-        {
-            string identifier = cobraType is CobraGenericInstance genInst
-                ? genInst.Base.Identifier
-                : cobraType.Identifier;
-
-            TypeBuilder typeBuilder = mb.DefineType(@namespace + "." + identifier, TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
-
-            Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
-
-            if (cobraType is CobraGeneric generic)
-            {
-                GenericTypeParameterBuilder[] genericParams = typeBuilder.DefineGenericParameters(generic.TypeParams.Select(param => param.Identifier).ToArray());
-                GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
-
-                for (int i = 0; i < generic.TypeParams.Count; i++)
-                {
-                    placeholders[i] = new GenericTypeParamPlaceholder(generic.TypeParams[i].Identifier, i);
-                    generics[placeholders[i]] = genericParams[i];
-                }
-
-                _typeStore.PushCurrentGenerics(generics);
-            }
-
-            _typeStore.AddType(cobraType, typeBuilder);
-
-            
-            foreach (KeyValuePair<string, CobraType> symbol in cobraType.Symbols)
-            {
-                if (symbol.Value.IsCallable())
-                {
-                    foreach (IReadOnlyList<CobraType> sig in symbol.Value.CallSigs)
-                    {
-                        Type returnType = _typeStore.GetType(sig.Last());
-                        Type[] paramTypes = sig.Take(sig.Count - 1).Select(param => _typeStore.GetType(param)).ToArray();
-
-                        MethodBuilder member = typeBuilder.DefineMethod(symbol.Key,
-                            MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.Public | MethodAttributes.HideBySig |
-                            MethodAttributes.NewSlot, CallingConventions.HasThis, returnType, paramTypes);
-
-                        _typeStore.AddTypeMember(cobraType, DotNetCobraGeneric.FuncType.CreateGenericInstance(sig), member);
-                    }
-                }
-                else
-                {
-
-                    Type returnType = _typeStore.GetType(symbol.Value);
-                    PropertyBuilder propertyBuilder = typeBuilder.DefineProperty(symbol.Key, PropertyAttributes.None, returnType, null);
-                    MethodBuilder getMethod = PropertyAssembler.DefineGetMethod(typeBuilder, symbol.Key, returnType, true);
-                    propertyBuilder.SetGetMethod(getMethod);
-
-                    _typeStore.AddTypeMember(cobraType, symbol.Value, propertyBuilder);
-                }
-            }
-
-            typeBuilder.CreateType();
-
-            _typeStore.PopGenerics(generics);
-
-            return typeBuilder;
         }
 
         public void SaveAssembly()
