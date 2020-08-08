@@ -11,7 +11,7 @@ namespace CobraCompilerTestFramework.Speed
     public class CompileSpeedTest
     {
         private const string basePath =
-            "C:\\Users\\DrewC\\source\\repos\\CobraCompiler\\CobraCompilerTest\\Speed";
+            "C:\\Users\\DrewC\\source\\repos\\CobraCompiler\\CobraCompilerTestFramework\\Speed";
 
         [TestMethod]
         public void CompileSpeedTest1()

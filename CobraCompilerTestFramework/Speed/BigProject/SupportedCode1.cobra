@@ -50,12 +50,7 @@ func printTimes(phrase: str, times: int){
 	return
 }
 
-
-type t1 = int | bool
-type t2 = str | float
-type t3 = t1 | t2
-
-type node[T] = {
+type node[T] {
 	val: T
 	next: node[T]
 
@@ -75,7 +70,7 @@ class Node[T]: node[T]{
 	}
 }
 
-type linkedList[T] = {
+type linkedList[T] {
 	count: int
 
 	get: f[int, T]
@@ -83,7 +78,7 @@ type linkedList[T] = {
 }
 
 
-type iterable[T] = {
+type iterable[T] {
 	done: bool
 	getNext: f[T]
 }
@@ -195,7 +190,7 @@ func printIntLL(llist: linkedList[int]){
 	return
 }
 
-type box[T] = {
+type box[T] {
 	val: T
 }
 
@@ -225,7 +220,7 @@ func clamp(a: int, min: int, max: int): int{
 		return a
 }
 
-type vec2D = {
+type vec2D {
 	x: int
 	y: int
 }
@@ -260,7 +255,7 @@ func noReturn(thing: int){
 	printInt(thing)
 }
 
-type person = {
+type person {
 	name: str
 	age: int
 	bestFriend: person
@@ -271,13 +266,13 @@ type person = {
 	callBestie: f[unit]
 }
 
-type Istr = {
+type Istr {
 	toStr: f[str]
 	toStr: f[str, str]
 }
 
 
-type sperson = person & Istr
+type sperson: person, Istr
 
 class Person: sperson {
 	var name: str
@@ -350,6 +345,15 @@ func testB(a: str): bool{
 
 	return true
 }
+
+
+//type recursive1 {
+//	val: recursive2
+//}
+
+//type recursive2 {
+//	val: recursive1
+//}
 
 func main(): int{
 	testLL()
@@ -431,12 +435,6 @@ func main(): int{
 		i = i + 1
 	}
 
-	var u: t1 = 5
-	var u2: union[int, bool, str] = u
-	var u3: union[int, bool, union[str, float]]
-	var u4: union[int, bool, str, float] = u3
-
-	var unionList: [int | bool] = [1, true, 5, 2, false, false]
 	var boolList: [bool] = [true, true, false]
 	var strList: [str] = ["hello", "world"]
 
@@ -444,8 +442,6 @@ func main(): int{
 	// strList[1] = "drew"
 	
 	var listList: [[int]] = [[1,2,3], [4,5,6]]
-
-	var u5: int|bool|float = 5
 
 	return 0
 }

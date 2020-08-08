@@ -60,14 +60,14 @@
     <None Include="Speed\BigProject\ListTools.cobra" />
     <None Include="Speed\BigProject\SupportedCode1.cobra" />
     <None Include="Speed\BigProject\SupportedCode10.cobra" />
-    <None Include="Speed\BigProject\SupportedCode2.cobra" />
-    <None Include="Speed\BigProject\SupportedCode3.cobra" />
-    <None Include="Speed\BigProject\SupportedCode4.cobra" />
-    <None Include="Speed\BigProject\SupportedCode5.cobra" />
-    <None Include="Speed\BigProject\SupportedCode6.cobra" />
-    <None Include="Speed\BigProject\SupportedCode7.cobra" />
-    <None Include="Speed\BigProject\SupportedCode8.cobra" />
     <None Include="Speed\BigProject\SupportedCode9.cobra" />
+    <None Include="Speed\BigProject\SupportedCode8.cobra" />
+    <None Include="Speed\BigProject\SupportedCode7.cobra" />
+    <None Include="Speed\BigProject\SupportedCode6.cobra" />
+    <None Include="Speed\BigProject\SupportedCode5.cobra" />
+    <None Include="Speed\BigProject\SupportedCode4.cobra" />
+    <None Include="Speed\BigProject\SupportedCode3.cobra" />
+    <None Include="Speed\BigProject\SupportedCode2.cobra" />
     <None Include="Speed\BigProject\SupportedProject.cobraproj" />
   </ItemGroup>
   <ItemGroup>
