@@ -81,34 +81,6 @@ namespace CobraCompiler.Parse.Scopes
             return generic.CreateGenericInstance(paramTypes);
         }
 
-        private CobraType CreateInterface(InterfaceDefinitionExpression interfaceDefinitionExpression, CobraType selfHint)
-        {
-            CobraType interfaceType;
-            if (selfHint is CobraGenericInstance genericInstance)
-            {
-                CobraGeneric genericInterface = genericInstance.Base;
-
-                _types[genericInterface.Identifier] = selfHint;
-
-                interfaceType = genericInstance;
-            }
-            else
-            {
-                _types[interfaceDefinitionExpression.IdentifierStr] = selfHint;
-                _types[selfHint.Identifier] = selfHint;
-
-                interfaceType = selfHint;
-            }
-
-            foreach (PropertyDefinitionExpression property in interfaceDefinitionExpression.Properties)
-            {
-                CobraType propType = GetType(property.Type);
-                interfaceType.DefineSymbol(property.Identifier.Lexeme, propType, propType is FuncGenericInstance);
-            }
-
-            return interfaceType;
-        }
-
         protected virtual CobraType GetSimpleType(TypeInitExpression typeInit, CobraType selfHint = null)
         {
             if (typeInit.IdentifierStr == null)
@@ -116,9 +88,6 @@ namespace CobraCompiler.Parse.Scopes
 
             if(_types.ContainsKey(typeInit.IdentifierStr))
                 return _types[typeInit.IdentifierStr];
-
-            if (typeInit is InterfaceDefinitionExpression interfaceDefinition)
-                return CreateInterface(interfaceDefinition, selfHint);
 
             return Parent?.GetSimpleType(typeInit);
         }

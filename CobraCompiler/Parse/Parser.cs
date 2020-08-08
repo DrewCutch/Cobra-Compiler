@@ -291,7 +291,7 @@ namespace CobraCompiler.Parse
             {
                 do
                 {
-                    parents.Add(SimpleTypeInit());
+                    parents.Add(TypeInitExpression());
                 } while (Match(TokenType.Comma));
             }
 
@@ -314,40 +314,6 @@ namespace CobraCompiler.Parse
             TypeInitExpression typeInit = TypeInit();
 
             return new ParamDeclarationStatement(name, typeInit);
-        }
-
-        private TypeInitExpression SimpleTypeInit()
-        {
-            List<Token> typeIdentifier = new List<Token>();
-            List<TypeInitExpression> genericParams = new List<TypeInitExpression>();
-
-            if (Check(TokenType.LeftBracket)) // List Type literal special case}
-            {
-                Token listId = new Token(TokenType.Identifier, "list", null, _tokens.Previous().SourceLocation, null);
-
-                typeIdentifier.Add(_tokens.Previous().InsertBefore(TokenType.Identifier, "list", null));
-            }
-            else
-                typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier."));
-
-            while (Match(TokenType.Dot))
-            {
-                typeIdentifier.Add(Expect(TokenType.Identifier, "Expect identifier after '.'"));
-            }
-
-            Token closingBrace = null;
-
-            if (Match(TokenType.LeftBracket))
-            {
-                do
-                {
-                    genericParams.Add(TypeInit());
-                } while (Match(TokenType.Comma));
-
-                closingBrace = Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
-            }
-
-            return new TypeInitExpression(typeIdentifier, genericParams, closingBrace);
         }
 
         private InterfaceDefinitionExpression InterfaceDefinition()
@@ -381,10 +347,36 @@ namespace CobraCompiler.Parse
 
         private TypeInitExpression TypeInitExpression()
         {
-            if (Match(TokenType.LeftBrace))
-                return InterfaceDefinition();
+            List<Token> typeIdentifier = new List<Token>();
+            List<TypeInitExpression> genericParams = new List<TypeInitExpression>();
 
-            return SimpleTypeInit();
+            if (Check(TokenType.LeftBracket)) // List Type literal special case}
+            {
+                Token listId = new Token(TokenType.Identifier, "list", null, _tokens.Previous().SourceLocation, null);
+
+                typeIdentifier.Add(_tokens.Previous().InsertBefore(TokenType.Identifier, "list", null));
+            }
+            else
+                typeIdentifier.Add(Expect(TokenType.Identifier, "Expect type identifier."));
+
+            while (Match(TokenType.Dot))
+            {
+                typeIdentifier.Add(Expect(TokenType.Identifier, "Expect identifier after '.'"));
+            }
+
+            Token closingBrace = null;
+
+            if (Match(TokenType.LeftBracket))
+            {
+                do
+                {
+                    genericParams.Add(TypeInit());
+                } while (Match(TokenType.Comma));
+
+                closingBrace = Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
+            }
+
+            return new TypeInitExpression(typeIdentifier, genericParams, closingBrace);
         }
 
         private TypeInitExpression TypeInit()
