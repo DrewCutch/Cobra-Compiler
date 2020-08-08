@@ -11,6 +11,8 @@ using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Scopes.ScopeReturn;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Scanning;
+using CobraCompiler.SupportedProject;
+using CobraCompiler.TypeCheck.Definers;
 using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Types;
@@ -113,6 +115,9 @@ namespace CobraCompiler.TypeCheck
         {
             try
             {
+                List<IDefine> typeDefiners = DeclareTypes(scope).ToList();
+                typeDefiners.ForEach(definer => definer.Define());
+
                 DefineTypes(scope);
                 CheckTypes(scope);
             }
@@ -122,32 +127,30 @@ namespace CobraCompiler.TypeCheck
             }
         }
 
+        private IEnumerable<IDefine> DeclareTypes(Scope scope)
+        {
+            foreach (Statement statement in scope.Body)
+            {
+                if (!(statement is TypeDeclarationStatement typeDeclaration))
+                    continue;
+
+                yield return new TypeDefiner(typeDeclaration, scope);
+            }
+        }
+
         private void DefineTypes(Scope scope)
         {
-            List<Statement> statements = new List<Statement>();
-
-            //if (scope.Body[0] is FuncDeclarationStatement funcDeclarationBody)
-            //    statements.Add(funcDeclarationBody.Body);
-            //else
-                statements.AddRange(scope.Body);
-
-
-            foreach (Statement statement in statements)
-            {
+            foreach (Statement statement in scope.Body)
                 DefineWithStatement(scope, statement);
-            }
         }
 
         private void DefineWithStatement(Scope scope, Statement statement)
         {
             if (statement is ClassDeclarationStatement classDeclaration)
-                DeclareClass(classDeclaration, scope);
+                DefineClass(classDeclaration, scope);
 
             if (statement is FuncDeclarationStatement funcDeclaration)
-                DeclareFunc(funcDeclaration, scope);
-
-            if (statement is TypeDeclarationStatement typeDeclaration)
-                DeclareType(typeDeclaration, scope);
+                DefineFunc(funcDeclaration, scope);
 
             if (statement is BlockStatement blockStatement)
             {
@@ -179,7 +182,7 @@ namespace CobraCompiler.TypeCheck
             }
         }
 
-        private void DeclareClass(ClassDeclarationStatement classDeclaration, Scope scope)
+        private void DefineClass(ClassDeclarationStatement classDeclaration, Scope scope)
         {
             if (classDeclaration.TypeArguments.Count > 0)
                 scope = PushGenericScope(classDeclaration, classDeclaration.TypeArguments, scope);
@@ -194,7 +197,7 @@ namespace CobraCompiler.TypeCheck
             _scopes.Enqueue(classScope);
         }
 
-        private void DeclareFunc(FuncDeclarationStatement funcDeclaration, Scope scope)
+        private void DefineFunc(FuncDeclarationStatement funcDeclaration, Scope scope)
         {
             if (funcDeclaration.TypeArguments.Count > 0)
                 scope = PushGenericScope(funcDeclaration, funcDeclaration.TypeArguments, scope);
@@ -234,40 +237,17 @@ namespace CobraCompiler.TypeCheck
             _scopes.Enqueue(funcScope);
         }
 
-        private void DeclareType(TypeDeclarationStatement typeDeclaration, Scope scope)
+        private void DefineType(TypeDeclarationStatement typeDeclaration, Scope scope)
         {
-            List<GenericTypeParamPlaceholder> typeParams = new List<GenericTypeParamPlaceholder>();
-            if (typeDeclaration.TypeArguments.Count > 0)
-            {
-                scope = PushGenericScope(typeDeclaration, typeDeclaration.TypeArguments, scope);
+            CobraType type = scope.GetSimpleType(typeDeclaration.Name.Lexeme);
 
-                int i = 0;
-                foreach (Token typeArgument in typeDeclaration.TypeArguments)
-                {
-                    typeParams.Add(new GenericTypeParamPlaceholder(typeArgument.Lexeme, i));
-                    i++;
-                }
-            }
-
-            bool isGenericType = typeParams.Count > 0;
-
-            List<CobraType> parents = new List<CobraType>();
             foreach (TypeInitExpression parent in typeDeclaration.Parents)
             {
                 if(!scope.IsTypeDefined(parent))
                     throw new TypeNotDefinedException(parent);
 
-                parents.Add(scope.GetType(parent));
+                type.AddParent(scope.GetType(parent));
             }
-
-            CobraType newType = isGenericType ? 
-                new CobraGeneric(typeDeclaration.Name.Lexeme, typeParams, parents) : 
-                new CobraType(typeDeclaration.Name.Lexeme, parents);
-
-            if(isGenericType)
-                scope.Parent.DefineType(typeDeclaration.Name.Lexeme, newType);
-            else
-                scope.DefineType(typeDeclaration.Name.Lexeme, newType);
 
             foreach (PropertyDefinitionExpression property in typeDeclaration.Interface?.Properties ?? new List<PropertyDefinitionExpression>())
             {
@@ -275,17 +255,13 @@ namespace CobraCompiler.TypeCheck
                     throw new TypeNotDefinedException(property.Type);
 
                 CobraType propType = scope.GetType(property.Type);
-                newType.DefineSymbol(property.Identifier.Lexeme, propType, propType is FuncGenericInstance);
+                type.DefineSymbol(property.Identifier.Lexeme, propType, propType is FuncGenericInstance);
             }
-
-            // Pop the temporary generic scope
-            if (isGenericType)
-                scope = scope.Parent;
         }
 
-        private Scope PushGenericScope(Statement body, IEnumerable<Token> typeArguments, Scope scope)
+        public static Scope PushGenericScope(Statement body, IEnumerable<Token> typeArguments, Scope scope)
         {
-            Scope genericScope = new GenericScope(CurrentScope, body);
+            Scope genericScope = new GenericScope(scope, body);
             int i = 0;
             foreach (Token typeArg in typeArguments)
             {

@@ -113,6 +113,7 @@
     <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnOrExpression.cs" />
     <Compile Include="Scanning\SourceLocation.cs" />
     <Compile Include="Scanning\SourceReader.cs" />
+    <Compile Include="TypeCheck\Definers\IDefine.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidConditionTypeException.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidGenericArgumentException.cs" />
     <Compile Include="Parse\Expressions\ListLiteralExpression.cs" />
@@ -145,6 +146,7 @@
     <Compile Include="TypeCheck\Operators\GenericOperator.cs" />
     <Compile Include="TypeCheck\Operators\Operation.cs" />
     <Compile Include="TypeCheck\Operators\Operator.cs" />
+    <Compile Include="TypeCheck\TypeDefiner.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeBase.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeCobraType.cs" />
     <Compile Include="TypeCheck\Types\FuncCobraGeneric.cs" />
