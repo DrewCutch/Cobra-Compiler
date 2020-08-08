@@ -237,28 +237,6 @@ namespace CobraCompiler.TypeCheck
             _scopes.Enqueue(funcScope);
         }
 
-        private void DefineType(TypeDeclarationStatement typeDeclaration, Scope scope)
-        {
-            CobraType type = scope.GetSimpleType(typeDeclaration.Name.Lexeme);
-
-            foreach (TypeInitExpression parent in typeDeclaration.Parents)
-            {
-                if(!scope.IsTypeDefined(parent))
-                    throw new TypeNotDefinedException(parent);
-
-                type.AddParent(scope.GetType(parent));
-            }
-
-            foreach (PropertyDefinitionExpression property in typeDeclaration.Interface?.Properties ?? new List<PropertyDefinitionExpression>())
-            {
-                if(!scope.IsTypeDefined(property.Type))
-                    throw new TypeNotDefinedException(property.Type);
-
-                CobraType propType = scope.GetType(property.Type);
-                type.DefineSymbol(property.Identifier.Lexeme, propType, propType is FuncGenericInstance);
-            }
-        }
-
         public static Scope PushGenericScope(Statement body, IEnumerable<Token> typeArguments, Scope scope)
         {
             Scope genericScope = new GenericScope(scope, body);
