@@ -1,0 +1,16 @@
+﻿func doMultiple[T](f: f[T, T], initial: T, times: int): T{
+	var sum: T = initial
+	var count: int = 0
+
+	while(count < times){
+		sum = f(sum)
+		count = count + 1
+	}
+
+	return sum
+}
+
+func double(n: int): int{
+	return n * 2
+}
+

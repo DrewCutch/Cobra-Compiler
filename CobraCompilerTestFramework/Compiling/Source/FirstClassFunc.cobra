@@ -1,0 +1,25 @@
+﻿func doMultiple(f: f[int, int], initial: int, times: int): int{
+	var sum: int = initial
+	var count: int = 0
+
+	while(count < times){
+		sum = f(sum)
+		count = count + 1
+	}
+
+	return sum
+}
+
+func double(n: int): int{
+	return n * 2
+}
+
+func main(): int{
+	var function: f[int, int] = double
+
+	var result: int  = doMultiple(function, 2, 5)
+
+	printInt(result)
+	
+	return 0
+}

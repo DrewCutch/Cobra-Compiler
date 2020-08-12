@@ -1,0 +1,6 @@
+﻿
+func main(): int{
+	printStr("Hello world")
+
+	return 0
+}

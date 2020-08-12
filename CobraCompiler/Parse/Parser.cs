@@ -17,8 +17,8 @@ namespace CobraCompiler.Parse
 
         public Parser(IReadOnlyList<Token> tokens, ErrorLogger errorLogger)
         {
-            this._tokens = new ListNibbler<Token>(tokens);
-            this._errorLogger = errorLogger;
+            _tokens = new ListNibbler<Token>(tokens);
+            _errorLogger = errorLogger;
         }
 
         public List<Statement> Parse()

@@ -49,12 +49,19 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiling\CompilerTest.cs" />
+    <Compile Include="Compiling\SingleFileProject.cs" />
     <Compile Include="Scanning\StringSourceReader.cs" />
     <Compile Include="Scanning\TokenTest.cs" />
     <Compile Include="Speed\CompileSpeedTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Util\OutputCapture.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Compiling\Source\FirstClassFunc.cobra" />
+    <None Include="Compiling\Source\FuncTest.cobra" />
+    <None Include="Compiling\Source\GenericFunc.cobra" />
+    <None Include="Compiling\Source\HelloWorld.cobra" />
     <None Include="packages.config" />
     <None Include="Speed\BigProject\ErrorTest.cobra" />
     <None Include="Speed\BigProject\ListTools.cobra" />
@@ -76,6 +83,7 @@
       <Name>CobraCompiler</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
