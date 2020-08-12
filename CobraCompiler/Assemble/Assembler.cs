@@ -36,9 +36,6 @@ namespace CobraCompiler.Assemble
             OpCodes.Ldarg_0, OpCodes.Ldarg_1, OpCodes.Ldarg_2, OpCodes.Ldarg_3
         };
 
-        private readonly Stack<Scope> _scopeStack;
-        private Scope CurrentScope => _scopeStack.Peek();
-        
         private readonly MethodStore _methodStore;
 
         public Assembler(String assName)
@@ -54,7 +51,6 @@ namespace CobraCompiler.Assemble
             _typeStore = new TypeStore(_assemblyBuilder, _moduleBuilder);
             _methodStore = new MethodStore(_assemblyBuilder);
             _locals = new Dictionary<Scope, Dictionary<string, LocalBuilder>>();
-            _scopeStack = new Stack<Scope>();
 
             foreach (DotNetCobraType dotNetCobraType in DotNetCobraType.DotNetCobraTypes)
             {
@@ -77,8 +73,8 @@ namespace CobraCompiler.Assemble
             MethodInfo printIntInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(int) });
             MethodInfo listGetInfo = typeof(List<>).GetMethod("get_Item");
 
-            _methodStore.AddMethodInfo("printStr", FuncCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Str, DotNetCobraType.Unit }), printStrInfo);
-            _methodStore.AddMethodInfo("printInt", FuncCobraGeneric.FuncType.CreateGenericInstance(new[] { DotNetCobraType.Int, DotNetCobraType.Unit }), printIntInfo);
+            _methodStore.AddMethodInfo("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(DotNetCobraType.Str, DotNetCobraType.Unit ), printStrInfo);
+            _methodStore.AddMethodInfo("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(DotNetCobraType.Int, DotNetCobraType.Unit ), printIntInfo);
             //_methodStore.AddMethodInfo("get_Item", GenericOperator.DotNetGenericOperators[0].GetGenericFuncType(), listGetInfo);
 
             foreach (DefinedModule module in definedModules)
