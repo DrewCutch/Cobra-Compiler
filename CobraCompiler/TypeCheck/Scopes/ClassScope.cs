@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
@@ -30,17 +31,18 @@ namespace CobraCompiler.Parse.Scopes
             else
                 ThisType = new CobraType("this", parentScope.GetType(classDeclaration.Type));
 
-            Declare("this", ThisType);
+            // Call base method to avoid virtual member call in constructor (overridden version is not needed)
+            base.Declare(classDeclaration, "this", ThisType, Mutability.AssignOnce, false);
         }
 
-        public override void Declare(string var, CobraType type, bool overload = false)
+        protected internal override void Declare(Statement statement, string var, CobraType type, Mutability mutability, bool overload = false)
         {
             if(var == "init" && type is CobraGenericInstance genericInstance && genericInstance.Base == FuncCobraGeneric.FuncType)
-                Parent.Declare(ClassDeclaration.Name.Lexeme, type);
+                Parent.Declare(statement, ClassDeclaration.Name.Lexeme, type, mutability, overload);
 
 
             ThisType.DefineSymbol(var, type, type is FuncGenericInstance);
-            base.Declare(var, type);
+            base.Declare(statement, var, type, mutability, overload);
         }
     }
 }

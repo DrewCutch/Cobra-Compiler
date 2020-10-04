@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
@@ -22,13 +23,13 @@ namespace CobraCompiler.Parse.Scopes
         public override void DefineType(string identifier, CobraType cobraType)
         {
             base.DefineType(identifier, cobraType);
-            Parent.Declare($"{Name}.{identifier}", _types[identifier]);
+            Parent.DefineType($"{Name}.{identifier}", _types[identifier]);
         }
-
-        public override void Declare(string var, CobraType type, bool overload = false)
+        
+        protected internal override void Declare(Statement statement, string var, CobraType type, Mutability mutability, bool overload = false)
         {
-            base.Declare(var, type, overload);
-            Parent.Declare($"{Name}.{var}", _vars[var]);
+            base.Declare(statement, var, type, mutability, overload);
+            Parent.Declare(statement,$"{Name}.{var}", _vars[var].Type, mutability);
         }
     }
 }

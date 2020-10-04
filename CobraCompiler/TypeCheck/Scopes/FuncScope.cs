@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.TypeCheck.Types;
 
@@ -13,11 +14,14 @@ namespace CobraCompiler.Parse.Scopes
         public FuncDeclarationStatement FuncDeclaration { get; }
         public readonly CobraType FuncType;
 
-        public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType) : base(parentScope, funcDeclaration.Body)
+        public readonly CFGNode CFGRoot;
+
+        public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType, CFGNode cfgRoot) : base(parentScope, funcDeclaration.Body)
         {
             Params = new List<(string, CobraType)>(parameters);
             ReturnType = returnType;
             FuncDeclaration = funcDeclaration;
+            CFGRoot = cfgRoot;
 
             List<CobraType> funcTypeArgs = Params.Select(x => x.Item2).ToList();
             funcTypeArgs.Add(returnType);
