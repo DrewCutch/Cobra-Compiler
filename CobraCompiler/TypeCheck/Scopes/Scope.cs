@@ -13,8 +13,6 @@ namespace CobraCompiler.Parse.Scopes
     class Scope
     {
         protected readonly Dictionary<string, Symbol> _vars;
-        protected readonly Dictionary<Symbol, List<Expression>> _references;
-        protected readonly Dictionary<Symbol, List<AssignExpression>> _assignments;
 
         protected readonly Dictionary<string, CobraType> _types;
         public HashSet<CobraType> DefinedTypes => new HashSet<CobraType>(_types.Values);
