@@ -8,7 +8,6 @@ using CobraCompiler.Compiler;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
-using CobraCompiler.Parse.Scopes.ScopeReturn;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Scanning;
 using CobraCompiler.SupportedProject;
@@ -101,7 +100,6 @@ namespace CobraCompiler.TypeCheck
         {
             if (scope is FuncScope funcScope && !(funcScope.FuncDeclaration is InitDeclarationStatement))
             {
-                if (!scope.Returns && funcScope.ReturnType != DotNetCobraType.Unit)
                     _errorLogger.Log(new MissingReturnException(funcScope.FuncDeclaration.Name, funcScope.ReturnType));
             }
 
@@ -158,8 +156,6 @@ namespace CobraCompiler.TypeCheck
 
                 scope.AddSubScope(blockScope);
                 _scopes.Enqueue(blockScope);
-
-                scope.AddReturnExpression(new ScopeReturnBindExpression(blockScope));
             }
 
             if (statement is IConditionalExpression conditional)
@@ -173,11 +169,6 @@ namespace CobraCompiler.TypeCheck
                     Scope elseScope = new Scope(scope, conditional.Else);
                     scope.AddSubScope(elseScope);
                     _scopes.Enqueue(elseScope);
-
-                    scope.AddReturnExpression(new ScopeReturnAndExpression(
-                            new ScopeReturnBindExpression(thenScope),
-                            new ScopeReturnBindExpression(elseScope)
-                        ));
                 }
             }
         }
@@ -318,8 +309,6 @@ namespace CobraCompiler.TypeCheck
                     CobraType returnStatementType = returnStatement.Value.Accept(this);
                     if (!returnStatementType.CanCastTo(CurrentScope.GetReturnType()))
                         throw new InvalidReturnTypeException(returnStatement.Value, CurrentScope.GetReturnType());
-
-                    CurrentScope.AddReturn();
                     break;
                 case ImportStatement importStatement:
                     CobraType importType = importStatement.Import.Accept(this);

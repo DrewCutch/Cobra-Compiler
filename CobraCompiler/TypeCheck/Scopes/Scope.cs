@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Parse.Expressions;
-using CobraCompiler.Parse.Scopes.ScopeReturn;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.TypeCheck;
 using CobraCompiler.TypeCheck.Operators;
@@ -29,11 +28,6 @@ namespace CobraCompiler.Parse.Scopes
         public readonly Statement[] Body;
 
         public readonly Scope Parent;
-        public readonly IReadOnlyList<Scope> Previous;
-        public readonly IReadOnlyList<Scope> Next;
-
-        private ScopeReturnOrExpression _returns;
-        public bool Returns => _returns.Returns;
 
         public Scope(Scope parentScope, Statement body)
         {
@@ -47,8 +41,6 @@ namespace CobraCompiler.Parse.Scopes
             _genericOperators = new Dictionary<(Operation, CobraType, CobraType), GenericOperator>();
 
             _subScopes = new List<Scope>();
-
-            _returns = new ScopeReturnOrExpression(new ScopeReturnConstant(false));
         }
 
         public Scope(Scope parentScope, Statement[] body)
@@ -63,18 +55,6 @@ namespace CobraCompiler.Parse.Scopes
             _genericOperators = new Dictionary<(Operation, CobraType, CobraType), GenericOperator>();
 
             _subScopes = new List<Scope>();
-
-            _returns = new ScopeReturnOrExpression(new ScopeReturnConstant(false));
-        }
-
-        public virtual void AddReturn()
-        {
-            _returns.AddOperand(new ScopeReturnConstant(true));
-        }
-
-        public void AddReturnExpression(ScopeReturnExpression expr)
-        {
-            _returns.AddOperand(expr);
         }
 
         public virtual CobraType GetType(TypeInitExpression typeInit, CobraType selfHint=null)
