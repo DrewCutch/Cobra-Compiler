@@ -15,13 +15,17 @@ namespace CobraCompiler.Parse.Scopes
         public readonly CobraType FuncType;
 
         public readonly CFGNode CFGRoot;
+        public readonly CFGNode CFGTerminal;
 
-        public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType, CFGNode cfgRoot) : base(parentScope, funcDeclaration.Body)
+        public bool Returns => CFGRoot.FulfilledByChildren(node => node.Next.Count == 1 && node.Next[0] == CFGTerminal);
+
+        public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType) : base(parentScope, funcDeclaration.Body)
         {
             Params = new List<(string, CobraType)>(parameters);
             ReturnType = returnType;
             FuncDeclaration = funcDeclaration;
-            CFGRoot = cfgRoot;
+            CFGRoot = new CFGNode(this);
+            CFGTerminal = new CFGNode(this);
 
             List<CobraType> funcTypeArgs = Params.Select(x => x.Item2).ToList();
             funcTypeArgs.Add(returnType);
