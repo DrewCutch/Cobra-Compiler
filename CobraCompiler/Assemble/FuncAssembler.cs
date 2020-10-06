@@ -152,7 +152,7 @@ namespace CobraCompiler.Assemble
                     exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext());
                     break;
                 case VarDeclarationStatement varDeclaration:
-                    CobraType varType = CurrentScope.GetVarType(varDeclaration.Name.Lexeme);
+                    CobraType varType = CurrentScope.GetVar(varDeclaration.Name.Lexeme).Type;
                     _localManager.DeclareVar(CurrentScope, varDeclaration.Name.Lexeme, _typeStore.GetType(varType));
                     varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext());
                     break;
@@ -171,7 +171,7 @@ namespace CobraCompiler.Assemble
 
                     _scopeCrawler.EnterScope();
                     AssembleStatement(ifStatement.Then, typeBuilder);
-                    bool ifReturns = CurrentScope.Returns;
+                    bool ifReturns = false; // CurrentScope.Returns;
 
                     if(!ifReturns)
                         _il.Emit(OpCodes.Br, endElseLabel);
@@ -247,7 +247,7 @@ namespace CobraCompiler.Assemble
         {
             ExpressionAssemblyContext targetContext = expr.Target.Accept(this, new ParentExpressionAssemblyContext(assigning: true));
             ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(expected:targetContext.Type));
-
+            
             if(expr.Target is VarExpression varExpr)
                 _localManager.StoreVar(CurrentScope, varExpr.Name.Lexeme);
 
@@ -449,7 +449,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(VarExpression expr, ParentExpressionAssemblyContext context)
         {
-            CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
+            CobraType varType = CurrentScope.GetVar(expr.Name.Lexeme).Type;
 
             if(varType is NamespaceType)
                 return new ExpressionAssemblyContext(varType);
