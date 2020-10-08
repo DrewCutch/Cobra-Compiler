@@ -131,7 +131,7 @@ namespace CobraCompiler.Parse.Scopes
         }
         public void Declare(ParamDeclarationStatement paramDeclaration)
         {
-            Declare(paramDeclaration, paramDeclaration.Name.Lexeme, GetType(paramDeclaration.TypeInit), Mutability.AssignOnce);
+            Declare(paramDeclaration, paramDeclaration.Name.Lexeme, GetType(paramDeclaration.TypeInit), Mutability.ReadOnly);
         }
 
         public void Declare(VarDeclarationStatement varDeclaration)
