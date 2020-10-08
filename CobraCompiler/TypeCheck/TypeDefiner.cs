@@ -9,6 +9,7 @@ using CobraCompiler.Parse.Statements;
 using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck.Definers;
 using CobraCompiler.TypeCheck.Exceptions;
+using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.TypeCheck
@@ -72,7 +73,15 @@ namespace CobraCompiler.TypeCheck
                     throw new TypeNotDefinedException(property.Type);
 
                 CobraType propType = _scope.GetType(property.Type);
-                _type.DefineSymbol(property.Identifier.Lexeme, propType, propType is FuncGenericInstance);
+
+                bool isFunction = propType is FuncGenericInstance;
+                string propName = property.Identifier.Lexeme;
+
+                Mutability propMutability = isFunction
+                    ? Mutability.CompileTimeConstant
+                    : Mutability.Mutable;
+
+                _type.DefineSymbol(propName, new Symbol(new ExpressionStatement(property), propType, propMutability, propName), isFunction);
             }
         }
     }

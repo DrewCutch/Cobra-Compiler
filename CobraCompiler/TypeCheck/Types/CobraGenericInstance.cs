@@ -38,21 +38,21 @@ namespace CobraCompiler.TypeCheck.Types
 
         public bool HasPlaceholders() => OrderedTypeParams.Any(param => param is GenericTypeParamPlaceholder);
 
-        public override CobraType GetSymbol(string symbol)
+        public override Symbol GetSymbol(string symbol)
         {
-            CobraType baseSymbol = Base.GetSymbol(symbol);
-
-            if (baseSymbol is GenericTypeParamPlaceholder typeParam)
-                return TypeParams[typeParam];
-
-            if (baseSymbol is CobraGenericInstance genericInstance)
-                return genericInstance.ReplacePlaceholders(OrderedTypeParams);
-
-            if (baseSymbol is CobraGeneric genericSymbol)
-                return genericSymbol.CreateGenericInstance(TypeParams);
+            Symbol baseSymbol = Base.GetSymbol(symbol);
 
             if (baseSymbol == null)
                 return base.GetSymbol(symbol);
+
+            if (baseSymbol.Type is GenericTypeParamPlaceholder typeParam)
+                return new Symbol(baseSymbol.Declaration, TypeParams[typeParam], baseSymbol.Mutability, baseSymbol.Lexeme);
+
+            if (baseSymbol.Type is CobraGenericInstance genericInstance)
+                return new Symbol(baseSymbol.Declaration, genericInstance.ReplacePlaceholders(OrderedTypeParams), baseSymbol.Mutability, baseSymbol.Lexeme);
+
+            if (baseSymbol.Type is CobraGeneric genericSymbol)
+                return new Symbol(baseSymbol.Declaration, genericSymbol.CreateGenericInstance(TypeParams), baseSymbol.Mutability, baseSymbol.Lexeme);
 
             return baseSymbol;
         }

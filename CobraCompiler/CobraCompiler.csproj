@@ -100,17 +100,21 @@
     <Compile Include="ErrorLogging\ErrorLogger.cs" />
     <Compile Include="ErrorLogging\ParsingException.cs" />
     <Compile Include="ErrorLogging\ScanningException.cs" />
+    <Compile Include="TypeCheck\CFG\BitMatrix.cs" />
+    <Compile Include="TypeCheck\CFG\CFGraph.cs" />
+    <Compile Include="TypeCheck\CFG\CFGNode.cs" />
     <Compile Include="Parse\Expressions\CallExpression.cs" />
     <Compile Include="Parse\Expressions\GetExpression.cs" />
     <Compile Include="Parse\Expressions\IExpressionVisitorWithContext.cs" />
     <Compile Include="Parse\Expressions\IndexExpression.cs" />
     <Compile Include="Parse\Expressions\InterfaceDefinitionExpression.cs" />
-    <Compile Include="Parse\Scopes\GenericScope.cs" />
-    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnAndExpression.cs" />
-    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnBindExpression.cs" />
-    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnConstant.cs" />
-    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnExpression.cs" />
-    <Compile Include="Parse\Scopes\ScopeReturn\ScopeReturnOrExpression.cs" />
+    <Compile Include="TypeCheck\CFG\CFGPrinter.cs" />
+    <Compile Include="TypeCheck\CFG\EdgeMatrix.cs" />
+    <Compile Include="TypeCheck\Exceptions\WriteToReadOnlySymbolException.cs" />
+    <Compile Include="TypeCheck\ExpressionChecker.cs" />
+    <Compile Include="TypeCheck\ExpressionType.cs" />
+    <Compile Include="TypeCheck\FuncChecker.cs" />
+    <Compile Include="TypeCheck\Scopes\GenericScope.cs" />
     <Compile Include="Scanning\SourceLocation.cs" />
     <Compile Include="Scanning\SourceReader.cs" />
     <Compile Include="TypeCheck\Definers\IDefine.cs" />
@@ -120,10 +124,10 @@
     <Compile Include="Parse\Expressions\PropertyDefinitionExpression.cs" />
     <Compile Include="Parse\Expressions\TypeInitExpression.cs" />
     <Compile Include="Parse\Expressions\IExpressionTraverser.cs" />
-    <Compile Include="Parse\Scopes\ClassScope.cs" />
-    <Compile Include="Parse\Scopes\GlobalScope.cs" />
-    <Compile Include="Parse\Scopes\IScopeVisitor.cs" />
-    <Compile Include="Parse\Scopes\ModuleScope.cs" />
+    <Compile Include="TypeCheck\Scopes\ClassScope.cs" />
+    <Compile Include="TypeCheck\Scopes\GlobalScope.cs" />
+    <Compile Include="TypeCheck\Scopes\IScopeVisitor.cs" />
+    <Compile Include="TypeCheck\Scopes\ModuleScope.cs" />
     <Compile Include="Parse\Statements\ClassDeclarationStatement.cs" />
     <Compile Include="Parse\Statements\IConditionalExpression.cs" />
     <Compile Include="Parse\Statements\IfStatement.cs" />
@@ -146,6 +150,9 @@
     <Compile Include="TypeCheck\Operators\GenericOperator.cs" />
     <Compile Include="TypeCheck\Operators\Operation.cs" />
     <Compile Include="TypeCheck\Operators\Operator.cs" />
+    <Compile Include="TypeCheck\Symbols\Mutability.cs" />
+    <Compile Include="TypeCheck\Symbols\MutabilityUtils.cs" />
+    <Compile Include="TypeCheck\Symbols\Symbol.cs" />
     <Compile Include="TypeCheck\TypeDefiner.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeBase.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeCobraType.cs" />
@@ -167,7 +174,7 @@
     <Compile Include="Parse\Expressions\AssignExpression.cs" />
     <Compile Include="Parse\PrettyPrint\AstPrinter.cs" />
     <Compile Include="Parse\Expressions\BinaryExpression.cs" />
-    <Compile Include="Parse\Scopes\Scope.cs" />
+    <Compile Include="TypeCheck\Scopes\Scope.cs" />
     <Compile Include="Parse\Statements\VarDeclarationStatement.cs" />
     <Compile Include="Parse\Expressions\DeclareVarExpression.cs" />
     <Compile Include="Parse\Statements\ExpressionStatement.cs" />
@@ -180,7 +187,7 @@
     <Compile Include="Parse\Statements\Statement.cs" />
     <Compile Include="Parse\Expressions\UnaryExpression.cs" />
     <Compile Include="Parse\Expressions\VarExpression.cs" />
-    <Compile Include="Parse\Scopes\FuncScope.cs" />
+    <Compile Include="TypeCheck\Scopes\FuncScope.cs" />
     <Compile Include="TypeCheck\Operators\DotNetBinaryOperator.cs" />
     <Compile Include="TypeCheck\Operators\IDotNetOperator.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidAssignmentException.cs" />
@@ -205,6 +212,7 @@
     <Compile Include="SupportedProject\ExamplePersonType.cs" />
     <Compile Include="SupportedProject\ExampleUnionBoolInt.cs" />
     <Compile Include="TokenType.cs" />
+    <Compile Include="Util\IEnumerableExtensions.cs" />
     <Compile Include="Util\ListByElementComparer.cs" />
   </ItemGroup>
   <ItemGroup>

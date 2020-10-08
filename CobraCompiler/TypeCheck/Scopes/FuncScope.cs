@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.TypeCheck.CFG;
 using CobraCompiler.TypeCheck.Types;
+using CobraCompiler.Util;
 
 namespace CobraCompiler.Parse.Scopes
 {
@@ -13,11 +16,16 @@ namespace CobraCompiler.Parse.Scopes
         public FuncDeclarationStatement FuncDeclaration { get; }
         public readonly CobraType FuncType;
 
+        public readonly CFGraph CFGraph;
+
+        public bool Returns => CFGraph.Root.FulfilledByChildren(node => node.Next.OnlyOrDefault()?.IsTerminal ?? false);
+
         public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType) : base(parentScope, funcDeclaration.Body)
         {
             Params = new List<(string, CobraType)>(parameters);
             ReturnType = returnType;
             FuncDeclaration = funcDeclaration;
+            CFGraph = new CFGraph(this);
 
             List<CobraType> funcTypeArgs = Params.Select(x => x.Item2).ToList();
             funcTypeArgs.Add(returnType);

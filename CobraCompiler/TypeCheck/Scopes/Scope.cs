@@ -2,16 +2,18 @@
 using System.Linq;
 using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Parse.Expressions;
-using CobraCompiler.Parse.Scopes.ScopeReturn;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.TypeCheck;
 using CobraCompiler.TypeCheck.Operators;
+using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Parse.Scopes
 {
     class Scope
     {
-        protected readonly Dictionary<string, CobraType> _vars;
+        protected readonly Dictionary<string, Symbol> _vars;
+
         protected readonly Dictionary<string, CobraType> _types;
         public HashSet<CobraType> DefinedTypes => new HashSet<CobraType>(_types.Values);
 
@@ -25,23 +27,18 @@ namespace CobraCompiler.Parse.Scopes
 
         public readonly Scope Parent;
 
-        private ScopeReturnOrExpression _returns;
-        public bool Returns => _returns.Returns;
-
         public Scope(Scope parentScope, Statement body)
         {
             Parent = parentScope;
             Body = new []{body};
 
-            _vars = new Dictionary<string, CobraType>();
+            _vars = new Dictionary<string, Symbol>();
             _types = new Dictionary<string, CobraType>();
 
             _operators = new Dictionary<(Operation, CobraType, CobraType), IOperator>();
             _genericOperators = new Dictionary<(Operation, CobraType, CobraType), GenericOperator>();
 
             _subScopes = new List<Scope>();
-
-            _returns = new ScopeReturnOrExpression(new ScopeReturnConstant(false));
         }
 
         public Scope(Scope parentScope, Statement[] body)
@@ -49,25 +46,13 @@ namespace CobraCompiler.Parse.Scopes
             Parent = parentScope;
             Body = body;
 
-            _vars = new Dictionary<string, CobraType>();
+            _vars = new Dictionary<string, Symbol>();
             _types = new Dictionary<string, CobraType>();
 
             _operators = new Dictionary<(Operation, CobraType, CobraType), IOperator>();
             _genericOperators = new Dictionary<(Operation, CobraType, CobraType), GenericOperator>();
 
             _subScopes = new List<Scope>();
-
-            _returns = new ScopeReturnOrExpression(new ScopeReturnConstant(false));
-        }
-
-        public virtual void AddReturn()
-        {
-            _returns.AddOperand(new ScopeReturnConstant(true));
-        }
-
-        public void AddReturnExpression(ScopeReturnExpression expr)
-        {
-            _returns.AddOperand(expr);
         }
 
         public virtual CobraType GetType(TypeInitExpression typeInit, CobraType selfHint=null)
@@ -125,32 +110,46 @@ namespace CobraCompiler.Parse.Scopes
             return _types.ContainsKey(identifier) || (Parent != null && Parent.IsTypeDefined(identifier));
         }
 
-        public CobraType GetVarType(string identifier)
+        public Symbol GetVar(string identifier)
         {
             if (_vars.ContainsKey(identifier))
                 return _vars[identifier];
 
-            return Parent?.GetVarType(identifier);
+            return Parent?.GetVar(identifier);
         }
 
         public virtual void DefineType(string identifier, CobraType cobraType)
         {
             CobraTypeCobraType metaType = new CobraTypeCobraType(cobraType);
-            _vars[identifier] = metaType;
+            _vars[identifier] = new Symbol(null, metaType, Mutability.CompileTimeConstant, identifier); //TODO: add definition
             _types[identifier] = cobraType;
         }
 
-        public void Declare(string var, TypeInitExpression typeInit, bool overload = false)
+        public void Declare(ImportStatement importStatement, CobraType importType)
         {
-            Declare(var, GetType(typeInit), overload);
+            Declare(importStatement, ((GetExpression)importStatement.Import).Name.Lexeme, importType, Mutability.CompileTimeConstant);
+        }
+        public void Declare(ParamDeclarationStatement paramDeclaration)
+        {
+            Declare(paramDeclaration, paramDeclaration.Name.Lexeme, GetType(paramDeclaration.TypeInit), Mutability.ReadOnly);
         }
 
-        public virtual void Declare(string var, CobraType type, bool overload = false)
+        public void Declare(VarDeclarationStatement varDeclaration)
+        {
+            Declare(varDeclaration, varDeclaration.Name.Lexeme, GetType(varDeclaration.TypeInit), Mutability.Mutable);
+        }
+
+        public void Declare(FuncDeclarationStatement funcDeclaration, CobraType funcType)
+        {
+            Declare(funcDeclaration, funcDeclaration.Name.Lexeme, funcType, Mutability.AssignOnce, true);
+        }
+
+        protected internal virtual void Declare(Statement expr, string var, CobraType type, Mutability mutability, bool overload = false)
         {
             if(IsDefined(var) && overload) 
-                _vars[var] = IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(GetVarType(var), type);
+                _vars[var] = new Symbol(expr, IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(GetVar(var).Type, type), mutability, var);
             else
-                _vars[var] = type;
+                _vars[var] = new Symbol(expr, type, mutability, var);
         }
 
         public bool IsDefined(string var)

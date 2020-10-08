@@ -62,14 +62,14 @@ namespace CobraCompiler.Assemble
                 _il.Emit(OpCodes.Ldarg_0);
         }
 
-        private bool IsClassField(string name) => IsClassMethod && _typeStore.TypeMemberExists(_classType, name, _funcScope.GetVarType(name));
+        private bool IsClassField(string name) => IsClassMethod && _typeStore.TypeMemberExists(_classType, name, _funcScope.GetVar(name)?.Type);
 
         private FieldInfo GetClassField(string name)
         {
             if (!IsClassField(name))
                 return null;
 
-            FieldInfo fieldBuilder = (FieldInfo) _typeStore.GetMemberInfo(_classType, name, _funcScope.GetVarType(name));
+            FieldInfo fieldBuilder = (FieldInfo) _typeStore.GetMemberInfo(_classType, name, _funcScope.GetVar(name).Type);
 
             return fieldBuilder;
         }

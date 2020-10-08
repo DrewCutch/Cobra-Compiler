@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using CobraCompiler.TypeCheck.Symbols;
 
 namespace CobraCompiler.TypeCheck.Types
 {
@@ -40,7 +41,7 @@ namespace CobraCompiler.TypeCheck.Types
             return base.CanCastTo(other);
         }
 
-        public override CobraType GetSymbol(string symbol)
+        public override Symbol GetSymbol(string symbol)
         {
             //Type memberType = Type.GetProperty(symbol).PropertyType;
 
@@ -63,13 +64,14 @@ namespace CobraCompiler.TypeCheck.Types
             if (Type == null)
                 return;
 
+            //TODO: assign proper mutability
             foreach (MemberInfo member in Type.GetMembers())
             {
                 switch (member)
                 {
                     case FieldInfo field:
                         if (FromType(field.FieldType) != null)
-                            DefineSymbol(field.Name, FromType(field.FieldType));
+                            DefineSymbol(field.Name, new Symbol(null, FromType(field.FieldType), Mutability.CompileTimeConstant, field.Name));
                         break;
                     case MethodInfo method:
                         CobraType returnType = FromType(method.ReturnType);
@@ -77,7 +79,7 @@ namespace CobraCompiler.TypeCheck.Types
                         if (!paramTypes.TrueForAll(element => element != null) || returnType == null)
                             continue;
                         paramTypes.Add(returnType);
-                        DefineSymbol(method.Name, DotNetCobraGeneric.FuncType.CreateGenericInstance(paramTypes), true);
+                        DefineSymbol(method.Name, new Symbol(null, DotNetCobraGeneric.FuncType.CreateGenericInstance(paramTypes), Mutability.CompileTimeConstant, method.Name), true);
                         break;
                     case PropertyInfo property:
                         break;

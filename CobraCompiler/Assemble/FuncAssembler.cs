@@ -11,6 +11,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Assemble.ExpressionAssemblyContexts;
+using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
@@ -18,6 +19,7 @@ using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Types;
+using CobraCompiler.Util;
 using InvalidOperationException = System.InvalidOperationException;
 
 namespace CobraCompiler.Assemble
@@ -35,9 +37,6 @@ namespace CobraCompiler.Assemble
         private readonly FuncScope _funcScope;
         private LocalManager _localManager;
 
-        private readonly ScopeCrawler _scopeCrawler;
-        private Scope CurrentScope => _scopeCrawler.Current;
-
         private readonly MethodStore _methodStore;
 
         private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _funcGenerics;
@@ -50,7 +49,6 @@ namespace CobraCompiler.Assemble
             _typeBuilder = typeBuilder;
             _assemblyBuilder = assemblyBuilder;
             _methodAttributes = methodAttributes;
-            _scopeCrawler = new ScopeCrawler(funcScope);
             _funcGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
         }
 
@@ -128,9 +126,15 @@ namespace CobraCompiler.Assemble
         public void Assemble()
         {
             _typeStore.PushCurrentGenerics(_funcGenerics);
-            _scopeCrawler.Reset();
-        
-            AssembleStatement(_funcScope.FuncDeclaration.Body, _typeBuilder);
+
+            IEnumerator<CFGNode> nodes = _funcScope.CFGraph.CFGNodes.GetEnumerator();
+            
+            while (nodes.MoveNext())
+            {
+                AssembleNode(nodes, _typeBuilder);
+            }
+
+            nodes.Dispose();
 
             if(_funcScope.FuncDeclaration is InitDeclarationStatement || !_funcScope.Returns)
                 _il.Emit(OpCodes.Ret);
@@ -138,52 +142,67 @@ namespace CobraCompiler.Assemble
             _typeStore.PopGenerics(_funcGenerics);
         }
 
-        private void AssembleStatement(Statement statement, TypeBuilder typeBuilder)
+        private void AssembleNode(IEnumerator<CFGNode> cfgNodes, TypeBuilder typeBuilder)
         {
+            if (cfgNodes.Current is null)
+                return;
+
+            foreach (Statement statement in cfgNodes.Current.Statements)
+            {
+                AssembleStatement(statement, cfgNodes, typeBuilder);
+            }
+        }
+
+        private void AssembleStatement(Statement statement, IEnumerator<CFGNode> cfgNodes, TypeBuilder typeBuilder)
+        {
+            if (cfgNodes.Current is null)
+                return;
+
             switch (statement)
             {
                 case BlockStatement block:
-                    _scopeCrawler.EnterScope();
-                    foreach (Statement stmt in block.Body)
-                        AssembleStatement(stmt, typeBuilder);
-                    _scopeCrawler.ExitScope();
+                    //foreach (Statement stmt in block.Body)
+                    //    AssembleStatement(stmt, typeBuilder);
                     break;
                 case ExpressionStatement exprStmt:
-                    exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext());
+                    exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
                     break;
                 case VarDeclarationStatement varDeclaration:
-                    CobraType varType = CurrentScope.GetVarType(varDeclaration.Name.Lexeme);
-                    _localManager.DeclareVar(CurrentScope, varDeclaration.Name.Lexeme, _typeStore.GetType(varType));
-                    varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext());
+                    CobraType varType = cfgNodes.Current.Scope.GetVar(varDeclaration.Name.Lexeme).Type;
+                    _localManager.DeclareVar(cfgNodes.Current.Scope, varDeclaration.Name.Lexeme, _typeStore.GetType(varType));
+                    varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
                     break;
                 case ReturnStatement returnStatement:
-                    returnStatement.Value.Accept(this, new ParentExpressionAssemblyContext());
-                    ReturnStatement();
+                    returnStatement.Value.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
+                    ReturnStatement(cfgNodes.Current.Scope);
                     break;
                 case IfStatement ifStatement:
                 {
-                    ifStatement.Condition.Accept(this, new ParentExpressionAssemblyContext());
+                    ifStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
 
                     Label elseLabel = _il.DefineLabel();
                     Label endElseLabel = _il.DefineLabel();
 
                     _il.Emit(OpCodes.Brfalse, elseLabel);
 
-                    _scopeCrawler.EnterScope();
-                    AssembleStatement(ifStatement.Then, typeBuilder);
-                    bool ifReturns = CurrentScope.Returns;
+                    if(!cfgNodes.MoveNext())
+                        throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
+
+                    AssembleNode(cfgNodes, typeBuilder);
+
+                    bool ifReturns = cfgNodes.Current.FulfilledByChildren(node => node.Next.OnlyOrDefault()?.IsTerminal ?? false);
 
                     if(!ifReturns)
                         _il.Emit(OpCodes.Br, endElseLabel);
 
-                    _scopeCrawler.ExitScope();
                 
                     _il.MarkLabel(elseLabel);
                     if (ifStatement.Else != null)
                     {
-                        _scopeCrawler.EnterScope();
-                        AssembleStatement(ifStatement.Else, typeBuilder);
-                        _scopeCrawler.ExitScope();
+                        if (!cfgNodes.MoveNext())
+                            throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
+
+                        AssembleNode(cfgNodes, typeBuilder);
                     }
 
                     if (!ifReturns)
@@ -201,26 +220,28 @@ namespace CobraCompiler.Assemble
                     Label whileLabel = _il.DefineLabel();
                     Label bodyLabel = _il.DefineLabel();
 
-                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext());
+                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
 
                     _il.Emit(OpCodes.Brfalse, elseLabel); // If condition fails the first time go to else
                     _il.Emit(OpCodes.Br, bodyLabel); // Else go to body
                     _il.MarkLabel(whileLabel); // Return here on subsequent loop
-                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext());
+                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
                     _il.Emit(OpCodes.Brfalse, endElseLabel);
                     _il.MarkLabel(bodyLabel); // Beginning of body
 
-                    _scopeCrawler.EnterScope();
-                    AssembleStatement(whileStatement.Then, typeBuilder);
-                    _scopeCrawler.ExitScope();
+                    if (!cfgNodes.MoveNext())
+                        throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
+
+                    AssembleNode(cfgNodes, typeBuilder);
                     
                     _il.Emit(OpCodes.Br, whileLabel); // Return to condition
                     _il.MarkLabel(elseLabel);
                     if (whileStatement.Else != null)
                     {
-                        _scopeCrawler.EnterScope();
-                        AssembleStatement(whileStatement.Else, typeBuilder);
-                        _scopeCrawler.ExitScope();
+                        if (!cfgNodes.MoveNext())
+                            throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
+
+                        AssembleNode(cfgNodes, typeBuilder);
                     }
                     _il.MarkLabel(endElseLabel);
                     _il.Emit(OpCodes.Nop);
@@ -231,12 +252,12 @@ namespace CobraCompiler.Assemble
             }
         }
 
-        private void ReturnStatement()
+        private void ReturnStatement(Scope scope)
         {
             if (_funcScope.ReturnType != DotNetCobraType.Unit)
             {
-                _localManager.StoreVar(CurrentScope, "@ret");
-                _localManager.LoadVar(CurrentScope, "@ret");
+                _localManager.StoreVar(scope, "@ret");
+                _localManager.LoadVar(scope, "@ret");
             }
             
             _il.Emit(OpCodes.Ret);
@@ -245,11 +266,11 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(AssignExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext targetContext = expr.Target.Accept(this, new ParentExpressionAssemblyContext(assigning: true));
-            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(expected:targetContext.Type));
-
+            ExpressionAssemblyContext targetContext = expr.Target.Accept(this, new ParentExpressionAssemblyContext(context.Scope, assigning: true));
+            ExpressionAssemblyContext valContext = expr.Value.Accept(this, new ParentExpressionAssemblyContext(context.Scope, expected: targetContext.Type));
+            
             if(expr.Target is VarExpression varExpr)
-                _localManager.StoreVar(CurrentScope, varExpr.Name.Lexeme);
+                _localManager.StoreVar(context.Scope, varExpr.Name.Lexeme);
 
             if (targetContext.AssigningToField)
                 _il.Emit(OpCodes.Stfld, targetContext.AssignToField);
@@ -259,8 +280,8 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(BinaryExpression expr, ParentExpressionAssemblyContext context)
         {
-            CobraType leftType = expr.Left.Accept(this, new ParentExpressionAssemblyContext()).Type;
-            CobraType rightType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
+            CobraType leftType = expr.Left.Accept(this, new ParentExpressionAssemblyContext(context.Scope)).Type;
+            CobraType rightType = expr.Right.Accept(this, new ParentExpressionAssemblyContext(context.Scope)).Type;
 
             IOperator op = _funcScope.GetOperator(Operator.GetOperation(expr.Op.Type), leftType, rightType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
@@ -282,9 +303,9 @@ namespace CobraCompiler.Assemble
 
             CobraType expected = DotNetCobraGeneric.FuncType.CreateGenericInstance(sig);
 
-            ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(calling: true, expected: expected));
+            ExpressionAssemblyContext calleeContext = expr.Callee.Accept(this, new ParentExpressionAssemblyContext(context.Scope, calling: true, expected: expected));
             for (int i = 0; i < expr.Arguments.Count; i++)
-                expr.Arguments[i].Accept(this, new ParentExpressionAssemblyContext(expected: sig[i]));
+                expr.Arguments[i].Accept(this, new ParentExpressionAssemblyContext(context.Scope, expected: sig[i]));
             
             CobraType returnType = null;
 
@@ -328,7 +349,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(IndexExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext collectionContext = expr.Collection.Accept(this, new ParentExpressionAssemblyContext(expected: expr.Collection.Type, calling:context.ImmediatelyCalling));
+            ExpressionAssemblyContext collectionContext = expr.Collection.Accept(this, new ParentExpressionAssemblyContext(context.Scope, expected: expr.Collection.Type, calling:context.ImmediatelyCalling));
 
             if (expr.Type is CobraGenericInstance genericInstance && collectionContext is MethodBuilderExpressionAssemblyContext methodContext)
             {
@@ -410,7 +431,7 @@ namespace CobraCompiler.Assemble
             foreach (Expression element in expr.Elements)
             {
                 _il.Emit(OpCodes.Dup);
-                element.Accept(this, new ParentExpressionAssemblyContext(expected:elementType));
+                element.Accept(this, new ParentExpressionAssemblyContext(context.Scope, expected:elementType));
                 _il.Emit(OpCodes.Callvirt, addMethod);
             }
 
@@ -431,7 +452,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(UnaryExpression expr, ParentExpressionAssemblyContext context)
         {
-            CobraType operandType = expr.Right.Accept(this, new ParentExpressionAssemblyContext()).Type;
+            CobraType operandType = expr.Right.Accept(this, new ParentExpressionAssemblyContext(context.Scope)).Type;
 
             IOperator op = _funcScope.GetOperator(Operator.GetOperation(expr.Op.Type), null, operandType);
             if (op is DotNetBinaryOperator dotNetBinaryOperator)
@@ -444,12 +465,12 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(GroupingExpression expr, ParentExpressionAssemblyContext context)
         {
-            return expr.Inner.Accept(this, new ParentExpressionAssemblyContext());
+            return expr.Inner.Accept(this, new ParentExpressionAssemblyContext(context.Scope));
         }
 
         public ExpressionAssemblyContext Visit(VarExpression expr, ParentExpressionAssemblyContext context)
         {
-            CobraType varType = CurrentScope.GetVarType(expr.Name.Lexeme);
+            CobraType varType = context.Scope.GetVar(expr.Name.Lexeme).Type;
 
             if(varType is NamespaceType)
                 return new ExpressionAssemblyContext(varType);
@@ -485,9 +506,9 @@ namespace CobraCompiler.Assemble
             else if (!context.Assigning)
             {
                 if (context.CallingMember && _typeStore.GetType(varType).IsValueType)
-                    _localManager.LoadVarAddress(_scopeCrawler.Current, expr.Name.Lexeme);
+                    _localManager.LoadVarAddress(context.Scope, expr.Name.Lexeme);
                 else
-                    _localManager.LoadVar(_scopeCrawler.Current, expr.Name.Lexeme);
+                    _localManager.LoadVar(context.Scope, expr.Name.Lexeme);
             }
             else
                 _localManager.PrepStoreField(expr.Name.Lexeme);
@@ -497,7 +518,7 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(GetExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext(callingMember:context.ImmediatelyCalling));
+            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext(context.Scope, callingMember:context.ImmediatelyCalling));
             if (exprContext.Type is NamespaceType _namespace)
             {
                 if(_namespace.HasType(expr.Name.Lexeme))
@@ -523,18 +544,18 @@ namespace CobraCompiler.Assemble
                     if(!context.Assigning)
                         _il.Emit(OpCodes.Ldfld, field);
                     else 
-                        return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme), field);
+                        return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme).Type, field);
                     break;
                 case MethodInfo method:
                     method = ResolveGenericMethodInfo(varType, method);
                     if (context.ImmediatelyCalling)
-                        return new MethodBuilderExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme), method);
+                        return new MethodBuilderExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme).Type, method);
                     break;
                 default:
                     throw new NotImplementedException();
             }
 
-            return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme));
+            return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme).Type);
         }
 
         private MethodInfo ResolveGenericMethodInfo(Type type, MethodInfo methodInfo)
