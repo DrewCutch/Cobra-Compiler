@@ -55,6 +55,7 @@
     <Compile Include="Scanning\TokenTest.cs" />
     <Compile Include="Speed\CompileSpeedTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypeCheck\CFG\EdgeMatrixTest.cs" />
     <Compile Include="Util\OutputCapture.cs" />
   </ItemGroup>
   <ItemGroup>
