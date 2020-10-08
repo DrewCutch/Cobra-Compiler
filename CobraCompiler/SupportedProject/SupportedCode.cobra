@@ -20,7 +20,6 @@ func fib(until: int): int{
 		var fibNum: int = fib(until - 2) + fib(until - 1)
 		return fibNum
 	}
-	return 0
 }
 
 func doMultiple[T](f: f[T, T], initial: T, times: int): T{
@@ -182,6 +181,8 @@ func testLL(){
 
 	printIntLL(llist)
 	printIntLL(doubled)
+
+	return
 }
 
 func printIntLL(llist: linkedList[int]){
@@ -405,6 +406,7 @@ func main(): int{
 		printStr("The sum is less than a")
 	}
 	var count: int = 0
+	
 	while(count < 10){
 		printInt(fib(count))
 		count = count + 1
