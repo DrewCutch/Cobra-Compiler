@@ -8,9 +8,11 @@ namespace CobraCompiler.TypeCheck.Symbols
 {
     enum Mutability
     {
+        Result,
         Mutable,
         AssignOnce,
         ReadOnly,
-        CompileTimeConstant
+        CompileTimeConstant,
+        CompileTimeConstantResult
     }
 }
