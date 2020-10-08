@@ -7,52 +7,56 @@ using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
+using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.TypeCheck
 {
-    class ExpressionChecker : IExpressionVisitorWithContext<CobraType, CFGNode>
+    class ExpressionChecker : IExpressionVisitorWithContext<(CobraType Type, Mutability Mutability), CFGNode>
     {
-        public CobraType Visit(AssignExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(AssignExpression expr, CFGNode cfgNode)
         {
-            CobraType varType = expr.Target.Accept(this, cfgNode);
+            (CobraType varType, Mutability varMutability) = expr.Target.Accept(this, cfgNode);
 
-            CobraType assignType = expr.Value.Accept(this, cfgNode);
+            (CobraType assignType, Mutability assignMutability) = expr.Value.Accept(this, cfgNode);
 
             if (!assignType.CanCastTo(varType))
                 throw new InvalidAssignmentException(expr);
 
+            if(varMutability != Mutability.Mutable)
+                throw new WriteToReadOnlySymbolException(expr);
+
             expr.Type = varType;
 
-            return varType;
+            return (varType, MutabilityUtils.GetResultMutability(varMutability, assignMutability));
         }
 
-        public CobraType Visit(BinaryExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(BinaryExpression expr, CFGNode cfgNode)
         {
-            CobraType leftType = expr.Left.Accept(this, cfgNode);
-            CobraType rightType = expr.Right.Accept(this, cfgNode);
+            var left = expr.Left.Accept(this, cfgNode);
+            var right = expr.Right.Accept(this, cfgNode);
 
-            if (!cfgNode.Scope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), leftType, rightType))
+            if (!cfgNode.Scope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), left.Type, right.Type))
             {
                 throw new OperatorNotDefinedException(expr);
             }
 
-            IOperator op = cfgNode.Scope.GetOperator(Operator.GetOperation(expr.Op.Type), leftType, rightType);
+            IOperator op = cfgNode.Scope.GetOperator(Operator.GetOperation(expr.Op.Type), left.Type, right.Type);
 
             expr.Type = op.ResultType;
 
-            return op.ResultType;
+            return (op.ResultType, MutabilityUtils.GetResultMutability(left.Mutability, right.Mutability));
         }
 
-        public CobraType Visit(CallExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(CallExpression expr, CFGNode cfgNode)
         {
-            CobraType calleeType = expr.Callee.Accept(this, cfgNode);
-            List<CobraType> paramTypes = expr.Arguments.Select(arg => arg.Accept(this, cfgNode)).ToList();
+            CobraType calleeType = expr.Callee.Accept(this, cfgNode).Type;
+            List<CobraType> paramTypes = expr.Arguments.Select(arg => arg.Accept(this, cfgNode).Type).ToList();
 
             if (calleeType.IsCallable(paramTypes))
             {
                 expr.Type = calleeType.CallReturn(paramTypes);
-                return calleeType.CallReturn(paramTypes);
+                return (calleeType.CallReturn(paramTypes), Mutability.Result);
             }
 
             if (calleeType is FuncGenericInstance func)
@@ -66,7 +70,6 @@ namespace CobraCompiler.TypeCheck
                 {
                     if (!paramTypes[i].CanCastTo(func.OrderedTypeParams[i]))
                     {
-                        CobraType test = expr.Arguments[i].Accept(this, cfgNode);
                         throw new InvalidArgumentException(expr.Arguments[i], func.OrderedTypeParams[i].Identifier);
                     }
                 }
@@ -75,14 +78,14 @@ namespace CobraCompiler.TypeCheck
             throw new InvalidCallException(expr);
         }
 
-        public CobraType Visit(IndexExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(IndexExpression expr, CFGNode cfgNode)
         {
-            CobraType collectionType = expr.Collection.Accept(this, cfgNode);
+            CobraType collectionType = expr.Collection.Accept(this, cfgNode).Type;
 
             List<CobraType> typeParams = new List<CobraType>();
             foreach (Expression expression in expr.Indicies)
             {
-                CobraType exprType = expression.Accept(this, cfgNode);
+                CobraType exprType = expression.Accept(this, cfgNode).Type;
                 if (exprType is CobraTypeCobraType typeType && typeType.CobraType is CobraType simpleType)
                     typeParams.Add(simpleType);
                 else
@@ -92,13 +95,13 @@ namespace CobraCompiler.TypeCheck
             if (collectionType is CobraGenericInstance genericInstance)
             {
                 expr.Type = genericInstance.ReplacePlaceholders(typeParams);
-                return expr.Type;
+                return (expr.Type, Mutability.Result);
             }
 
             if (collectionType is CobraTypeCobraType metaType && metaType.CobraType is CobraGeneric generic)
             {
                 expr.Type = generic.CreateGenericInstance(typeParams);
-                return new CobraTypeCobraType(expr.Type);
+                return (new CobraTypeCobraType(expr.Type), Mutability.CompileTimeConstantResult);
             }
 
             throw new NotImplementedException();
@@ -116,56 +119,60 @@ namespace CobraCompiler.TypeCheck
             */
         }
 
-        public CobraType Visit(ListLiteralExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(ListLiteralExpression expr, CFGNode cfgNode)
         {
-            CobraType elementsCommonType = expr.Elements[0].Accept(this, cfgNode);
+            (CobraType elementsCommonType, Mutability elementsMutability) = expr.Elements[0].Accept(this, cfgNode);
 
             foreach (Expression element in expr.Elements)
             {
-                elementsCommonType = elementsCommonType.GetCommonParent(element.Accept(this, cfgNode));
+                (CobraType elementType, Mutability elementMutability) = element.Accept(this, cfgNode);
+
+                elementsCommonType = elementsCommonType.GetCommonParent(elementType);
+                
+                elementsMutability = MutabilityUtils.GetResultMutability(elementsMutability, elementMutability);
             }
 
             CobraType listType = DotNetCobraGeneric.ListType.CreateGenericInstance(new[] { elementsCommonType });
 
             expr.Type = listType;
 
-            return listType;
+            return (listType, elementsMutability);
         }
 
-        public CobraType Visit(LiteralExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(LiteralExpression expr, CFGNode cfgNode)
         {
-            return expr.LiteralType;
+            return (expr.LiteralType, Mutability.CompileTimeConstantResult);
         }
 
-        public CobraType Visit(TypeInitExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(TypeInitExpression expr, CFGNode cfgNode)
         {
             throw new NotImplementedException();
         }
 
-        public CobraType Visit(UnaryExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(UnaryExpression expr, CFGNode cfgNode)
         {
-            CobraType operand = expr.Right.Accept(this, cfgNode);
+            var operand = expr.Right.Accept(this, cfgNode);
 
-            if (!cfgNode.Scope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), null, operand))
+            if (!cfgNode.Scope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), null, operand.Type))
                 throw new OperatorNotDefinedException(expr);
 
-            IOperator op = cfgNode.Scope.GetOperator(Operator.GetOperation(expr.Op.Type), null, operand);
+            IOperator op = cfgNode.Scope.GetOperator(Operator.GetOperation(expr.Op.Type), null, operand.Type);
 
             expr.Type = op.ResultType;
 
-            return op.ResultType;
+            return (op.ResultType, MutabilityUtils.GetResultMutability(operand.Mutability));
         }
 
-        public CobraType Visit(GetExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(GetExpression expr, CFGNode cfgNode)
         {
-            CobraType objType = expr.Obj.Accept(this, cfgNode);
+            var obj = expr.Obj.Accept(this, cfgNode);
 
-            if (objType is NamespaceType namespaceType)
+            if (obj.Type is NamespaceType namespaceType)
             {
                 if (namespaceType.HasType(expr.Name.Lexeme))
                 {
                     expr.Type = namespaceType.GetType(expr.Name.Lexeme);
-                    return namespaceType.GetType(expr.Name.Lexeme);
+                    return (namespaceType.GetType(expr.Name.Lexeme), Mutability.CompileTimeConstantResult);
                 }
 
                 string resolvedName = namespaceType.ResolveName(expr.Name.Lexeme);
@@ -175,33 +182,32 @@ namespace CobraCompiler.TypeCheck
                 CobraType varType = cfgNode.Scope.GetVar(resolvedName).Type;
 
                 expr.Type = varType;
-                return varType;
+                return (varType, Mutability.CompileTimeConstantResult);
             }
 
-            if (!objType.HasSymbol(expr.Name.Lexeme))
+            if (!obj.Type.HasSymbol(expr.Name.Lexeme))
                 throw new InvalidMemberException(expr);
 
+            Symbol symbol = obj.Type.GetSymbol(expr.Name.Lexeme);
 
-            CobraType symbolType = objType.GetSymbol(expr.Name.Lexeme);
-
-            expr.Type = symbolType;
-            return symbolType;
+            expr.Type = symbol.Type;
+            return (symbol.Type, symbol.Mutability);
         }
 
-        public CobraType Visit(GroupingExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(GroupingExpression expr, CFGNode cfgNode)
         {
             return expr.Inner.Accept(this, cfgNode);
         }
 
-        public CobraType Visit(VarExpression expr, CFGNode cfgNode)
+        public (CobraType, Mutability) Visit(VarExpression expr, CFGNode cfgNode)
         {
             if (!cfgNode.Scope.IsDefined(expr.Name.Lexeme))
                 throw new VarNotDefinedException(expr);
 
-            CobraType varType = cfgNode.Scope.GetVar(expr.Name.Lexeme).Type;
-            expr.Type = varType;
+            var var = cfgNode.Scope.GetVar(expr.Name.Lexeme);
+            expr.Type = var.Type;
 
-            return varType;
+            return (var.Type, var.Mutability);
         }
     }
 }
