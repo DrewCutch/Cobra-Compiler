@@ -100,6 +100,8 @@
     <Compile Include="ErrorLogging\ErrorLogger.cs" />
     <Compile Include="ErrorLogging\ParsingException.cs" />
     <Compile Include="ErrorLogging\ScanningException.cs" />
+    <Compile Include="TypeCheck\CFG\BitMatrix.cs" />
+    <Compile Include="TypeCheck\CFG\CFGraph.cs" />
     <Compile Include="TypeCheck\CFG\CFGNode.cs" />
     <Compile Include="Parse\Expressions\CallExpression.cs" />
     <Compile Include="Parse\Expressions\GetExpression.cs" />
@@ -107,7 +109,10 @@
     <Compile Include="Parse\Expressions\IndexExpression.cs" />
     <Compile Include="Parse\Expressions\InterfaceDefinitionExpression.cs" />
     <Compile Include="TypeCheck\CFG\CFGPrinter.cs" />
+    <Compile Include="TypeCheck\CFG\EdgeMatrix.cs" />
+    <Compile Include="TypeCheck\Exceptions\WriteToReadOnlySymbolException.cs" />
     <Compile Include="TypeCheck\ExpressionChecker.cs" />
+    <Compile Include="TypeCheck\ExpressionType.cs" />
     <Compile Include="TypeCheck\FuncChecker.cs" />
     <Compile Include="TypeCheck\Scopes\GenericScope.cs" />
     <Compile Include="Scanning\SourceLocation.cs" />
@@ -146,6 +151,7 @@
     <Compile Include="TypeCheck\Operators\Operation.cs" />
     <Compile Include="TypeCheck\Operators\Operator.cs" />
     <Compile Include="TypeCheck\Symbols\Mutability.cs" />
+    <Compile Include="TypeCheck\Symbols\MutabilityUtils.cs" />
     <Compile Include="TypeCheck\Symbols\Symbol.cs" />
     <Compile Include="TypeCheck\TypeDefiner.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeBase.cs" />
@@ -206,6 +212,7 @@
     <Compile Include="SupportedProject\ExamplePersonType.cs" />
     <Compile Include="SupportedProject\ExampleUnionBoolInt.cs" />
     <Compile Include="TokenType.cs" />
+    <Compile Include="Util\IEnumerableExtensions.cs" />
     <Compile Include="Util\ListByElementComparer.cs" />
   </ItemGroup>
   <ItemGroup>
