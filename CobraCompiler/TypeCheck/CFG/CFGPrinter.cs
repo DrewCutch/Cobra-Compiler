@@ -11,11 +11,9 @@ namespace CobraCompiler.TypeCheck.CFG
 {
     class CFGPrinter
     {
-        public void PrintCFG(CFGNode root)
+        public void PrintCFG(CFGraph graph)
         {
-            List<CFGNode> allNodes = CFGNode.LinearNodes(root);
-
-            foreach (CFGNode node in allNodes)
+            foreach (CFGNode node in graph.CFGNodes)
             {
                 PrintNode(node);
             }
