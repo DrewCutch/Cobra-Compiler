@@ -207,11 +207,6 @@ namespace CobraCompiler.TypeCheck
         {
             FuncScope funcScope = _funcChecker.DefineFunc(funcDeclaration, scope);
             _scopes.Enqueue(funcScope);
-            if (funcScope.FuncDeclaration.Name.Lexeme == "TESTCFG")
-            {
-                CFGPrinter printer = new CFGPrinter();
-                printer.PrintCFG(funcScope.CFGRoot);
-            }
         }
 
         public static Scope PushGenericScope(Statement body, IEnumerable<Token> typeArguments, Scope scope)
@@ -233,9 +228,9 @@ namespace CobraCompiler.TypeCheck
         {
             if (scope is FuncScope funcScope)
             {
-                _funcChecker.CheckFunc(funcScope);
+                _funcChecker.CheckFunc(funcScope, _errorLogger);
             }
-            else
+            else if(scope is ModuleScope || scope is ClassScope)
             {
                 foreach (Statement statement in scope.Body)
                 {
@@ -248,9 +243,12 @@ namespace CobraCompiler.TypeCheck
 
                 CobraType classType = CurrentScope.GetType(classScope.ClassDeclaration.Type);
                 HashSet<KeyValuePair<string, CobraType>> definedSymbols =
-                    new HashSet<KeyValuePair<string, CobraType>>(classScope.ThisType.Symbols);
+                    new HashSet<KeyValuePair<string, CobraType>>(classScope.ThisType.Symbols
+                        .Select(symbol => new KeyValuePair<string, CobraType>(symbol.Key, symbol.Value.Type)));
+
                 HashSet<KeyValuePair<string, CobraType>> requiredSymbols =
-                    new HashSet<KeyValuePair<string, CobraType>>(classType.Symbols);
+                    new HashSet<KeyValuePair<string, CobraType>>(classType.Symbols
+                        .Select(symbol => new KeyValuePair<string, CobraType>(symbol.Key, symbol.Value.Type)));
 
                 if (!definedSymbols.IsSupersetOf(requiredSymbols))
                 {
@@ -270,7 +268,7 @@ namespace CobraCompiler.TypeCheck
 
         private void Check(Statement statement)
         {
-            CFGNode moduleNode = new CFGNode(CurrentScope);
+            CFGNode moduleNode = CFGNode.CreateDummyNode(CurrentScope);
 
             switch (statement)
             {
@@ -297,19 +295,19 @@ namespace CobraCompiler.TypeCheck
                     expressionStatement.Expression.Accept(_expressionChecker, moduleNode);
                     break;
                 case ReturnStatement returnStatement:
-                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, moduleNode);
+                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, moduleNode).Type;
                     if (!returnStatementType.CanCastTo(CurrentScope.GetReturnType()))
                         throw new InvalidReturnTypeException(returnStatement.Value, CurrentScope.GetReturnType());
                     break;
                 case ImportStatement importStatement:
-                    CobraType importType = importStatement.Import.Accept(_expressionChecker, moduleNode);
+                    CobraType importType = importStatement.Import.Accept(_expressionChecker, moduleNode).Type;
                     if (!(importType is NamespaceType))
                         throw new InvalidImportException(importStatement);
 
                     CurrentScope.Declare(importStatement, importType);
                     break;
                 case IConditionalExpression conditionalExpression:
-                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, moduleNode);
+                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, moduleNode).Type;
                     if (!conditionType.CanCastTo(DotNetCobraType.Bool))
                         throw new InvalidConditionTypeException(conditionalExpression.Condition);
                     break;

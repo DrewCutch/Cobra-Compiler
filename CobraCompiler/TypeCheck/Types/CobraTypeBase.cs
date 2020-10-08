@@ -39,7 +39,7 @@ namespace CobraCompiler.TypeCheck.Types
 
             foreach (CobraType parent in _parents)
                 if (parent.HasSymbol(symbol))
-                    return parent.GetSymbol(symbol);
+                    return parent.GetSymbol(symbol).Type;
 
             return null;
         }

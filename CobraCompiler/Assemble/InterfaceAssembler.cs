@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.TypeCheck;
 using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.Assemble
@@ -68,11 +69,11 @@ namespace CobraCompiler.Assemble
             foreach (CobraType parent in _cobraType.Parents)
                 _typeBuilder.AddInterfaceImplementation(_typeStore.GetType(parent));
 
-            foreach (KeyValuePair<string, CobraType> symbol in _cobraType.Symbols)
+            foreach (KeyValuePair<string, Symbol> symbol in _cobraType.Symbols)
             {
-                if (symbol.Value.IsCallable())
+                if (symbol.Value.Type.IsCallable())
                 {
-                    foreach (IReadOnlyList<CobraType> sig in symbol.Value.CallSigs)
+                    foreach (IReadOnlyList<CobraType> sig in symbol.Value.Type.CallSigs)
                     {
                         Type returnType = _typeStore.GetType(sig.Last());
                         Type[] paramTypes = sig.Take(sig.Count - 1).Select(param => _typeStore.GetType(param)).ToArray();
@@ -87,12 +88,12 @@ namespace CobraCompiler.Assemble
                 else
                 {
 
-                    Type returnType = _typeStore.GetType(symbol.Value);
+                    Type returnType = _typeStore.GetType(symbol.Value.Type);
                     PropertyBuilder propertyBuilder = _typeBuilder.DefineProperty(symbol.Key, PropertyAttributes.None, returnType, null);
                     MethodBuilder getMethod = PropertyAssembler.DefineGetMethod(_typeBuilder, symbol.Key, returnType, true);
                     propertyBuilder.SetGetMethod(getMethod);
 
-                    _typeStore.AddTypeMember(_cobraType, symbol.Value, propertyBuilder);
+                    _typeStore.AddTypeMember(_cobraType, symbol.Value.Type, propertyBuilder);
                 }
             }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using CobraCompiler.TypeCheck.Symbols;
 
 namespace CobraCompiler.TypeCheck.Types
 {
@@ -45,9 +46,11 @@ namespace CobraCompiler.TypeCheck.Types
 
             foreach (PropertyInfo property in properties)
             {
+                Mutability propertyMutability = property.CanWrite ? Mutability.Mutable : Mutability.ReadOnly;
+
                 DotNetCobraType propertyType = DotNetCobraType.FromType(property.PropertyType);
                 if (propertyType != null)
-                    DefineSymbol(property.Name, propertyType);
+                    DefineSymbol(property.Name, new Symbol(null, propertyType, propertyMutability, property.Name));
             }
         }
 

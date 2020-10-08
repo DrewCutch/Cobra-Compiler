@@ -193,21 +193,21 @@ namespace CobraCompiler.TypeCheck
                     expressionStatement.Expression.Accept(_expressionChecker, cfgNode);
                     break;
                 case ReturnStatement returnStatement:
-                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, cfgNode);
+                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, cfgNode).Type;
                     if (!returnStatementType.CanCastTo(scope.GetReturnType()))
                         throw new InvalidReturnTypeException(returnStatement.Value, scope.GetReturnType());
 
-                    cfgNode.SetNext(funcScope.CFGTerminal);
+                    cfgNode.SetNext(funcScope.CFGraph.Terminal);
                     break;
                 case ImportStatement importStatement:
-                    CobraType importType = importStatement.Import.Accept(_expressionChecker, cfgNode);
+                    CobraType importType = importStatement.Import.Accept(_expressionChecker, cfgNode).Type;
                     if (!(importType is NamespaceType))
                         throw new InvalidImportException(importStatement);
 
                     scope.Declare(importStatement, importType);
                     break;
                 case IConditionalExpression conditionalExpression:
-                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, cfgNode);
+                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, cfgNode).Type;
                     if (!conditionType.CanCastTo(DotNetCobraType.Bool))
                         throw new InvalidConditionTypeException(conditionalExpression.Condition);
                     break;

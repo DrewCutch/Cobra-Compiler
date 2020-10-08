@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CobraCompiler.TypeCheck.Symbols;
 
 namespace CobraCompiler.TypeCheck.Types
 {
@@ -11,8 +12,8 @@ namespace CobraCompiler.TypeCheck.Types
 
         protected readonly HashSet<CobraType> _parents;
 
-        protected readonly Dictionary<string, CobraType> _symbols;
-        public IReadOnlyDictionary<string, CobraType> Symbols => _symbols;
+        protected readonly Dictionary<string, Symbol> _symbols;
+        public IReadOnlyDictionary<string, Symbol> Symbols => _symbols;
 
         public IEnumerable<IReadOnlyList<CobraType>> CallSigs
         {
@@ -33,7 +34,7 @@ namespace CobraCompiler.TypeCheck.Types
         public CobraType(string identifier)
         {
             Identifier = identifier;
-            _symbols = new Dictionary<string, CobraType>();
+            _symbols = new Dictionary<string, Symbol>();
             _parents = new HashSet<CobraType>();
             _callSigs = new List<List<CobraType>>();
         }
@@ -41,7 +42,7 @@ namespace CobraCompiler.TypeCheck.Types
         public CobraType(string identifier, params CobraType[] parents)
         {
             Identifier = identifier;
-            _symbols = new Dictionary<string, CobraType>();
+            _symbols = new Dictionary<string, Symbol>();
             _parents = new HashSet<CobraType>(parents);
             _callSigs = new List<List<CobraType>>();
             _callSigs = new List<List<CobraType>>();
@@ -63,7 +64,7 @@ namespace CobraCompiler.TypeCheck.Types
             return _symbols.ContainsKey(symbol);
         }
 
-        public virtual CobraType GetSymbol(string symbol)
+        public virtual Symbol GetSymbol(string symbol)
         {
             if (_symbols.ContainsKey(symbol))
                 return _symbols[symbol];
@@ -75,13 +76,12 @@ namespace CobraCompiler.TypeCheck.Types
             return null;
         }
 
-        public virtual void DefineSymbol(string symbol, CobraType type, bool overload = false)
+        public virtual void DefineSymbol(string symbolName, Symbol symbol, bool overload = false)
         {
-            if (DeclaresSymbol(symbol) && overload)
-                _symbols[symbol] =
-                    IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(_symbols[symbol], type);
+            if (DeclaresSymbol(symbolName) && overload)
+                _symbols[symbolName] = new Symbol(symbol.Declaration, IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(_symbols[symbolName].Type, symbol.Type), Mutability.CompileTimeConstant, symbolName);
             else
-                _symbols[symbol] = type;
+                _symbols[symbolName] = symbol;
         }
 
         public bool IsCallable()

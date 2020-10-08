@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.TypeCheck;
 using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
 
@@ -41,7 +42,7 @@ namespace CobraCompiler.Parse.Scopes
                 Parent.Declare(statement, ClassDeclaration.Name.Lexeme, type, mutability, overload);
 
 
-            ThisType.DefineSymbol(var, type, type is FuncGenericInstance);
+            ThisType.DefineSymbol(var, new Symbol(statement, type, mutability, var), type is FuncGenericInstance);
             base.Declare(statement, var, type, mutability, overload);
         }
     }
