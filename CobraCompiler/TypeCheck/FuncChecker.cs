@@ -62,7 +62,7 @@ namespace CobraCompiler.TypeCheck
             if (funcDeclaration.TypeArguments.Count > 0)
                 scope = scope.Parent;
 
-            BuildCFG(funcScope, funcScope.CFGRoot);
+            BuildCFG(funcScope, funcScope.CFGraph.Root);
 
             return funcScope;
         }
@@ -102,32 +102,30 @@ namespace CobraCompiler.TypeCheck
 
                 if (statement is IConditionalExpression conditional)
                 {
-                    CFGNode conditionalEnd = new CFGNode(scope);
-
                     Scope thenScope = new Scope(scope, conditional.Then);
                     scope.AddSubScope(thenScope);
 
-                    CFGNode thenNode = new CFGNode(thenScope);
-                    CFGNode.Link(previous, thenNode);
+                    CFGNode thenNode = previous.CreateNext(thenScope);
 
                     CFGNode thenEnd = BuildCFG(thenScope, thenNode);
-                    CFGNode.Link(thenEnd, conditionalEnd);
+
+                    CFGNode elseEnd = null;
 
                     if (conditional.Else != null)
                     {
                         Scope elseScope = new Scope(scope, conditional.Else);
                         scope.AddSubScope(elseScope);
 
-                        CFGNode elseNode = new CFGNode(elseScope);
-                        CFGNode.Link(previous, elseNode);
+                        CFGNode elseNode = previous.CreateNext(elseScope);
 
-                        CFGNode elseEnd = BuildCFG(elseScope, elseNode);
-                        CFGNode.Link(elseEnd, conditionalEnd);
+                        elseEnd = BuildCFG(elseScope, elseNode);
                     }
+
+                    CFGNode conditionalEnd = thenEnd.CreateNext(scope);
+                    if(elseEnd != null)
+                        elseEnd.Link(conditionalEnd);
                     else
-                    {
-                        CFGNode.Link(previous, conditionalEnd);
-                    }
+                        previous.Link(conditionalEnd);
 
                     previous = conditionalEnd;
                 }
@@ -136,26 +134,33 @@ namespace CobraCompiler.TypeCheck
             return previous;
         }
 
-        public void CheckFunc(FuncScope funcScope)
+        public void CheckFunc(FuncScope funcScope, ErrorLogger errorLogger)
         {
-            List<CFGNode> nodes = CFGNode.LinearNodes(funcScope.CFGRoot);
+            IReadOnlyList<CFGNode> nodes = funcScope.CFGraph.CFGNodes;
 
             foreach (ParamDeclarationStatement paramDeclaration in funcScope.FuncDeclaration.Params)
             {
-                Check(paramDeclaration, funcScope.CFGRoot, funcScope);
+                Check(paramDeclaration, funcScope.CFGraph.Root, funcScope);
             }
 
             foreach (CFGNode node in nodes)
             {
-                CheckNode(node, funcScope);
+                CheckNode(node, funcScope, errorLogger);
             }
         }
 
-        private void CheckNode(CFGNode node, FuncScope funcScope)
+        private void CheckNode(CFGNode node, FuncScope funcScope, ErrorLogger errorLogger)
         {
             foreach (Statement statement in node.Statements)
             {
-                Check(statement, node, funcScope);
+                try
+                {
+                    Check(statement, node, funcScope);
+                }
+                catch(TypingException typingException)
+                {
+                    errorLogger.Log(typingException);
+                }
             }
         }
 

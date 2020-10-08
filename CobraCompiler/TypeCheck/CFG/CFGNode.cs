@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.TypeCheck.CFG;
+using CobraCompiler.Util;
 
 namespace CobraCompiler.Parse.CFG
 {
@@ -15,67 +17,47 @@ namespace CobraCompiler.Parse.CFG
         public IReadOnlyList<Statement> Statements => _statements;
         protected List<Statement> _statements;
 
-        public bool IsTerminal => _next.Count == 0;
-        public IReadOnlyList<CFGNode> Next => _next;
-        protected List<CFGNode> _next;
+        public bool IsTerminal => Index == 0;
 
-        public bool IsRoot => _previous.Count == 0;
-        public IReadOnlyList<CFGNode> Previous => _previous;
-        protected List<CFGNode> _previous;
+        public bool IsRoot => Index == 1;
 
-        public CFGNode(Scope scope)
+        public readonly CFGraph Graph;
+        internal readonly int Index;
+
+        public IEnumerable<CFGNode> Next => Graph.GetNext(this);
+        public IEnumerable<CFGNode> Previous => Graph.GetPrevious(this);
+
+        internal CFGNode(Scope scope, CFGraph graph, int index)
         {
             Scope = scope;
-            _next = new List<CFGNode>();
-            _previous = new List<CFGNode>();
+            Graph = graph;
+            Index = index;
+
             _statements = new List<Statement>();
         }
 
-        public static void Link(CFGNode previous, CFGNode next)
+        public static CFGNode CreateDummyNode(Scope scope)
         {
-            previous._next.Add(next);
-            next._previous.Add(previous);
+            return new CFGNode(scope, null, -1);
         }
 
-        // This can be improved using a topological sort
-        public static List<CFGNode> LinearNodes(CFGNode root)
+        public CFGNode CreateNext(Scope scope)
         {
-            Queue<CFGNode> pendingNodes = new Queue<CFGNode>();
-            HashSet<CFGNode> solvedNodes = new HashSet<CFGNode>();
-            List<CFGNode> linearNodes = new List<CFGNode>();
+            CFGNode newNode = Graph.AddNode(scope);
 
-            pendingNodes.Enqueue(root);
+            Link(newNode);
 
-            while (pendingNodes.Count != 0)
-            {
-                CFGNode next = pendingNodes.Dequeue();
-                if (solvedNodes.Contains(next))
-                    continue;
+            return newNode;
+        }
 
-                if (next.Previous.All(previous => solvedNodes.Contains(previous)))
-                {
-                    linearNodes.Add(next);
-                    solvedNodes.Add(next);
-
-                    foreach (CFGNode node in next.Next)
-                    {
-                        pendingNodes.Enqueue(node);
-                    }
-                }
-                else
-                {
-                    pendingNodes.Enqueue(next);
-                }
-            }
-
-            return linearNodes;
+        public void Link(CFGNode next)
+        {
+            Graph.AddLink(this, next);
         }
 
         public void SetNext(CFGNode next)
         {
-            _next.Clear();
-            _next.Add(next);
-            next._previous.Add(next);
+            Graph.SetChild(this, next);
         }
 
         public void AddStatement(Statement statement)
@@ -88,10 +70,10 @@ namespace CobraCompiler.Parse.CFG
             if (predicate(this))
                 return true;
 
-            if (IsRoot)
+            if (Previous.Empty())
                 return false;
 
-            return _previous.All(previous => previous.FulfilledByAncestors(predicate));
+            return Graph.GetPrevious(this).All(previous => previous.FulfilledByAncestors(predicate));
         }
 
         public bool FulfilledByChildren(Func<CFGNode, bool> predicate)
@@ -99,10 +81,10 @@ namespace CobraCompiler.Parse.CFG
             if (predicate(this))
                 return true;
 
-            if (IsTerminal)
+            if (Next.Empty())
                 return false;
 
-            return _next.All(next => next.FulfilledByChildren(predicate));
+            return Next.All(next => next.FulfilledByChildren(predicate));
         }
 
         public bool FulfilledByAnyChildren(Func<CFGNode, bool> predicate)
@@ -110,26 +92,10 @@ namespace CobraCompiler.Parse.CFG
             if (predicate(this))
                 return true;
 
-            if (IsTerminal)
+            if (Next.Empty())
                 return false;
 
-            return _next.Any(next => next.FulfilledByAnyChildren(predicate));
-        }
-
-        public CFGNode GetRoot()
-        {
-            if (IsRoot)
-                return this;
-
-            return _previous[0].GetRoot();
-        }
-
-        public CFGNode GetTerminal()
-        {
-            if (IsTerminal)
-                return this;
-
-            return _next[0].GetTerminal();
+            return Next.Any(next => next.FulfilledByAnyChildren(predicate));
         }
     }
 }
