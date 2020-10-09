@@ -140,7 +140,7 @@ namespace CobraCompiler.Parse
         {
             try
             {
-                if (Match(TokenType.Var))
+                if (Match(TokenType.Var, TokenType.Val))
                     return VarDeclaration();
 
                 if (Match(TokenType.Func))
