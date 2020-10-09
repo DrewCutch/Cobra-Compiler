@@ -4,8 +4,10 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
+using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
+using CobraCompiler.TypeCheck;
 using CobraCompiler.TypeCheck.CFG;
 using CobraCompiler.Util;
 
@@ -16,6 +18,9 @@ namespace CobraCompiler.Parse.CFG
         public readonly Scope Scope;
         public IReadOnlyList<Statement> Statements => _statements;
         protected List<Statement> _statements;
+
+        public IReadOnlyDictionary<Symbol, List<AssignExpression>> Assignments => _assignments;
+        private readonly Dictionary<Symbol, List<AssignExpression>> _assignments;
 
         public bool IsTerminal => Index == 0;
 
@@ -34,6 +39,7 @@ namespace CobraCompiler.Parse.CFG
             Index = index;
 
             _statements = new List<Statement>();
+            _assignments = new Dictionary<Symbol, List<AssignExpression>>();
         }
 
         public static CFGNode CreateDummyNode(Scope scope)
@@ -65,6 +71,14 @@ namespace CobraCompiler.Parse.CFG
             _statements.Add(statement);
         }
 
+        public void AddAssignment(Symbol symbol, AssignExpression assignExpression)
+        {
+            if(!_assignments.ContainsKey(symbol))
+                _assignments[symbol] = new List<AssignExpression>();
+
+            _assignments[symbol].Add(assignExpression);
+        }
+
         public bool FulfilledByAncestors(Func<CFGNode, bool> predicate)
         {
             if (predicate(this))
@@ -74,6 +88,17 @@ namespace CobraCompiler.Parse.CFG
                 return false;
 
             return Graph.GetPrevious(this).All(previous => previous.FulfilledByAncestors(predicate));
+        }
+
+        public bool FulfilledByAnyAncestors(Func<CFGNode, bool> predicate)
+        {
+            if (predicate(this))
+                return true;
+
+            if (Previous.Empty())
+                return false;
+
+            return Graph.GetPrevious(this).Any(previous => previous.FulfilledByAnyAncestors(predicate));
         }
 
         public bool FulfilledByChildren(Func<CFGNode, bool> predicate)
@@ -96,6 +121,21 @@ namespace CobraCompiler.Parse.CFG
                 return false;
 
             return Next.Any(next => next.FulfilledByAnyChildren(predicate));
+        }
+
+        private bool IsAssigned(Symbol symbol)
+        {
+            return Assignments.ContainsKey(symbol);
+        }
+
+        public bool IsEverAssigned(Symbol symbol)
+        {
+            return FulfilledByAnyAncestors(node => node.IsAssigned(symbol));
+        }
+
+        public bool IsAlwaysAssigned(Symbol symbol)
+        {
+            return FulfilledByAncestors(node => node.IsAssigned(symbol));
         }
     }
 }
