@@ -226,6 +226,10 @@ namespace CobraCompiler.Scanning
                     if (!isAlphanumeric(next))
                         return TokenType.Var;
                     return null;
+                case "val":
+                    if (!isAlphanumeric(next))
+                        return TokenType.Val;
+                    return null;
                 case "while":
                     if (!isAlphanumeric(next))
                         return TokenType.While;

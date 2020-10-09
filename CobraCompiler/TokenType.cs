@@ -26,7 +26,7 @@ namespace CobraCompiler
         // Keywords.                                     
         And, Class, Else, False, Func, For, If, Import,
         In, Init, Null, Or, Op, Return, Super, True,
-        Type, Var, While,
+        Type, Var, Val, While,
 
         //Invalid
         Invalid,
