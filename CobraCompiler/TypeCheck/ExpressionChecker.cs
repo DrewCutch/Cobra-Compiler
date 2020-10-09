@@ -12,29 +12,35 @@ using CobraCompiler.TypeCheck.Types;
 
 namespace CobraCompiler.TypeCheck
 {
-    class ExpressionChecker : IExpressionVisitorWithContext<(CobraType Type, Mutability Mutability), CFGNode>
+    class ExpressionChecker : IExpressionVisitorWithContext<ExpressionType, CFGNode>
     {
-        public (CobraType, Mutability) Visit(AssignExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(AssignExpression expr, CFGNode cfgNode)
         {
-            (CobraType varType, Mutability varMutability) = expr.Target.Accept(this, cfgNode);
+            ExpressionType var = expr.Target.Accept(this, cfgNode);
 
-            (CobraType assignType, Mutability assignMutability) = expr.Value.Accept(this, cfgNode);
+            ExpressionType value = expr.Value.Accept(this, cfgNode);
 
-            if (!assignType.CanCastTo(varType))
+            if (!value.Type.CanCastTo(var.Type))
                 throw new InvalidAssignmentException(expr);
 
-            if(varMutability != Mutability.Mutable)
+            if(var.Mutability != Mutability.Mutable && var.Mutability != Mutability.AssignOnce)
                 throw new WriteToReadOnlySymbolException(expr);
 
-            expr.Type = varType;
+            if(var.Mutability == Mutability.AssignOnce && cfgNode.IsEverAssigned(var.Symbol))
+                throw new WriteToReadOnlySymbolException(expr);
 
-            return (varType, MutabilityUtils.GetResultMutability(varMutability, assignMutability));
+            expr.Type = var.Type;
+
+            cfgNode.AddAssignment(var.Symbol, expr);
+
+            return new ExpressionType(var.Type, MutabilityUtils.GetResultMutability(var.Mutability, value.Mutability),
+                null);
         }
 
-        public (CobraType, Mutability) Visit(BinaryExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(BinaryExpression expr, CFGNode cfgNode)
         {
-            var left = expr.Left.Accept(this, cfgNode);
-            var right = expr.Right.Accept(this, cfgNode);
+            ExpressionType left = expr.Left.Accept(this, cfgNode);
+            ExpressionType right = expr.Right.Accept(this, cfgNode);
 
             if (!cfgNode.Scope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), left.Type, right.Type))
             {
@@ -45,10 +51,11 @@ namespace CobraCompiler.TypeCheck
 
             expr.Type = op.ResultType;
 
-            return (op.ResultType, MutabilityUtils.GetResultMutability(left.Mutability, right.Mutability));
+            return new ExpressionType(op.ResultType,
+                MutabilityUtils.GetResultMutability(left.Mutability, right.Mutability), null);
         }
 
-        public (CobraType, Mutability) Visit(CallExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(CallExpression expr, CFGNode cfgNode)
         {
             CobraType calleeType = expr.Callee.Accept(this, cfgNode).Type;
             List<CobraType> paramTypes = expr.Arguments.Select(arg => arg.Accept(this, cfgNode).Type).ToList();
@@ -56,7 +63,7 @@ namespace CobraCompiler.TypeCheck
             if (calleeType.IsCallable(paramTypes))
             {
                 expr.Type = calleeType.CallReturn(paramTypes);
-                return (calleeType.CallReturn(paramTypes), Mutability.Result);
+                return new ExpressionType(calleeType.CallReturn(paramTypes), Mutability.Result, null);
             }
 
             if (calleeType is FuncGenericInstance func)
@@ -78,7 +85,7 @@ namespace CobraCompiler.TypeCheck
             throw new InvalidCallException(expr);
         }
 
-        public (CobraType, Mutability) Visit(IndexExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(IndexExpression expr, CFGNode cfgNode)
         {
             CobraType collectionType = expr.Collection.Accept(this, cfgNode).Type;
 
@@ -95,13 +102,13 @@ namespace CobraCompiler.TypeCheck
             if (collectionType is CobraGenericInstance genericInstance)
             {
                 expr.Type = genericInstance.ReplacePlaceholders(typeParams);
-                return (expr.Type, Mutability.Result);
+                return new ExpressionType(expr.Type, Mutability.Result, null);
             }
 
             if (collectionType is CobraTypeCobraType metaType && metaType.CobraType is CobraGeneric generic)
             {
                 expr.Type = generic.CreateGenericInstance(typeParams);
-                return (new CobraTypeCobraType(expr.Type), Mutability.CompileTimeConstantResult);
+                return new ExpressionType(new CobraTypeCobraType(expr.Type), Mutability.CompileTimeConstantResult, null);
             }
 
             throw new NotImplementedException();
@@ -119,39 +126,41 @@ namespace CobraCompiler.TypeCheck
             */
         }
 
-        public (CobraType, Mutability) Visit(ListLiteralExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(ListLiteralExpression expr, CFGNode cfgNode)
         {
-            (CobraType elementsCommonType, Mutability elementsMutability) = expr.Elements[0].Accept(this, cfgNode);
+            ExpressionType firstElement = expr.Elements[0].Accept(this, cfgNode);
+            CobraType elementsCommonType = firstElement.Type;
+            Mutability elementsMutability = firstElement.Mutability;
 
             foreach (Expression element in expr.Elements)
             {
-                (CobraType elementType, Mutability elementMutability) = element.Accept(this, cfgNode);
+                ExpressionType elementExpressionType = element.Accept(this, cfgNode);
 
-                elementsCommonType = elementsCommonType.GetCommonParent(elementType);
+                elementsCommonType = elementsCommonType.GetCommonParent(elementExpressionType.Type);
                 
-                elementsMutability = MutabilityUtils.GetResultMutability(elementsMutability, elementMutability);
+                elementsMutability = MutabilityUtils.GetResultMutability(elementsMutability, elementExpressionType.Mutability);
             }
 
             CobraType listType = DotNetCobraGeneric.ListType.CreateGenericInstance(new[] { elementsCommonType });
 
             expr.Type = listType;
 
-            return (listType, elementsMutability);
+            return new ExpressionType(listType, elementsMutability, null);
         }
 
-        public (CobraType, Mutability) Visit(LiteralExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(LiteralExpression expr, CFGNode cfgNode)
         {
-            return (expr.LiteralType, Mutability.CompileTimeConstantResult);
+            return new ExpressionType(expr.LiteralType, Mutability.CompileTimeConstantResult, null);
         }
 
-        public (CobraType, Mutability) Visit(TypeInitExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(TypeInitExpression expr, CFGNode cfgNode)
         {
             throw new NotImplementedException();
         }
 
-        public (CobraType, Mutability) Visit(UnaryExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(UnaryExpression expr, CFGNode cfgNode)
         {
-            var operand = expr.Right.Accept(this, cfgNode);
+            ExpressionType operand = expr.Right.Accept(this, cfgNode);
 
             if (!cfgNode.Scope.IsOperatorDefined(Operator.GetOperation(expr.Op.Type), null, operand.Type))
                 throw new OperatorNotDefinedException(expr);
@@ -160,10 +169,10 @@ namespace CobraCompiler.TypeCheck
 
             expr.Type = op.ResultType;
 
-            return (op.ResultType, MutabilityUtils.GetResultMutability(operand.Mutability));
+            return new ExpressionType(op.ResultType, MutabilityUtils.GetResultMutability(operand.Mutability), null);
         }
 
-        public (CobraType, Mutability) Visit(GetExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(GetExpression expr, CFGNode cfgNode)
         {
             var obj = expr.Obj.Accept(this, cfgNode);
 
@@ -172,17 +181,19 @@ namespace CobraCompiler.TypeCheck
                 if (namespaceType.HasType(expr.Name.Lexeme))
                 {
                     expr.Type = namespaceType.GetType(expr.Name.Lexeme);
-                    return (namespaceType.GetType(expr.Name.Lexeme), Mutability.CompileTimeConstantResult);
+
+                    //TODO: reference type symbol
+                    return new ExpressionType(namespaceType.GetType(expr.Name.Lexeme), Mutability.CompileTimeConstantResult, null);
                 }
 
                 string resolvedName = namespaceType.ResolveName(expr.Name.Lexeme);
                 if (!cfgNode.Scope.IsDefined(resolvedName))
                     throw new VarNotDefinedException(expr, resolvedName);
 
-                CobraType varType = cfgNode.Scope.GetVar(resolvedName).Type;
+                Symbol var = cfgNode.Scope.GetVar(resolvedName);
 
-                expr.Type = varType;
-                return (varType, Mutability.CompileTimeConstantResult);
+                expr.Type = var.Type;
+                return new ExpressionType(var.Type, Mutability.CompileTimeConstantResult, var);
             }
 
             if (!obj.Type.HasSymbol(expr.Name.Lexeme))
@@ -191,23 +202,23 @@ namespace CobraCompiler.TypeCheck
             Symbol symbol = obj.Type.GetSymbol(expr.Name.Lexeme);
 
             expr.Type = symbol.Type;
-            return (symbol.Type, symbol.Mutability);
+            return new ExpressionType(symbol);
         }
 
-        public (CobraType, Mutability) Visit(GroupingExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(GroupingExpression expr, CFGNode cfgNode)
         {
             return expr.Inner.Accept(this, cfgNode);
         }
 
-        public (CobraType, Mutability) Visit(VarExpression expr, CFGNode cfgNode)
+        public ExpressionType Visit(VarExpression expr, CFGNode cfgNode)
         {
             if (!cfgNode.Scope.IsDefined(expr.Name.Lexeme))
                 throw new VarNotDefinedException(expr);
 
-            var var = cfgNode.Scope.GetVar(expr.Name.Lexeme);
+            Symbol var = cfgNode.Scope.GetVar(expr.Name.Lexeme);
             expr.Type = var.Type;
 
-            return (var.Type, var.Mutability);
+            return new ExpressionType(var);
         }
     }
 }
