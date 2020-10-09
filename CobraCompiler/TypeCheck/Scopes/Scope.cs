@@ -136,7 +136,7 @@ namespace CobraCompiler.Parse.Scopes
 
         public void Declare(VarDeclarationStatement varDeclaration)
         {
-            Declare(varDeclaration, varDeclaration.Name.Lexeme, GetType(varDeclaration.TypeInit), Mutability.Mutable);
+            Declare(varDeclaration, varDeclaration.Name.Lexeme, GetType(varDeclaration.TypeInit), varDeclaration.IsVal ? Mutability.AssignOnce : Mutability.Mutable);
         }
 
         public void Declare(FuncDeclarationStatement funcDeclaration, CobraType funcType)
