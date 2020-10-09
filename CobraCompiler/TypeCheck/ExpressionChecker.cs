@@ -23,6 +23,9 @@ namespace CobraCompiler.TypeCheck
             if (!value.Type.CanCastTo(var.Type))
                 throw new InvalidAssignmentException(expr);
 
+            if (var.Symbol?.Kind == SymbolKind.Param)
+                throw new AssignToParamException(expr, var.Symbol);
+
             if(var.Mutability != Mutability.Mutable && var.Mutability != Mutability.AssignOnce)
                 throw new WriteToReadOnlySymbolException(expr);
 
