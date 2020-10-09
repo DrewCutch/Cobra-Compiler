@@ -153,6 +153,7 @@
     <Compile Include="TypeCheck\Symbols\Mutability.cs" />
     <Compile Include="TypeCheck\Symbols\MutabilityUtils.cs" />
     <Compile Include="TypeCheck\Symbols\Symbol.cs" />
+    <Compile Include="TypeCheck\Symbols\SymbolKind.cs" />
     <Compile Include="TypeCheck\TypeDefiner.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeBase.cs" />
     <Compile Include="TypeCheck\Types\CobraTypeCobraType.cs" />

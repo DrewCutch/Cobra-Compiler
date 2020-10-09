@@ -15,16 +15,18 @@ namespace CobraCompiler.TypeCheck
     {
         public readonly string Lexeme;
         public readonly CobraType Type;
+        public readonly SymbolKind Kind;
         public readonly Mutability Mutability;
         public readonly Statement Declaration;
         public IReadOnlyList<Expression> References => _references;
 
         private readonly List<Expression> _references;
 
-        public Symbol(Statement declaration, CobraType type, Mutability mutability, string lexeme)
+        public Symbol(Statement declaration, CobraType type, SymbolKind kind, Mutability mutability, string lexeme)
         {
             Declaration = declaration;
             Type = type;
+            Kind = kind;
             Mutability = mutability;
             Lexeme = lexeme;
             _references = new List<Expression>();

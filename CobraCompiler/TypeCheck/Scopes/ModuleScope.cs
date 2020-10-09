@@ -26,10 +26,10 @@ namespace CobraCompiler.Parse.Scopes
             Parent.DefineType($"{Name}.{identifier}", _types[identifier]);
         }
         
-        protected internal override void Declare(Statement statement, string var, CobraType type, Mutability mutability, bool overload = false)
+        protected internal override void Declare(Statement statement, string var, CobraType type, SymbolKind kind, Mutability mutability, bool overload = false)
         {
-            base.Declare(statement, var, type, mutability, overload);
-            Parent.Declare(statement,$"{Name}.{var}", _vars[var].Type, mutability);
+            base.Declare(statement, var, type, kind, mutability, overload);
+            Parent.Declare(statement,$"{Name}.{var}", _vars[var].Type, kind, mutability);
         }
     }
 }

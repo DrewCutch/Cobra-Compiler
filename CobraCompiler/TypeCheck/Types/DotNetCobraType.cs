@@ -71,7 +71,7 @@ namespace CobraCompiler.TypeCheck.Types
                 {
                     case FieldInfo field:
                         if (FromType(field.FieldType) != null)
-                            DefineSymbol(field.Name, new Symbol(null, FromType(field.FieldType), Mutability.CompileTimeConstant, field.Name));
+                            DefineSymbol(field.Name, new Symbol(null, FromType(field.FieldType), SymbolKind.Member, Mutability.CompileTimeConstant, field.Name));
                         break;
                     case MethodInfo method:
                         CobraType returnType = FromType(method.ReturnType);
@@ -79,7 +79,7 @@ namespace CobraCompiler.TypeCheck.Types
                         if (!paramTypes.TrueForAll(element => element != null) || returnType == null)
                             continue;
                         paramTypes.Add(returnType);
-                        DefineSymbol(method.Name, new Symbol(null, DotNetCobraGeneric.FuncType.CreateGenericInstance(paramTypes), Mutability.CompileTimeConstant, method.Name), true);
+                        DefineSymbol(method.Name, new Symbol(null, DotNetCobraGeneric.FuncType.CreateGenericInstance(paramTypes), SymbolKind.Member, Mutability.CompileTimeConstant, method.Name), true);
                         break;
                     case PropertyInfo property:
                         break;

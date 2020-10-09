@@ -46,13 +46,13 @@ namespace CobraCompiler.TypeCheck.Types
                 return base.GetSymbol(symbol);
 
             if (baseSymbol.Type is GenericTypeParamPlaceholder typeParam)
-                return new Symbol(baseSymbol.Declaration, TypeParams[typeParam], baseSymbol.Mutability, baseSymbol.Lexeme);
+                return new Symbol(baseSymbol.Declaration, TypeParams[typeParam], baseSymbol.Kind, baseSymbol.Mutability, baseSymbol.Lexeme);
 
             if (baseSymbol.Type is CobraGenericInstance genericInstance)
-                return new Symbol(baseSymbol.Declaration, genericInstance.ReplacePlaceholders(OrderedTypeParams), baseSymbol.Mutability, baseSymbol.Lexeme);
+                return new Symbol(baseSymbol.Declaration, genericInstance.ReplacePlaceholders(OrderedTypeParams), baseSymbol.Kind, baseSymbol.Mutability, baseSymbol.Lexeme);
 
             if (baseSymbol.Type is CobraGeneric genericSymbol)
-                return new Symbol(baseSymbol.Declaration, genericSymbol.CreateGenericInstance(TypeParams), baseSymbol.Mutability, baseSymbol.Lexeme);
+                return new Symbol(baseSymbol.Declaration, genericSymbol.CreateGenericInstance(TypeParams), baseSymbol.Kind, baseSymbol.Mutability, baseSymbol.Lexeme);
 
             return baseSymbol;
         }

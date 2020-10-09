@@ -33,17 +33,17 @@ namespace CobraCompiler.Parse.Scopes
                 ThisType = new CobraType("this", parentScope.GetType(classDeclaration.Type));
 
             // Call base method to avoid virtual member call in constructor (overridden version is not needed)
-            base.Declare(classDeclaration, "this", ThisType, Mutability.AssignOnce, false);
+            base.Declare(classDeclaration, "this", ThisType, SymbolKind.This, Mutability.AssignOnce, false);
         }
 
-        protected internal override void Declare(Statement statement, string var, CobraType type, Mutability mutability, bool overload = false)
+        protected internal override void Declare(Statement statement, string var, CobraType type, SymbolKind kind, Mutability mutability, bool overload = false)
         {
             if(var == "init" && type is CobraGenericInstance genericInstance && genericInstance.Base == FuncCobraGeneric.FuncType)
-                Parent.Declare(statement, ClassDeclaration.Name.Lexeme, type, mutability, overload);
+                Parent.Declare(statement, ClassDeclaration.Name.Lexeme, type, SymbolKind.Global, mutability, overload);
 
 
-            ThisType.DefineSymbol(var, new Symbol(statement, type, mutability, var), type is FuncGenericInstance);
-            base.Declare(statement, var, type, mutability, overload);
+            ThisType.DefineSymbol(var, new Symbol(statement, type, kind, mutability, var), type is FuncGenericInstance);
+            base.Declare(statement, var, type, SymbolKind.ThisMember, mutability, overload);
         }
     }
 }

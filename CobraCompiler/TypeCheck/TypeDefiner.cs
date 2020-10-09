@@ -81,7 +81,7 @@ namespace CobraCompiler.TypeCheck
                     ? Mutability.CompileTimeConstant
                     : Mutability.Mutable;
 
-                _type.DefineSymbol(propName, new Symbol(new ExpressionStatement(property), propType, propMutability, propName), isFunction);
+                _type.DefineSymbol(propName, new Symbol(new ExpressionStatement(property), propType, SymbolKind.Member, propMutability, propName), isFunction);
             }
         }
     }

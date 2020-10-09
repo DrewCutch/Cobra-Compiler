@@ -17,9 +17,9 @@ namespace CobraCompiler.Parse.Scopes
 
         }
 
-        protected internal override void Declare(Statement expr, string var, CobraType type, Mutability mutability, bool overload = false)
+        protected internal override void Declare(Statement expr, string var, CobraType type, SymbolKind kind, Mutability mutability, bool overload = false)
         {
-            Parent.Declare(expr, var, type, mutability, overload);
+            Parent.Declare(expr, var, type, kind, mutability, overload);
         }
     }
 }

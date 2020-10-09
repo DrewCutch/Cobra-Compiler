@@ -50,7 +50,7 @@ namespace CobraCompiler.TypeCheck.Types
 
                 DotNetCobraType propertyType = DotNetCobraType.FromType(property.PropertyType);
                 if (propertyType != null)
-                    DefineSymbol(property.Name, new Symbol(null, propertyType, propertyMutability, property.Name));
+                    DefineSymbol(property.Name, new Symbol(null, propertyType, SymbolKind.Member, propertyMutability, property.Name));
             }
         }
 

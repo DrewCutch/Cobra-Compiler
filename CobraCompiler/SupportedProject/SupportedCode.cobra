@@ -24,7 +24,7 @@ func fib(until: int): int{
 		return 1
 	}
 	else{
-		var fibNum: int = fib(until - 2) + fib(until - 1)
+		val fibNum: int = fib(until - 2) + fib(until - 1)
 		return fibNum
 	}
 }
@@ -65,7 +65,7 @@ type node[T] {
 }
 
 class Node[T]: node[T]{
-	var value: T
+	val value: T
 	var next: node[T]
 
 	init(value: T){

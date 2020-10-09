@@ -57,10 +57,10 @@ namespace CobraCompiler.TypeCheck
 
             _globalScope.Declare(null, "printStr",
                 FuncCobraGeneric.FuncType.CreateGenericInstance(new[] {DotNetCobraType.Str, DotNetCobraType.Unit}),
-                Mutability.AssignOnce);
+                SymbolKind.Global, Mutability.AssignOnce);
             _globalScope.Declare(null, "printInt",
                 DotNetCobraGeneric.FuncType.CreateGenericInstance(new[] {DotNetCobraType.Int, DotNetCobraType.Unit}),
-                Mutability.AssignOnce);
+                SymbolKind.Global, Mutability.AssignOnce);
         }
 
         public void DefineNamespaces(Project project)
@@ -79,7 +79,7 @@ namespace CobraCompiler.TypeCheck
                 }
             }
 
-            _globalScope.Declare(null, project.Name, globalNamespace, Mutability.CompileTimeConstant);
+            _globalScope.Declare(null, project.Name, globalNamespace, SymbolKind.Global, Mutability.CompileTimeConstant);
         }
 
         public GlobalScope Check(IEnumerable<ParsedModule> modules)
