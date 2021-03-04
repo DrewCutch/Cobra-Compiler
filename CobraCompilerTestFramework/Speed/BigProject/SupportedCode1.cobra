@@ -51,18 +51,18 @@ func printTimes(phrase: str, times: int){
 }
 
 type node[T] {
-	val: T
+	value: T
 	next: node[T]
 
 	setNext: f[node[T], unit]
 }
 
 class Node[T]: node[T]{
-	var val: T
+	var value: T
 	var next: node[T]
 
-	init(val: T){
-		this.val = val
+	init(value: T){
+		this.value = value
 	}
 
 	func setNext(next: node[T]){
@@ -119,7 +119,7 @@ class LinkedList[T]: linkedList[T]{
 
 	func get(i: int): T{
 		if(i > count - 1){
-			return root.val
+			return root.value
 		}
 
 		var counter: int = 0
@@ -131,11 +131,11 @@ class LinkedList[T]: linkedList[T]{
 			counter = counter + 1
 		}
 
-		return found.val
+		return found.value
 	}
 
-	func add(val: T){
-		var newNode: node[T] = Node[T](val)
+	func add(value: T){
+		var newNode: node[T] = Node[T](value)
 
 		if(count == 0){
 			root = newNode
@@ -191,24 +191,24 @@ func printIntLL(llist: linkedList[int]){
 }
 
 type box[T] {
-	val: T
+	value: T
 }
 
 class Box[T]: box[T]{
-	var val: T
+	var value: T
 
-	init(val: T){
-		this.val = val
+	init(value: T){
+		this.value = value
 	}
 }
 
 
-func boxVal[T](val: T): box[T]{
-	return Box[T](val)
+func boxVal[T](value: T): box[T]{
+	return Box[T](value)
 }
 
 func unboxVal[T](boxed: box[T]): T{
-	return boxed.val
+	return boxed.value
 }
 
 func clamp(a: int, min: int, max: int): int{
@@ -348,11 +348,11 @@ func testB(a: str): bool{
 
 
 //type recursive1 {
-//	val: recursive2
+//	value: recursive2
 //}
 
 //type recursive2 {
-//	val: recursive1
+//	value: recursive1
 //}
 
 func main(): int{
