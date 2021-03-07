@@ -19,8 +19,8 @@ namespace CobraCompiler.Parse.CFG
         public IReadOnlyList<Statement> Statements => _statements;
         protected List<Statement> _statements;
 
-        public IReadOnlyDictionary<Symbol, List<AssignExpression>> Assignments => _assignments;
-        private readonly Dictionary<Symbol, List<AssignExpression>> _assignments;
+        public IReadOnlyDictionary<Symbol, List<Expression>> Assignments => _assignments;
+        private readonly Dictionary<Symbol, List<Expression>> _assignments;
 
         public bool IsTerminal => Index == 0;
 
@@ -39,7 +39,7 @@ namespace CobraCompiler.Parse.CFG
             Index = index;
 
             _statements = new List<Statement>();
-            _assignments = new Dictionary<Symbol, List<AssignExpression>>();
+            _assignments = new Dictionary<Symbol, List<Expression>>();
         }
 
         public static CFGNode CreateDummyNode(Scope scope)
@@ -71,10 +71,10 @@ namespace CobraCompiler.Parse.CFG
             _statements.Add(statement);
         }
 
-        public void AddAssignment(Symbol symbol, AssignExpression assignExpression)
+        public void AddAssignment(Symbol symbol, Expression assignExpression)
         {
             if(!_assignments.ContainsKey(symbol))
-                _assignments[symbol] = new List<AssignExpression>();
+                _assignments[symbol] = new List<Expression>();
 
             _assignments[symbol].Add(assignExpression);
         }
@@ -125,13 +125,17 @@ namespace CobraCompiler.Parse.CFG
 
         private bool IsAssigned(Symbol symbol)
         {
+            if (Scope.Parent is ClassScope containingClass && Scope is FuncScope funcScope &&
+                funcScope.FuncDeclaration.Name.Lexeme != "init")
+                return true;
+
             return Assignments.ContainsKey(symbol);
         }
 
-        public bool IsEverAssigned(Symbol symbol)
+        /*public bool IsEverAssigned(Symbol symbol)
         {
             return FulfilledByAnyAncestors(node => node.IsAssigned(symbol));
-        }
+        }*/
 
         public bool IsAlwaysAssigned(Symbol symbol)
         {
