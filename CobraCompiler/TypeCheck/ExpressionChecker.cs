@@ -234,6 +234,9 @@ namespace CobraCompiler.TypeCheck
             Symbol var = context.CfgNode.Scope.GetVar(expr.Name.Lexeme);
             expr.Type = var.Type;
 
+            if (context.CfgNode.Graph != null && !context.IsAssigning && !context.CfgNode.FulfilledByAncestors(ControlFlowCheck.IsAssigned(var)))
+                throw new UnassignedVarException(expr);
+
             return new ExpressionType(var);
         }
     }
