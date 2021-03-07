@@ -280,7 +280,7 @@ namespace CobraCompiler.TypeCheck
                         throw new VarAlreadyDeclaredException(varDeclaration);
 
                     CurrentScope.Declare(varDeclaration);
-                    varDeclaration.Assignment?.Accept(_expressionChecker, moduleNode);
+                    varDeclaration.Assignment?.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(moduleNode));
                     break;
                 case ParamDeclarationStatement paramDeclaration:
                     if (!CurrentScope.IsTypeDefined(paramDeclaration.TypeInit))
@@ -292,22 +292,22 @@ namespace CobraCompiler.TypeCheck
                     CurrentScope.Declare(paramDeclaration);
                     break;
                 case ExpressionStatement expressionStatement:
-                    expressionStatement.Expression.Accept(_expressionChecker, moduleNode);
+                    expressionStatement.Expression.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(moduleNode));
                     break;
                 case ReturnStatement returnStatement:
-                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, moduleNode).Type;
+                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(moduleNode)).Type;
                     if (!returnStatementType.CanCastTo(CurrentScope.GetReturnType()))
                         throw new InvalidReturnTypeException(returnStatement.Value, CurrentScope.GetReturnType());
                     break;
                 case ImportStatement importStatement:
-                    CobraType importType = importStatement.Import.Accept(_expressionChecker, moduleNode).Type;
+                    CobraType importType = importStatement.Import.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(moduleNode)).Type;
                     if (!(importType is NamespaceType))
                         throw new InvalidImportException(importStatement);
 
                     CurrentScope.Declare(importStatement, importType);
                     break;
                 case IConditionalExpression conditionalExpression:
-                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, moduleNode).Type;
+                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(moduleNode)).Type;
                     if (!conditionType.CanCastTo(DotNetCobraType.Bool))
                         throw new InvalidConditionTypeException(conditionalExpression.Condition);
                     break;

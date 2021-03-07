@@ -178,7 +178,8 @@ namespace CobraCompiler.TypeCheck
                         throw new VarAlreadyDeclaredException(varDeclaration);
 
                     scope.Declare(varDeclaration);
-                    varDeclaration.Assignment?.Accept(_expressionChecker, cfgNode);
+
+                    varDeclaration.Assignment?.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode));
                     break;
                 case ParamDeclarationStatement paramDeclaration:
                     if (!scope.IsTypeDefined(paramDeclaration.TypeInit))
@@ -188,26 +189,27 @@ namespace CobraCompiler.TypeCheck
                         throw new VarAlreadyDeclaredException(paramDeclaration);
 
                     scope.Declare(paramDeclaration);
+                    cfgNode.AddAssignment(scope.GetVar(paramDeclaration.Name.Lexeme), paramDeclaration.TypeInit);
                     break;
                 case ExpressionStatement expressionStatement:
-                    expressionStatement.Expression.Accept(_expressionChecker, cfgNode);
+                    expressionStatement.Expression.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode));
                     break;
                 case ReturnStatement returnStatement:
-                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, cfgNode).Type;
+                    CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode)).Type;
                     if (!returnStatementType.CanCastTo(scope.GetReturnType()))
                         throw new InvalidReturnTypeException(returnStatement.Value, scope.GetReturnType());
 
                     cfgNode.SetNext(funcScope.CFGraph.Terminal);
                     break;
                 case ImportStatement importStatement:
-                    CobraType importType = importStatement.Import.Accept(_expressionChecker, cfgNode).Type;
+                    CobraType importType = importStatement.Import.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode)).Type;
                     if (!(importType is NamespaceType))
                         throw new InvalidImportException(importStatement);
 
                     scope.Declare(importStatement, importType);
                     break;
                 case IConditionalExpression conditionalExpression:
-                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, cfgNode).Type;
+                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode)).Type;
                     if (!conditionType.CanCastTo(DotNetCobraType.Bool))
                         throw new InvalidConditionTypeException(conditionalExpression.Condition);
                     break;
