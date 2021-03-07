@@ -36,7 +36,7 @@ namespace CobraCompiler.Parse
                 catch (ParsingException parsingException)
                 {
                     _errorLogger.Log(parsingException);
-                    _tokens.Pop();
+                    //_tokens.Pop();
                     sync();
                 }
             }
@@ -48,8 +48,12 @@ namespace CobraCompiler.Parse
         {
             while (!IsAtEnd)
             {
+                if(_tokens.Peek().SourceLocation.CharIndex == 0)
+                    return;
+
                 if (Match(TokenType.NewLine))
                     return;
+
                 _tokens.Pop();
             }
         }
@@ -71,7 +75,8 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.NewLine))
                 return null;
 
-            throw new ParsingException(_tokens.Peek(0), "Invalid code outside of function");
+
+            throw new ParsingException(_tokens.Pop(), "Invalid code outside of function");
         }
 
         private Statement ClassDeclaration()
@@ -130,10 +135,10 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.Func))
                 return FuncDeclaration();
 
-            if (Match(TokenType.Var))
+            if (Match(TokenType.Var, TokenType.Val))
                 return VarDeclaration();
 
-            throw new ParsingException(_tokens.Peek(0), "Invalid code outside of function");
+            throw new ParsingException(_tokens.Pop(), "Invalid code outside of function");
         }
 
         private Statement Declaration()
@@ -255,7 +260,7 @@ namespace CobraCompiler.Parse
                 else if (Match(TokenType.NewLine))
                     break;
                 else if (!Match(TokenType.Dot))
-                    throw new ParsingException(_tokens.Peek(0), "Invalid import target");
+                    throw new ParsingException(_tokens.Pop(), "Invalid import target");
             }
 
             Expression identifierExpression = new VarExpression(names.Dequeue());
@@ -326,6 +331,8 @@ namespace CobraCompiler.Parse
                 PropertyDefinitionExpression nextProperty = PropertyDefinition();
                 if (nextProperty != null)
                     properties.Add(nextProperty);
+                else
+                    break;
             }
 
             Token closingBrace = Expect(TokenType.RightBrace, "Expect '}' after interface definition.");
@@ -717,7 +724,7 @@ namespace CobraCompiler.Parse
                 return null;
             }
 
-            throw new ParsingException(_tokens.Peek(), "Expect expression.");
+            throw new ParsingException(_tokens.Pop(), "Expect expression.");
         }
 
         private Expression FinishCall(Expression callee)
@@ -763,7 +770,7 @@ namespace CobraCompiler.Parse
             if (Check(type))
                 return _tokens.Pop();
 
-            throw new ParsingException(_tokens.Peek(), message);
+            throw new ParsingException(_tokens.Pop(), message);
         }
 
         private void IgnoreNewlines()
