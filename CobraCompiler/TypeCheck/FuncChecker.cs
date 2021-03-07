@@ -62,7 +62,8 @@ namespace CobraCompiler.TypeCheck
             if (funcDeclaration.TypeArguments.Count > 0)
                 scope = scope.Parent;
 
-            BuildCFG(funcScope, funcScope.CFGraph.Root);
+            CFGNode lastNode = BuildCFG(funcScope, funcScope.CFGraph.Root); 
+            lastNode.Link(funcScope.CFGraph.Terminal);
 
             return funcScope;
         }

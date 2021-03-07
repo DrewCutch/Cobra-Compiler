@@ -112,6 +112,7 @@
     <Compile Include="TypeCheck\CFG\ControlFlowCheck.cs" />
     <Compile Include="TypeCheck\CFG\EdgeMatrix.cs" />
     <Compile Include="TypeCheck\Exceptions\AssignToParamException.cs" />
+    <Compile Include="TypeCheck\Exceptions\IncompleteMemberAssignmentException.cs" />
     <Compile Include="TypeCheck\Exceptions\UnassignedVarException.cs" />
     <Compile Include="TypeCheck\Exceptions\WriteToReadOnlySymbolException.cs" />
     <Compile Include="TypeCheck\ExpressionChecker.cs" />

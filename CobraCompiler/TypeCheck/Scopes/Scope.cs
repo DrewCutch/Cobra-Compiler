@@ -141,7 +141,7 @@ namespace CobraCompiler.Parse.Scopes
 
         public void Declare(FuncDeclarationStatement funcDeclaration, CobraType funcType)
         {
-            Declare(funcDeclaration, funcDeclaration.Name.Lexeme, funcType, SymbolKind.Global, Mutability.AssignOnce, true);
+            Declare(funcDeclaration, funcDeclaration.Name.Lexeme, funcType, SymbolKind.Global, Mutability.ReadOnly, true);
         }
 
         protected internal virtual void Declare(Statement expr, string var, CobraType type, SymbolKind kind, Mutability mutability, bool overload = false)

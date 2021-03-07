@@ -20,6 +20,8 @@ namespace CobraCompiler.Parse.Scopes
 
         public bool Returns => CFGraph.Root.FulfilledByChildren(node => node.Next.OnlyOrDefault()?.IsTerminal ?? false);
 
+        public bool IsInit => Parent is ClassScope && FuncDeclaration.Name.Lexeme == "init";
+
         public FuncScope(Scope parentScope, FuncDeclarationStatement funcDeclaration, IEnumerable<(string, CobraType)> parameters, CobraType returnType) : base(parentScope, funcDeclaration.Body)
         {
             Params = new List<(string, CobraType)>(parameters);

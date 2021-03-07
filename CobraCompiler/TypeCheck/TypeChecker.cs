@@ -224,11 +224,28 @@ namespace CobraCompiler.TypeCheck
             return genericScope;
         }
 
+        private void CheckAssignVals(ClassScope classScope, FuncScope funcScope)
+        {
+            foreach (Symbol symbol in classScope.ThisType.Symbols.Values)
+            {
+                if (symbol.Mutability != Mutability.AssignOnce)
+                        continue;
+
+                if (!funcScope.CFGraph.Terminal.FulfilledByAncestors(ControlFlowCheck.IsAssigned(symbol)))
+                {
+                    throw new IncompleteMemberAssignmentException(symbol, funcScope.FuncDeclaration);
+                }
+            }
+        }
+
         private void CheckTypes(Scope scope)
         {
             if (scope is FuncScope funcScope)
             {
                 _funcChecker.CheckFunc(funcScope, _errorLogger);
+
+                if (funcScope.IsInit)
+                    CheckAssignVals(funcScope.Parent as ClassScope, funcScope);
             }
             else if(scope is ModuleScope || scope is ClassScope)
             {
