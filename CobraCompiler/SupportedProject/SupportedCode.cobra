@@ -63,18 +63,6 @@ type node[T] {
 	setNext: f[node[T], unit]
 }
 
-func test(){
-	defer
-	
-	//loop {
-		//guard(thing :: .valid) else{
-		//	print(thing.err.message)
-		//}
-
-		//print(thing.value.toStr())
-	//}
-}
-
 class Node[T]: node[T]{
 	val value: T
 	var next: node[T]
