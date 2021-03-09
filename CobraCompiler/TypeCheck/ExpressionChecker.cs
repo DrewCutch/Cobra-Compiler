@@ -18,20 +18,26 @@ namespace CobraCompiler.TypeCheck
         public class ExpressionCheckContext
         {
             public readonly CFGNode CfgNode;
-            public readonly bool IsAssigning;
+            public readonly CobraType Assigning;
+            public readonly CobraType Expected;
+            public readonly bool IsInitialPass;
 
-            public ExpressionCheckContext(CFGNode cfgNode, bool isAssigning = false)
+            public ExpressionCheckContext(CFGNode cfgNode, CobraType expected = null, CobraType assigning = null, bool isInitialPass = false)
             {
                 CfgNode = cfgNode;
-                IsAssigning = isAssigning;
+                Assigning = assigning;
+                Expected = expected;
+                IsInitialPass = isInitialPass;
             }
         }
 
         public ExpressionType Visit(AssignExpression expr, ExpressionCheckContext context)
         {
-            ExpressionType var = expr.Target.Accept(this, new ExpressionCheckContext(context.CfgNode, isAssigning:true));
+            ExpressionType initialVar = expr.Target.Accept(this, new ExpressionCheckContext(context.CfgNode, isInitialPass: true));
 
-            ExpressionType value = expr.Value.Accept(this, context);
+            ExpressionType value = expr.Value.Accept(this, new ExpressionCheckContext(context.CfgNode, expected: initialVar.Type));
+
+            ExpressionType var = expr.Target.Accept(this, new ExpressionCheckContext(context.CfgNode, assigning: value.Type));
 
             if (!value.Type.CanCastTo(var.Type))
                 throw new InvalidAssignmentException(expr);
@@ -47,7 +53,8 @@ namespace CobraCompiler.TypeCheck
 
             expr.Type = var.Type;
 
-            context.CfgNode.AddAssignment(var.Symbol, expr);
+            if (var.Symbol != null) 
+                context.CfgNode.AddAssignment(var.Symbol, expr);
 
             return new ExpressionType(var.Type, MutabilityUtils.GetResultMutability(var.Mutability, value.Mutability),
                 null);
@@ -144,6 +151,11 @@ namespace CobraCompiler.TypeCheck
 
         public ExpressionType Visit(ListLiteralExpression expr, ExpressionCheckContext context)
         {
+            if (expr.Elements.Empty())
+            {
+                return new ExpressionType(context.Expected, Mutability.Result, null);
+            }
+
             ExpressionType firstElement = expr.Elements[0].Accept(this, context);
             CobraType elementsCommonType = firstElement.Type;
             Mutability elementsMutability = firstElement.Mutability;
@@ -234,7 +246,7 @@ namespace CobraCompiler.TypeCheck
             Symbol var = context.CfgNode.Scope.GetVar(expr.Name.Lexeme);
             expr.Type = var.Type;
 
-            if (context.CfgNode.Graph != null && !context.IsAssigning && !context.CfgNode.FulfilledByAncestors(ControlFlowCheck.IsAssigned(var)))
+            if (!context.IsInitialPass && context.CfgNode.Graph != null && context.Assigning == null && !context.CfgNode.FulfilledByAncestors(ControlFlowCheck.IsAssigned(var)))
                 throw new UnassignedVarException(expr);
 
             return new ExpressionType(var);
