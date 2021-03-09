@@ -359,6 +359,17 @@ type recursive2 {
 	value: recursive1
 }
 
+func listOfVecs(): [vec2D]{
+	val points: [vec2D] = []
+	points.Add(Vector2D(1, 1))
+	points.Add(Vector2D(2, 3))
+	points.Add(Vector2D(5, 5))
+
+	val magnitudes: [int] = ListTools.map[vec2D, int](points, sqrMag)
+
+	return points
+}
+
 func main(): int{
 	testLL()
 	noReturn(10)
@@ -428,6 +439,10 @@ func main(): int{
 
 	var squares: [int] = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 	var size: int = squares.Count
+	squares.Add(121)
+	val first: int = squares[0]
+
+	squares[0] = 0
 
 	var smallest: int = ListTools.minInt(squares)
 	printInt(smallest)
@@ -440,7 +455,7 @@ func main(): int{
 		i = i + 1
 	}
 
-	var boolList: [bool] = [true, true, false]
+	var boolList: [bool] = []
 	var strList: [str] = ["hello", "world"]
 
 	//var strListItem: str = strList.Get(0)
