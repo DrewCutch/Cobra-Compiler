@@ -94,7 +94,15 @@ namespace CobraCompiler.TypeCheck
                     Scope blockScope = new Scope(scope, block.Body.ToArray());
                     scope.AddSubScope(blockScope);
 
-                    previous = BuildCFG(blockScope, previous);
+                    if (previous.IsRoot)
+                    {
+                        CFGNode nextBlock = previous.CreateNext(blockScope);
+                        previous = BuildCFG(blockScope, nextBlock);
+                    }
+                    else
+                    {
+                        previous = BuildCFG(blockScope, previous);
+                    }
                 }
                 else
                 {
