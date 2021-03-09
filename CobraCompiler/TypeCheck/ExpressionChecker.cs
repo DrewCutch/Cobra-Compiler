@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
+using CobraCompiler.Util;
 
 namespace CobraCompiler.TypeCheck
 {
@@ -108,11 +110,10 @@ namespace CobraCompiler.TypeCheck
             throw new InvalidCallException(expr);
         }
 
-        public ExpressionType Visit(IndexExpression expr, ExpressionCheckContext context)
+        private ExpressionType VisitTypeDeclaration(IndexExpression expr, CobraType collectionType, ExpressionCheckContext context)
         {
-            CobraType collectionType = expr.Collection.Accept(this, context).Type;
-
             List<CobraType> typeParams = new List<CobraType>();
+
             foreach (Expression expression in expr.Indicies)
             {
                 CobraType exprType = expression.Accept(this, context).Type;
@@ -122,7 +123,7 @@ namespace CobraCompiler.TypeCheck
                     throw new InvalidGenericArgumentException(expression);
             }
 
-            if (collectionType is CobraGenericInstance genericInstance)
+            if (collectionType is CobraGenericInstance genericInstance && genericInstance.HasPlaceholders())
             {
                 expr.Type = genericInstance.ReplacePlaceholders(typeParams);
                 return new ExpressionType(expr.Type, Mutability.Result, null);
@@ -135,18 +136,37 @@ namespace CobraCompiler.TypeCheck
             }
 
             throw new NotImplementedException();
+        }
 
-            /*
-            CobraType collectionType = expr.Collection.Accept(this);
-            List<CobraType> indexTypes = expr.Indicies.Select(index => index.Accept(this)).ToList();
+        public ExpressionType Visit(IndexExpression expr, ExpressionCheckContext context)
+        {
+            CobraType collectionType = expr.Collection.Accept(this, context).Type;
 
+            bool couldBeTypeDeclaration =
+                (collectionType is CobraGenericInstance genericInstance && genericInstance.HasPlaceholders()) ||
+                (collectionType is CobraTypeCobraType metaType && metaType.CobraType is CobraGeneric generic);
 
-            IOperator getOperator = CurrentcfgNode.Scope.GetOperator(Operation.Get, collectionType, DotNetCobraType.Int);
+            // It is not a type declaration
+            List<CobraType> indexTypes = expr.Indicies.Select((x) => x.Accept(this, context).Type).ToList();
 
-            expr.Type = getOperator.ResultType;
+            if(context.Assigning != null)
+                indexTypes.Add(context.Assigning);
 
-            return getOperator.ResultType;
-            */
+            string symbolName = context.Assigning != null ? "set_Item" : "get_Item";
+
+            Symbol symbol = collectionType.GetSymbol(symbolName);
+
+            if(symbol == null)
+                return couldBeTypeDeclaration ? VisitTypeDeclaration(expr, collectionType, context) : throw new InvalidIndexException(expr);
+
+            CobraType valueType = symbol.Type.CallReturn(indexTypes);
+
+            if(valueType == null)
+                return couldBeTypeDeclaration ? VisitTypeDeclaration(expr, collectionType, context) : throw new InvalidIndexException(expr);
+
+            expr.Type = valueType;
+
+            return new ExpressionType(context.Assigning ?? valueType, context.Assigning != null ? Mutability.Mutable : Mutability.Result, null);
         }
 
         public ExpressionType Visit(ListLiteralExpression expr, ExpressionCheckContext context)
