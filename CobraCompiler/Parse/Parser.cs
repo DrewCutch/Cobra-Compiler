@@ -752,10 +752,13 @@ namespace CobraCompiler.Parse
 
             Token openingBrace = Expect(TokenType.LeftBracket, "Expect '[' at beginning of list literal");
 
-            do
+            if (_tokens.Peek().Type != TokenType.RightBracket)
             {
-                elements.Add(Expression());
-            } while (Match(TokenType.Comma));
+                do
+                {
+                    elements.Add(Expression());
+                } while (Match(TokenType.Comma));
+            }
 
             Token closingBrace = Expect(TokenType.RightBracket, "Expect closing ']' at end of list literal");
 
