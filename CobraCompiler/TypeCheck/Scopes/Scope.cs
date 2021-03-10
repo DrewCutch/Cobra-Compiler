@@ -86,8 +86,19 @@ namespace CobraCompiler.Parse.Scopes
             if (typeInit.IdentifierStr == null)
                 return null;
 
-            if(_types.ContainsKey(typeInit.IdentifierStr))
-                return _types[typeInit.IdentifierStr];
+            //Remove '?' from IdentifierStr
+            string idStr = typeInit.IsNullable ? typeInit.IdentifierStr.Substring(0, typeInit.IdentifierStr.Length - 1) : typeInit.IdentifierStr;
+
+            CobraType type = null;
+
+            if(_types.ContainsKey(idStr))
+                type = _types[idStr];
+
+            if(type != null && typeInit.IsNullable)
+                type = CobraType.Nullable(type);
+
+            if (type != null)
+                return type;
 
             return Parent?.GetSimpleType(typeInit);
         }

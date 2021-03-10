@@ -25,17 +25,23 @@ namespace CobraCompiler.Parse.Scopes
             if (typeInit.IdentifierStr == null)
                 return null;
 
-            if (_types.ContainsKey(typeInit.IdentifierStr))
-                return _types[typeInit.IdentifierStr];
+            string idStr = typeInit.IsNullable ? typeInit.IdentifierStr.Substring(0, typeInit.IdentifierStr.Length - 1) : typeInit.IdentifierStr;
+            CobraType type = null;
 
-            if (Type.GetType(typeInit.IdentifierStr) is Type coreType)
+            if (_types.ContainsKey(idStr))
+                type = _types[idStr];
+
+            if (type != null && typeInit.IsNullable)
+                type = CobraType.Nullable(type);
+
+            if (Type.GetType(idStr) is Type coreType)
             {
-                DotNetCobraType cobraType = new DotNetCobraType(typeInit.IdentifierStr, coreType);
-                _types[typeInit.IdentifierStr] = cobraType;
+                DotNetCobraType cobraType = new DotNetCobraType(idStr, coreType);
+                _types[idStr] = cobraType;
                 return cobraType;
             }
 
-            return null;
+            return type;
         }
     }
 }

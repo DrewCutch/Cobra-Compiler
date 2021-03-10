@@ -5,7 +5,7 @@ namespace CobraCompiler.TypeCheck.Types
     class UnionInstanceType: CobraType
     {
         public UnionInstanceType(string identifier, IReadOnlyList<CobraType> typeParams) : 
-            base(identifier, new List<CobraType>(),  false, new List<CobraType>(), typeParams, UnionLangCobraGeneric.UnionGeneric, -1)
+            base(identifier, new List<CobraType>(),  false, new List<CobraType>(), typeParams, UnionLangCobraGeneric.UnionGeneric, -1, null)
         {
             CobraType commonParent = GetCommonParent(typeParams, unionize:false);
             foreach (KeyValuePair<string, Symbol> symbol in commonParent.Symbols)

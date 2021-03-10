@@ -67,6 +67,9 @@ namespace CobraCompiler.Assemble
 
         public Type GetType(CobraType cobraType)
         {
+            if (cobraType.IsNullable)
+                cobraType = cobraType.NullableBase;
+
             if(cobraType.IsTypeParamPlaceholder)
                 return _currentGenerics[cobraType];
 
@@ -139,6 +142,9 @@ namespace CobraCompiler.Assemble
 
         public MemberInfo GetMemberInfo(CobraType cobraType, string memberName, CobraType memberType)
         {
+            if (cobraType.IsNullable)
+                cobraType = cobraType.NullableBase;
+
             Type type = GetType(cobraType);
 
             if (type.ContainsGenericParameters && type.Module != _moduleBuilder)

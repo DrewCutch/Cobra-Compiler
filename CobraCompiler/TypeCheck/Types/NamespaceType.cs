@@ -8,7 +8,7 @@ namespace CobraCompiler.TypeCheck.Types
         private readonly string name;
 
         public NamespaceType(string nameSpace) : 
-            base("NamespaceLabel", new List<CobraType>(), false, new List<CobraType>(), new List<CobraType>(), null ,-1 )
+            base("NamespaceLabel", new List<CobraType>(), false, new List<CobraType>(), new List<CobraType>(), null ,-1, null)
         {
             this.name = nameSpace;
             definitions = new Dictionary<string, CobraType>();

@@ -10,7 +10,7 @@ namespace CobraCompiler.TypeCheck.Types
     {
         public readonly CobraType CobraType;
 
-        public CobraTypeCobraType(CobraType cobraType) : base(cobraType.Identifier + "Type", new List<CobraType>(),false, new List<CobraType>(), new List<CobraType>(), null, -1)
+        public CobraTypeCobraType(CobraType cobraType) : base(cobraType.Identifier + "Type", new List<CobraType>(),false, new List<CobraType>(), new List<CobraType>(), null, -1, null)
         {
             CobraType = cobraType;
         }

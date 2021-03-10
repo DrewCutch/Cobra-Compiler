@@ -6,7 +6,7 @@ namespace CobraCompiler.TypeCheck.Types
     class IntersectionInstanceType: CobraType
     {
         public IntersectionInstanceType(string identifier, IReadOnlyList<CobraType> typeParams) : 
-            base(identifier,new List<CobraType>(), false, new List<CobraType>(), typeParams, IntersectionLangCobraGeneric.IntersectGeneric, -1)
+            base(identifier,new List<CobraType>(), false, new List<CobraType>(), typeParams, IntersectionLangCobraGeneric.IntersectGeneric, -1, null)
         {
             foreach (CobraType typeParam in typeParams)
                 AddParent(typeParam);

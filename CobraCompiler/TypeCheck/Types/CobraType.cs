@@ -35,7 +35,8 @@ namespace CobraCompiler.TypeCheck.Types
         public virtual int TypeParamPlaceholderIndex { get; }
 
         // Nullable type properties
-        public virtual bool IsNullable => false;
+        public CobraType NullableBase { get; }
+        public virtual bool IsNullable => NullableBase != null;
 
         private readonly List<List<CobraType>> _callSigs;
 
@@ -55,7 +56,7 @@ namespace CobraCompiler.TypeCheck.Types
 
         // Protected constructor for any kind of cobra type
         protected CobraType(string identifier, IEnumerable<CobraType> parents, bool isGeneric, IEnumerable<CobraType> typeParams, IReadOnlyList<CobraType> typeArguments,
-            CobraType genericBase, int typeParamIndex)
+            CobraType genericBase, int typeParamIndex, CobraType nullableBase)
         {
             Identifier = identifier;
             _symbols = new Dictionary<string, Symbol>();
@@ -76,26 +77,33 @@ namespace CobraCompiler.TypeCheck.Types
                 throw new ArgumentException("Generic base must be a generic type", nameof(genericBase));
 
             TypeParamPlaceholderIndex = typeParamIndex;
+
+            NullableBase = nullableBase;
         }
 
         public static CobraType BasicCobraType(string identifier, params CobraType[] parents)
         {
-            return new CobraType(identifier, parents, false, new List<CobraType>(), new List<CobraType>(), null, -1);
+            return new CobraType(identifier, parents, false, new List<CobraType>(), new List<CobraType>(), null, -1, null);
         }
 
         public static CobraType GenericCobraType(string identifier, IEnumerable<CobraType> typeParams)
         {
-            return new CobraType(identifier, new List<CobraType>(), true, typeParams, new List<CobraType>(), null, -1);
+            return new CobraType(identifier, new List<CobraType>(), true, typeParams, new List<CobraType>(), null, -1, null);
         }
 
         public static CobraType GenericPlaceholder(string identifier, int index)
         {
-            return new CobraType(identifier, new List<CobraType>(), false, new List<CobraType>(), new List<CobraType>(), null, index);
+            return new CobraType(identifier, new List<CobraType>(), false, new List<CobraType>(), new List<CobraType>(), null, index, null);
+        }
+
+        public static CobraType Nullable(CobraType baseType)
+        {
+            return new CobraType(baseType.Identifier + "?", new List<CobraType>(), true, baseType.TypeParams, baseType.OrderedTypeArguments, baseType.GenericBase, -1, baseType);
         }
 
         protected static CobraType GenericInstance(string identifier, IReadOnlyList<CobraType> typeArgs, CobraType genericBase)
         {
-            return new CobraType(identifier, new List<CobraType>(), false, new List<CobraType>(), typeArgs, genericBase, -1);
+            return new CobraType(identifier, new List<CobraType>(), false, new List<CobraType>(), typeArgs, genericBase, -1, null);
         }
 
         public virtual void AddParent(CobraType parent)
@@ -225,7 +233,7 @@ namespace CobraCompiler.TypeCheck.Types
 
         public virtual bool CanCastTo(CobraType other)
         {
-            return Equals(other) || GetCommonParent(other).Equals(other);
+            return Equals(other) || GetCommonParent(other).Equals(other) || (other.IsNullable && GetCommonParent(other.NullableBase).Equals(other.NullableBase));
         }
 
         public virtual CobraType GetCommonParent(CobraType other, bool unionize = true)

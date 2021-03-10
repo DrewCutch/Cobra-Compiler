@@ -33,7 +33,7 @@ namespace CobraCompiler.TypeCheck.Types
         private Type _type;
 
         public DotNetCobraGeneric(string identifier, int numberOfParams, GenericInstanceGenerator instanceGenerator, Type type = null) :
-            base(identifier, new List<CobraType>(),  true, GenerateTypeParamPlaceholders(numberOfParams), new List<CobraType>(), null, -1)
+            base(identifier, new List<CobraType>(),  true, GenerateTypeParamPlaceholders(numberOfParams), new List<CobraType>(), null, -1, null)
         {
             InstanceGenerator = instanceGenerator;
             _type = type;
