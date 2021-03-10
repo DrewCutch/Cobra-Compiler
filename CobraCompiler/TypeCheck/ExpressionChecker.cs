@@ -93,12 +93,12 @@ namespace CobraCompiler.TypeCheck
 
             if (calleeType is FuncGenericInstance func)
             {
-                if (func.TypeParams.Count - 1 != expr.Arguments.Count)
+                if (func.TypeArguments.Count - 1 != expr.Arguments.Count)
                 {
                     throw new IncorrectArgumentCountException(expr, func.TypeParams.Count - 1);
                 }
 
-                for (int i = 0; i < func.TypeParams.Count - 1; i++)
+                for (int i = 0; i < func.TypeArguments.Count - 1; i++)
                 {
                     if (!paramTypes[i].CanCastTo(func.OrderedTypeArguments[i]))
                     {
@@ -243,6 +243,9 @@ namespace CobraCompiler.TypeCheck
                 expr.Type = var.Type;
                 return new ExpressionType(var.Type, Mutability.CompileTimeConstantResult, var);
             }
+
+            if(obj.Type.IsNullable)
+                throw new InvalidMemberAccessOnNullableException(expr);
 
             if (!obj.Type.HasSymbol(expr.Name.Lexeme))
                 throw new InvalidMemberException(expr);
