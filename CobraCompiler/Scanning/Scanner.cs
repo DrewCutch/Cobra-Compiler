@@ -126,6 +126,8 @@ namespace CobraCompiler.Scanning
                     return TokenType.Colon;
                 case "*":
                     return TokenType.Star;
+                case "?":
+                    return TokenType.QuestionMark;
                 case "/":
                     if(next != '/')
                         return TokenType.Slash;
