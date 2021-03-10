@@ -359,6 +359,21 @@ type recursive2 {
 	value: recursive1
 }
 
+func listOfVecs(): [vec2D]{
+	val points: [vec2D] = []
+	val firstVec: vec2D = Vector2D(1, 1)
+
+	points.Add(firstVec)
+	points.Add(Vector2D(2, 3))
+	points.Add(Vector2D(5, 5))
+
+	points.Remove(firstVec)
+
+	val magnitudes: [int] = ListTools.map[vec2D, int](points, sqrMag)
+
+	return points
+}
+
 func main(): int{
 	testLL()
 	noReturn(10)
@@ -443,8 +458,8 @@ func main(): int{
 	var boolList: [bool] = [true, true, false]
 	var strList: [str] = ["hello", "world"]
 
-	//var strListItem: str = strList.Get(0)
-	// strList[1] = "drew"
+	var strListItem: str = strList[0]
+	strList[1] = "drew"
 	
 	var listList: [[int]] = [[1,2,3], [4,5,6]]
 
