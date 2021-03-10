@@ -371,7 +371,7 @@ namespace CobraCompiler.Parse
                 typeIdentifier.Add(Expect(TokenType.Identifier, "Expect identifier after '.'"));
             }
 
-            Token closingBrace = null;
+            Token lastToken = null;
 
             if (Match(TokenType.LeftBracket))
             {
@@ -380,10 +380,15 @@ namespace CobraCompiler.Parse
                     genericParams.Add(TypeInit());
                 } while (Match(TokenType.Comma));
 
-                closingBrace = Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
+                lastToken = Expect(TokenType.RightBracket, "Expect closing ']' after generic parameters");
             }
 
-            return new TypeInitExpression(typeIdentifier, genericParams, closingBrace);
+            if (Check(TokenType.QuestionMark))
+            {
+                lastToken = Expect(TokenType.QuestionMark, "Expect '?' in nullable type definition");
+            }
+
+            return new TypeInitExpression(typeIdentifier, genericParams, lastToken);
         }
 
         private TypeInitExpression TypeInit()

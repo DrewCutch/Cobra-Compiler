@@ -17,19 +17,25 @@ namespace CobraCompiler.Parse.Expressions
         public readonly IReadOnlyList<TypeInitExpression> GenericParams;
         public readonly string IdentifierStr;
         public readonly string IdentifierStrWithoutParams;
+
+        public bool IsNullable => LastToken.Type == TokenType.QuestionMark;
+
         public bool IsGenericInstance => GenericParams.Count > 0;
 
-        public TypeInitExpression(IEnumerable<Token> identifier, IEnumerable<TypeInitExpression> genericParams, Token closingBrace)
+        public TypeInitExpression(IEnumerable<Token> identifier, IEnumerable<TypeInitExpression> genericParams, Token finalToken)
         {
             Identifier = new List<Token>(identifier);
             GenericParams = new List<TypeInitExpression>(genericParams);
-            LastToken = closingBrace ?? Identifier.Last();
+            LastToken = finalToken ?? Identifier.Last();
 
             IdentifierStr = string.Join(".", Identifier.Select(token => token.Lexeme).ToArray());
             IdentifierStrWithoutParams = IdentifierStr;
 
             if (GenericParams.Count > 0)
                 IdentifierStr += $"[{string.Join(",", GenericParams.Select(typeInit => typeInit.IdentifierStr).ToArray())}]";
+
+            if (finalToken?.Type == TokenType.QuestionMark)
+                IdentifierStr += "?";
         }
 
         public override T Accept<T>(IExpressionVisitor<T> expressionVisitor)
