@@ -28,7 +28,8 @@ namespace CobraCompiler.TypeCheck.Types
         }
 
         public Type Type { get; }
-        public DotNetCobraType(string identifier, Type type) : base(identifier)
+        public DotNetCobraType(string identifier, Type type) : 
+            base(identifier, new List<CobraType>(), false, new List<CobraType>(), new List<CobraType>(),null, -1 )
         {
             Type = type;
         }

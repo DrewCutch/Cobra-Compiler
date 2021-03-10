@@ -17,7 +17,7 @@ namespace CobraCompiler.Assemble
         private readonly ModuleBuilder _moduleBuilder;
         private readonly Dictionary<string, Type> _typeAlias;
         private readonly Dictionary<CobraType, Type> _types;
-        private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _currentGenerics;
+        private readonly Dictionary<CobraType, GenericTypeParameterBuilder> _currentGenerics;
         private readonly Dictionary<CobraType, Dictionary<string, Dictionary<CobraType, MemberInfo>>> _typeMembers;
         private readonly Dictionary<string, GenericTypeAssembler> _genericInstanceGenerators;
 
@@ -27,7 +27,7 @@ namespace CobraCompiler.Assemble
             _moduleBuilder = moduleBuilder;
             _typeAlias = new Dictionary<string, Type>();
             _types = new Dictionary<CobraType, Type>();
-            _currentGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
+            _currentGenerics = new Dictionary<CobraType, GenericTypeParameterBuilder>();
             _typeMembers = new Dictionary<CobraType, Dictionary<string, Dictionary<CobraType, MemberInfo>>>();
             _genericInstanceGenerators = new Dictionary<string, GenericTypeAssembler>();
         }
@@ -50,12 +50,12 @@ namespace CobraCompiler.Assemble
             _types[cobraType] = type;
         }
 
-        public void PushCurrentGenerics(Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics)
+        public void PushCurrentGenerics(Dictionary<CobraType, GenericTypeParameterBuilder> generics)
         {
             generics.ToList().ForEach(x => _currentGenerics.Add(x.Key, x.Value));
         }
 
-        public void PopGenerics(Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> generics)
+        public void PopGenerics(Dictionary<CobraType, GenericTypeParameterBuilder> generics)
         {
             generics.ToList().ForEach(x => _currentGenerics.Remove(x.Key));
         }
@@ -67,25 +67,25 @@ namespace CobraCompiler.Assemble
 
         public Type GetType(CobraType cobraType)
         {
-            if(cobraType is GenericTypeParamPlaceholder placeholder)
-                return _currentGenerics[placeholder];
+            if(cobraType.IsTypeParamPlaceholder)
+                return _currentGenerics[cobraType];
 
-            if (cobraType is CobraGenericInstance genericInstance && genericInstance.Base is ITypeGenerator typeGen)
-                return typeGen.GetType(_moduleBuilder, genericInstance.OrderedTypeParams.Select(GetType).ToArray());
+            if (cobraType.IsConstructedGeneric && cobraType.GenericBase is ITypeGenerator typeGen)
+                return typeGen.GetType(_moduleBuilder, cobraType.OrderedTypeArguments.Select(GetType).ToArray());
 
-            if (cobraType is CobraGenericInstance genInst)
+            if (cobraType.IsConstructedGeneric)
             {
                 foreach (CobraType key in _types.Keys)
                 {
-                    if(!(key is CobraGenericInstance otherGenericInstance) || otherGenericInstance.Base != genInst.Base)
+                    if(!(key.IsConstructedGeneric) || key.GenericBase != cobraType.GenericBase)
                         continue;
 
                     Type Generic = _types[key];
 
-                    return Generic.MakeGenericType(genInst.OrderedTypeParams.Select(GetType).ToArray());
+                    return Generic.MakeGenericType(cobraType.OrderedTypeArguments.Select(GetType).ToArray());
                 }
 
-                return _types[genInst.Base].MakeGenericType(genInst.OrderedTypeParams.Select(GetType).ToArray());
+                return _types[cobraType.GenericBase].MakeGenericType(cobraType.OrderedTypeArguments.Select(GetType).ToArray());
             }
 
             return _types[cobraType];
@@ -151,9 +151,9 @@ namespace CobraCompiler.Assemble
                 return type.GetMember(memberName).FirstOrDefault();
 
 
-            if (type.IsConstructedGenericType && cobraType is CobraGenericInstance cobraGenericInstance)
+            if (type.IsConstructedGenericType && cobraType.IsConstructedGeneric)
             {
-                MemberInfo genericInfo = _typeMembers[cobraGenericInstance.Base][memberName].Values.FirstOrDefault();
+                MemberInfo genericInfo = _typeMembers[cobraType.GenericBase][memberName].Values.FirstOrDefault();
                 TypeBuilder baseType = genericInfo.DeclaringType as TypeBuilder;
                 MemberInfo[] members = baseType.GetMembers();
                 
@@ -173,13 +173,13 @@ namespace CobraCompiler.Assemble
             {
                 FuncGenericInstance keyFunc = key as FuncGenericInstance;
 
-                if(keyFunc.TypeParams.Count != func.TypeParams.Count)
+                if(keyFunc.TypeArguments.Count != func.TypeArguments.Count)
                     continue;
 
                 bool matches = true;
 
                 for (int i = 0; i < func.TypeParams.Count; i++)
-                    if (!func.OrderedTypeParams[i].CanCastTo(keyFunc.OrderedTypeParams[i]))
+                    if (!func.OrderedTypeArguments[i].CanCastTo(keyFunc.OrderedTypeArguments[i]))
                     {
                         matches = false;
                         break;

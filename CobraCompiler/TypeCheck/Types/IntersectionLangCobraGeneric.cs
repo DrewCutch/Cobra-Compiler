@@ -12,7 +12,7 @@ namespace CobraCompiler.TypeCheck.Types
 
         }
 
-        public override CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
+        public override CobraType CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
         {
             List<CobraType> normalizedTypes = ApplyAssociativeProperty(typeParams);
 
@@ -29,7 +29,7 @@ namespace CobraCompiler.TypeCheck.Types
             {
                 if (typeParam is UnionInstanceType union)
                 {
-                    types.AddRange(ApplyAssociativeProperty(union.OrderedTypeParams));
+                    types.AddRange(ApplyAssociativeProperty(union.OrderedTypeArguments));
                 }
                 else
                 {

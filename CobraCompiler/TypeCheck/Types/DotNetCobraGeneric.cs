@@ -9,18 +9,18 @@ namespace CobraCompiler.TypeCheck.Types
 {
     public delegate Type GenericInstanceGenerator(params Type[] typeParams);
 
-    class DotNetCobraGeneric : CobraGeneric, ITypeGenerator
+    class DotNetCobraGeneric : CobraType, ITypeGenerator
     {
         public static DotNetCobraGeneric FuncType = new FuncCobraGeneric();
         public static DotNetCobraGeneric ListType = new DotNetCobraGeneric("list", 1, typeof(List<>).MakeGenericType, typeof(List<>));
         
-        public static CobraGeneric[] BuiltInCobraGenerics;
+        public static CobraType[] BuiltInCobraGenerics;
 
         static DotNetCobraGeneric()
         {
             var awake = FuncCobraGeneric.FuncType;
 
-            BuiltInCobraGenerics = new CobraGeneric[]{
+            BuiltInCobraGenerics = new CobraType[]{
                 FuncType,
                 ListType,
                 UnionLangCobraGeneric.UnionGeneric,
@@ -32,7 +32,8 @@ namespace CobraCompiler.TypeCheck.Types
 
         private Type _type;
 
-        public DotNetCobraGeneric(string identifier, int numberOfParams, GenericInstanceGenerator instanceGenerator, Type type = null) : base(identifier, GenerateTypeParamPlaceholders(numberOfParams))
+        public DotNetCobraGeneric(string identifier, int numberOfParams, GenericInstanceGenerator instanceGenerator, Type type = null) :
+            base(identifier, new List<CobraType>(),  true, GenerateTypeParamPlaceholders(numberOfParams), new List<CobraType>(), null, -1)
         {
             InstanceGenerator = instanceGenerator;
             _type = type;
@@ -48,7 +49,7 @@ namespace CobraCompiler.TypeCheck.Types
             
             foreach ((Type typeArgument, int i) in typeArguments.WithIndex())
             {
-                typeArgs[typeArgument] = new GenericTypeParamPlaceholder(typeArgument.Name, i);
+                typeArgs[typeArgument] = GenericPlaceholder(typeArgument.Name, i);
             }
 
             PropertyInfo[] properties = _type.GetProperties();
@@ -105,9 +106,9 @@ namespace CobraCompiler.TypeCheck.Types
             return InstanceGenerator(typeArgs);
         }
 
-        public override CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
+        public override CobraType CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
         {
-            CobraGenericInstance instance = base.CreateGenericInstance(typeParams);
+            CobraType instance = base.CreateGenericInstance(typeParams);
 
             return instance;
         }

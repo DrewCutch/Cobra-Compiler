@@ -47,7 +47,7 @@ namespace CobraCompiler.TypeCheck
 
             }
 
-            foreach (CobraGeneric builtinCobraGeneric in DotNetCobraGeneric.BuiltInCobraGenerics)
+            foreach (CobraType builtinCobraGeneric in DotNetCobraGeneric.BuiltInCobraGenerics)
                 _globalScope.DefineType(builtinCobraGeneric.Identifier, builtinCobraGeneric);
 
             foreach (DotNetBinaryOperator op in DotNetBinaryOperator.OpCodeDotNetBinaryOperators)
@@ -215,7 +215,7 @@ namespace CobraCompiler.TypeCheck
             int i = 0;
             foreach (Token typeArg in typeArguments)
             {
-                genericScope.DefineType(typeArg.Lexeme, new GenericTypeParamPlaceholder(typeArg.Lexeme, i));
+                genericScope.DefineType(typeArg.Lexeme, CobraType.GenericPlaceholder(typeArg.Lexeme, i));
                 i++;
             }
 

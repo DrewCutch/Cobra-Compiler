@@ -28,13 +28,13 @@ namespace CobraCompiler.TypeCheck
 
             _isGenericType = typeDeclaration.TypeArguments.Count > 0;
 
-            List<GenericTypeParamPlaceholder> typeParams = new List<GenericTypeParamPlaceholder>();
+            List<CobraType> typeParams = new List<CobraType>();
             if (_isGenericType)
             {
                 int i = 0;
                 foreach (Token typeArgument in typeDeclaration.TypeArguments)
                 {
-                    typeParams.Add(new GenericTypeParamPlaceholder(typeArgument.Lexeme, i));
+                    typeParams.Add(CobraType.GenericPlaceholder(typeArgument.Lexeme, i));
                     i++;
                 }
             }
@@ -44,8 +44,8 @@ namespace CobraCompiler.TypeCheck
 
 
             CobraType newType = _isGenericType ?
-                new CobraGeneric(typeDeclaration.Name.Lexeme, typeParams) :
-                new CobraType(typeDeclaration.Name.Lexeme);
+                CobraType.GenericCobraType(typeDeclaration.Name.Lexeme, typeParams) : 
+                CobraType.BasicCobraType(typeDeclaration.Name.Lexeme);
 
             if (_isGenericType)
                 scope.Parent.DefineType(typeDeclaration.Name.Lexeme, newType);

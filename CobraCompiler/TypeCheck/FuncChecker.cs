@@ -52,7 +52,7 @@ namespace CobraCompiler.TypeCheck
             List<CobraType> typeArgs = funcDeclaration.Params.Select(param => scope.GetType(param.TypeInit)).ToList();
             typeArgs.Add(funcScope.ReturnType);
 
-            CobraGenericInstance funcType = DotNetCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
+            CobraType funcType = DotNetCobraGeneric.FuncType.CreateGenericInstance(typeArgs);
 
             scope.AddSubScope(funcScope);
 
@@ -74,7 +74,7 @@ namespace CobraCompiler.TypeCheck
             int i = 0;
             foreach (Token typeArg in typeArguments)
             {
-                genericScope.DefineType(typeArg.Lexeme, new GenericTypeParamPlaceholder(typeArg.Lexeme, i));
+                genericScope.DefineType(typeArg.Lexeme, CobraType.GenericPlaceholder(typeArg.Lexeme, i));
                 i++;
             }
 

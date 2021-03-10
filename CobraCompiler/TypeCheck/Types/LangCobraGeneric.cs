@@ -7,13 +7,14 @@ namespace CobraCompiler.TypeCheck.Types
 {
     public delegate Type GenericTypeAssembler(ModuleBuilder mb, params Type[] typeParams);
 
-    class LangCobraGeneric: CobraGeneric, ITypeGenerator
+    class LangCobraGeneric: CobraType, ITypeGenerator
     {
         private readonly Dictionary<List<Type>, Type> _typeCache;
 
         private readonly GenericTypeAssembler _typeAssembler;
 
-        public LangCobraGeneric(string identifier, int numberOfParams, GenericTypeAssembler instanceGenerator) : base(identifier, GenerateTypeParamPlaceholders(numberOfParams))
+        public LangCobraGeneric(string identifier, int numberOfParams, GenericTypeAssembler instanceGenerator) : 
+            base(identifier, new List<CobraType>(), true,  GenerateTypeParamPlaceholders(numberOfParams), new List<CobraType>(), null, -1)
         {
             _typeAssembler = instanceGenerator;
             _typeCache = new Dictionary<List<Type>, Type>(new ListByElementComparer<Type>());

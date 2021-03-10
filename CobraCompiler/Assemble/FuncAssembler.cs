@@ -40,7 +40,7 @@ namespace CobraCompiler.Assemble
 
         private readonly MethodStore _methodStore;
 
-        private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _funcGenerics;
+        private readonly Dictionary<CobraType, GenericTypeParameterBuilder> _funcGenerics;
 
         public FuncAssembler(FuncScope funcScope, TypeStore typeStore, MethodStore methodStore, TypeBuilder typeBuilder, AssemblyBuilder assemblyBuilder, MethodAttributes methodAttributes)
         {
@@ -50,7 +50,7 @@ namespace CobraCompiler.Assemble
             _typeBuilder = typeBuilder;
             _assemblyBuilder = assemblyBuilder;
             _methodAttributes = methodAttributes;
-            _funcGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
+            _funcGenerics = new Dictionary<CobraType, GenericTypeParameterBuilder>();
         }
 
         public MethodBase AssembleDefinition()
@@ -95,11 +95,11 @@ namespace CobraCompiler.Assemble
             if (funcDeclaration.TypeArguments.Count > 0)
             {
                 GenericTypeParameterBuilder[] genericParams = methodBuilder.DefineGenericParameters(funcDeclaration.TypeArguments.Select(arg => arg.Lexeme).ToArray());
-                GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
+                CobraType[] placeholders = new CobraType[genericParams.Length];
                 for (int i = 0; i < funcDeclaration.TypeArguments.Count; i++)
                 {
                     _typeStore.AddType(_funcScope.GetType(new TypeInitExpression(new[] { funcDeclaration.TypeArguments[i] }, new TypeInitExpression[] { }, null)), genericParams[i]);
-                    placeholders[i] = new GenericTypeParamPlaceholder(funcDeclaration.TypeArguments[i].Lexeme, i);
+                    placeholders[i] =  CobraType.GenericPlaceholder(funcDeclaration.TypeArguments[i].Lexeme, i);
                     _funcGenerics[placeholders[i]] = genericParams[i];
                 }
 
@@ -362,8 +362,8 @@ namespace CobraCompiler.Assemble
             }
             
 
-            if (calleeContext.Type is CobraGenericInstance funcInstance)
-                returnType = funcInstance.OrderedTypeParams.Last();
+            if (calleeContext.Type.IsConstructedGeneric)
+                returnType = calleeContext.Type.OrderedTypeArguments.Last();
 
             return new ExpressionAssemblyContext(returnType);
         }
@@ -373,7 +373,7 @@ namespace CobraCompiler.Assemble
             ExpressionAssemblyContext collectionContext = expr.Collection.Accept(this, new ParentExpressionAssemblyContext(context.Scope, expected: expr.Collection.Type, calling:context.ImmediatelyCalling));
 
             // If this is specifying type args to a function or constructor
-            if (expr.Type is CobraGenericInstance genericInstance && collectionContext is MethodBuilderExpressionAssemblyContext methodContext)
+            if (expr.Type.IsConstructedGeneric && collectionContext is MethodBuilderExpressionAssemblyContext methodContext)
             {
                 MethodBase genericMethodInfo = methodContext.Method;
                 Type[] typeArgs = expr.Indicies.Select(e => _typeStore.GetType(((CobraTypeCobraType) e.Type).CobraType)).ToArray();
@@ -416,7 +416,7 @@ namespace CobraCompiler.Assemble
 
             Type listType = _typeStore.GetType(type);
 
-            CobraType elementType = (type as CobraGenericInstance).OrderedTypeParams[0];
+            CobraType elementType = type.OrderedTypeArguments[0];
 
             ConstructorInfo listCtor = ResolveGenericConstructorInfo(listType, new[] {typeof(int)});
             MethodInfo addMethod = ResolveGenericMethodInfo(listType, listType.GetGenericTypeDefinition().GetMethod("Add"));

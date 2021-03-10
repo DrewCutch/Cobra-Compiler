@@ -95,8 +95,8 @@ namespace CobraCompiler.Assemble
             List<InterfaceAssembler> typeAssemblers = new List<InterfaceAssembler>();
             foreach (CobraType definedType in scope.DefinedTypes)
             {
-                if ((definedType is CobraGeneric generic && generic.HasFixedParamCount) ||
-                    !(definedType is CobraGenericInstance))
+                if ((definedType.IsGenericType && definedType.HasFixedParamCount) ||
+                    !(definedType.IsConstructedGeneric))
                 {
                     InterfaceAssembler typeAssembler = new InterfaceAssembler(scope.Name, definedType, _typeStore, mb);
                     typeAssembler.AssembleDefinition();

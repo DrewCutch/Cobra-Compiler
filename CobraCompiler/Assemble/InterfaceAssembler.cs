@@ -19,7 +19,7 @@ namespace CobraCompiler.Assemble
 
         private TypeBuilder _typeBuilder;
 
-        private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _interfaceGenerics;
+        private readonly Dictionary<CobraType, GenericTypeParameterBuilder> _interfaceGenerics;
 
         public InterfaceAssembler(string @namespace, CobraType cobraType, TypeStore typeStore, ModuleBuilder moduleBuilder)
         {
@@ -28,27 +28,27 @@ namespace CobraCompiler.Assemble
             _typeStore = typeStore;
             _moduleBuilder = moduleBuilder;
 
-            _interfaceGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
+            _interfaceGenerics = new Dictionary<CobraType, GenericTypeParameterBuilder>();
         }
 
         public TypeBuilder AssembleDefinition()
         {
-            string identifier = _cobraType is CobraGenericInstance genInst
-                ? genInst.Base.Identifier
+            string identifier = _cobraType.IsConstructedGeneric
+                ? _cobraType.GenericBase.Identifier
                 : _cobraType.Identifier;
 
             _typeBuilder = _moduleBuilder.DefineType(_namespace + "." + identifier,
                 TypeAttributes.Abstract | TypeAttributes.Interface | TypeAttributes.Public);
 
 
-            if (_cobraType is CobraGeneric generic)
+            if (_cobraType.IsGenericType)
             {
-                GenericTypeParameterBuilder[] genericParams = _typeBuilder.DefineGenericParameters(generic.TypeParams.Select(param => param.Identifier).ToArray());
-                GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
+                GenericTypeParameterBuilder[] genericParams = _typeBuilder.DefineGenericParameters(_cobraType.TypeParams.Select(param => param.Identifier).ToArray());
+                CobraType[] placeholders = new CobraType[genericParams.Length];
 
-                for (int i = 0; i < generic.TypeParams.Count; i++)
+                for (int i = 0; i < _cobraType.TypeParams.Count; i++)
                 {
-                    placeholders[i] = new GenericTypeParamPlaceholder(generic.TypeParams[i].Identifier, i);
+                    placeholders[i] = CobraType.GenericPlaceholder(_cobraType.TypeParams[i].Identifier, i);
                     _interfaceGenerics[placeholders[i]] = genericParams[i];
                 }
 

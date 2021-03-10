@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Parse.Expressions;
@@ -75,7 +76,7 @@ namespace CobraCompiler.Parse.Scopes
                 return GetSimpleType(typeInit, selfHint);
 
             List<CobraType> paramTypes = typeInit.GenericParams.Select(param => GetType(param)).ToList();
-            CobraGeneric generic = (CobraGeneric) GetSimpleType(typeInit.IdentifierStrWithoutParams);
+            CobraType generic = GetSimpleType(typeInit.IdentifierStrWithoutParams);
 
             return generic.CreateGenericInstance(paramTypes);
         }
@@ -121,6 +122,8 @@ namespace CobraCompiler.Parse.Scopes
 
         protected virtual bool IsTypeDefined(string identifier)
         {
+            identifier = identifier.Replace("?", "");
+
             return _types.ContainsKey(identifier) || (Parent != null && Parent.IsTypeDefined(identifier));
         }
 
@@ -192,12 +195,12 @@ namespace CobraCompiler.Parse.Scopes
         public IOperator GetOperator(Operation op, CobraType lhs, CobraType rhs)
         {
             CobraType lhsBase = lhs;
-            if (lhs is CobraGenericInstance lhsGeneric)
-                lhsBase = lhsGeneric.Base;
+            if (lhs.IsConstructedGeneric)
+                lhsBase = lhs.GenericBase;
 
             CobraType rhsBase = rhs;
-            if (rhs is CobraGenericInstance rhsGeneric)
-                rhsBase = rhsGeneric;
+            if (rhs.IsConstructedGeneric)
+                rhsBase = rhs.GenericBase;
 
             if (_genericOperators.ContainsKey((op, lhsBase, rhsBase)))
                 return _genericOperators[(op, lhsBase, rhsBase)].GetOperatorInstance(lhs, rhs);
@@ -211,12 +214,12 @@ namespace CobraCompiler.Parse.Scopes
         public BinaryOperator? GetGenericBinaryOperator(Operation op, CobraType lhs, CobraType rhs)
         {
             CobraType lhsBase = lhs;
-            if (lhs is CobraGenericInstance lhsGeneric)
-                lhsBase = lhsGeneric.Base;
+            if (lhs.IsConstructedGeneric)
+                lhsBase = lhs.GenericBase;
 
             CobraType rhsBase = rhs;
-            if (rhs is CobraGenericInstance rhsGeneric)
-                rhsBase = rhsGeneric;
+            if (rhs.IsConstructedGeneric)
+                rhsBase = rhs.GenericBase;
 
             if (_genericOperators.ContainsKey((op, lhsBase, rhsBase)))
                 return _genericOperators[(op, lhsBase, rhsBase)].GetGenericBinaryOperator();

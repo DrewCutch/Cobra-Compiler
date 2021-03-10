@@ -2,12 +2,13 @@
 
 namespace CobraCompiler.TypeCheck.Types
 {
-    class UnionInstanceType: CobraGenericInstance
+    class UnionInstanceType: CobraType
     {
-        public UnionInstanceType(string identifier, IReadOnlyList<CobraType> typeParams) : base(identifier, typeParams, UnionLangCobraGeneric.UnionGeneric)
+        public UnionInstanceType(string identifier, IReadOnlyList<CobraType> typeParams) : 
+            base(identifier, new List<CobraType>(),  false, new List<CobraType>(), typeParams, UnionLangCobraGeneric.UnionGeneric, -1)
         {
             CobraType commonParent = GetCommonParent(typeParams, unionize:false);
-            foreach (KeyValuePair<string, CobraType> symbol in commonParent.Symbols)
+            foreach (KeyValuePair<string, Symbol> symbol in commonParent.Symbols)
                 DefineSymbol(symbol.Key, symbol.Value);
 
             AddParent(commonParent);
@@ -17,8 +18,8 @@ namespace CobraCompiler.TypeCheck.Types
         {
             if (other is UnionInstanceType otherUnion)
             {
-                HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeParams);
-                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.OrderedTypeParams);
+                HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeArguments);
+                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.OrderedTypeArguments);
 
                 return myTypes.IsSubsetOf(otherTypes);
             }
@@ -31,11 +32,11 @@ namespace CobraCompiler.TypeCheck.Types
             if (Equals(other))
                 return this;
 
-            HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeParams);
+            HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeArguments);
 
             if (other is UnionInstanceType otherUnion)
             {
-                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.OrderedTypeParams);
+                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherUnion.OrderedTypeArguments);
                 myTypes.UnionWith(otherTypes);
 
                 return UnionLangCobraGeneric.UnionGeneric.CreateGenericInstance(new List<CobraType>(myTypes));

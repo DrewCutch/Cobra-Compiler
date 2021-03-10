@@ -32,7 +32,7 @@ namespace CobraCompiler.Assemble
         private TypeBuilder _typeBuilder;
         private List<IAssemble> _members;
 
-        private readonly Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder> _classGenerics;
+        private readonly Dictionary<CobraType, GenericTypeParameterBuilder> _classGenerics;
 
         private enum MethodType
         {
@@ -47,7 +47,7 @@ namespace CobraCompiler.Assemble
             _methodStore = methodStore;
             _assemblyBuilder = assemblyBuilder;
             _moduleBuilder = moduleBuilder;
-            _classGenerics = new Dictionary<GenericTypeParamPlaceholder, GenericTypeParameterBuilder>();
+            _classGenerics = new Dictionary<CobraType, GenericTypeParameterBuilder>();
         }
 
         public TypeBuilder AssembleDefinition()
@@ -62,11 +62,11 @@ namespace CobraCompiler.Assemble
             if (classDeclaration.TypeArguments.Count > 0)
             {
                 GenericTypeParameterBuilder[] genericParams = _typeBuilder.DefineGenericParameters(classDeclaration.TypeArguments.Select(arg => arg.Lexeme).ToArray());
-                GenericTypeParamPlaceholder[] placeholders = new GenericTypeParamPlaceholder[genericParams.Length];
+                CobraType[] placeholders = new CobraType[genericParams.Length];
                 for (int i = 0; i < classDeclaration.TypeArguments.Count; i++)
                 {
                     _typeStore.AddType(_classScope.GetType(new TypeInitExpression(new[] { classDeclaration.TypeArguments[i] }, new TypeInitExpression[] { }, null)), genericParams[i]);
-                    placeholders[i] = new GenericTypeParamPlaceholder(classDeclaration.TypeArguments[i].Lexeme, i);
+                    placeholders[i] = CobraType.GenericPlaceholder(classDeclaration.TypeArguments[i].Lexeme, i);
                     _classGenerics[placeholders[i]] = genericParams[i];
                 }
 

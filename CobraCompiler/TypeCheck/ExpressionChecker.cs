@@ -100,9 +100,9 @@ namespace CobraCompiler.TypeCheck
 
                 for (int i = 0; i < func.TypeParams.Count - 1; i++)
                 {
-                    if (!paramTypes[i].CanCastTo(func.OrderedTypeParams[i]))
+                    if (!paramTypes[i].CanCastTo(func.OrderedTypeArguments[i]))
                     {
-                        throw new InvalidArgumentException(expr.Arguments[i], func.OrderedTypeParams[i].Identifier);
+                        throw new InvalidArgumentException(expr.Arguments[i], func.OrderedTypeArguments[i].Identifier);
                     }
                 }
             }
@@ -123,15 +123,15 @@ namespace CobraCompiler.TypeCheck
                     throw new InvalidGenericArgumentException(expression);
             }
 
-            if (collectionType is CobraGenericInstance genericInstance && genericInstance.HasPlaceholders())
+            if (collectionType.IsConstructedGeneric && collectionType.HasPlaceholders)
             {
-                expr.Type = genericInstance.ReplacePlaceholders(typeParams);
+                expr.Type = collectionType.ReplacePlaceholders(typeParams);
                 return new ExpressionType(expr.Type, Mutability.Result, null);
             }
 
-            if (collectionType is CobraTypeCobraType metaType && metaType.CobraType is CobraGeneric generic)
+            if (collectionType is CobraTypeCobraType metaType && metaType.CobraType.IsGenericType)
             {
-                expr.Type = generic.CreateGenericInstance(typeParams);
+                expr.Type = metaType.CobraType.CreateGenericInstance(typeParams);
                 return new ExpressionType(new CobraTypeCobraType(expr.Type), Mutability.CompileTimeConstantResult, null);
             }
 
@@ -143,8 +143,8 @@ namespace CobraCompiler.TypeCheck
             CobraType collectionType = expr.Collection.Accept(this, context).Type;
 
             bool couldBeTypeDeclaration =
-                (collectionType is CobraGenericInstance genericInstance && genericInstance.HasPlaceholders()) ||
-                (collectionType is CobraTypeCobraType metaType && metaType.CobraType is CobraGeneric generic);
+                (collectionType.IsConstructedGeneric && collectionType.HasPlaceholders) ||
+                (collectionType is CobraTypeCobraType metaType && metaType.CobraType.IsGenericType);
 
             // It is not a type declaration
             List<CobraType> indexTypes = expr.Indicies.Select((x) => x.Accept(this, context).Type).ToList();

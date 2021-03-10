@@ -10,7 +10,7 @@ namespace CobraCompiler.TypeCheck.Types
 
         }
 
-        public override CobraGenericInstance CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
+        public override CobraType CreateGenericInstance(IReadOnlyList<CobraType> typeParams)
         {
             return new FuncGenericInstance(GenerateGenericInstanceName(typeParams), typeParams);
         }

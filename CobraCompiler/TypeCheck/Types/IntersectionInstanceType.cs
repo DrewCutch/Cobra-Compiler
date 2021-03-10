@@ -3,9 +3,10 @@ using System.Linq;
 
 namespace CobraCompiler.TypeCheck.Types
 {
-    class IntersectionInstanceType: CobraGenericInstance
+    class IntersectionInstanceType: CobraType
     {
-        public IntersectionInstanceType(string identifier, IReadOnlyList<CobraType> typeParams) : base(identifier, typeParams, IntersectionLangCobraGeneric.IntersectGeneric)
+        public IntersectionInstanceType(string identifier, IReadOnlyList<CobraType> typeParams) : 
+            base(identifier,new List<CobraType>(), false, new List<CobraType>(), typeParams, IntersectionLangCobraGeneric.IntersectGeneric, -1)
         {
             foreach (CobraType typeParam in typeParams)
                 AddParent(typeParam);
@@ -15,13 +16,13 @@ namespace CobraCompiler.TypeCheck.Types
         {
             if (other is IntersectionInstanceType otherIntersection)
             {
-                HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeParams);
-                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherIntersection.OrderedTypeParams);
+                HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeArguments);
+                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherIntersection.OrderedTypeArguments);
 
                 return myTypes.IsSupersetOf(otherTypes);
             }
 
-            return base.CanCastTo(other) || OrderedTypeParams.Contains(other);
+            return base.CanCastTo(other) || TypeArguments.ContainsKey(other);
         }
 
         public override CobraType GetCommonParent(CobraType other, bool unionize = true)
@@ -29,11 +30,11 @@ namespace CobraCompiler.TypeCheck.Types
             if (Equals(other))
                 return this;
 
-            HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeParams);
+            HashSet<CobraType> myTypes = new HashSet<CobraType>(OrderedTypeArguments);
 
             if (other is IntersectionInstanceType otherIntersection)
             {
-                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherIntersection.OrderedTypeParams);
+                HashSet<CobraType> otherTypes = new HashSet<CobraType>(otherIntersection.OrderedTypeArguments);
                 myTypes.IntersectWith(otherTypes);
 
                 return IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(new List<CobraType>(myTypes));

@@ -174,8 +174,6 @@
     <Compile Include="TypeCheck\Exceptions\OperatorNotDefinedException.cs" />
     <Compile Include="TypeCheck\Operators\BinaryOperator.cs" />
     <Compile Include="TypeCheck\Types\DotNetCobraType.cs" />
-    <Compile Include="TypeCheck\Types\CobraGeneric.cs" />
-    <Compile Include="TypeCheck\Types\CobraGenericInstance.cs" />
     <Compile Include="TypeCheck\Types\CobraType.cs" />
     <Compile Include="Parse\Expressions\AssignExpression.cs" />
     <Compile Include="Parse\PrettyPrint\AstPrinter.cs" />
@@ -202,7 +200,6 @@
     <Compile Include="TypeCheck\Operators\UnaryOperator.cs" />
     <Compile Include="TypeCheck\TypeChecker.cs" />
     <Compile Include="TypeCheck\Exceptions\TypeNotDefinedException.cs" />
-    <Compile Include="TypeCheck\Types\GenericTypeParamPlaceholder.cs" />
     <Compile Include="TypeCheck\Types\IDotNetType.cs" />
     <Compile Include="TypeCheck\Types\UnionInstanceType.cs" />
     <Compile Include="TypeCheck\Types\UnionLangCobraGeneric.cs" />
