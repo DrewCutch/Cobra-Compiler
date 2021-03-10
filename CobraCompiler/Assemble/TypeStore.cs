@@ -141,6 +141,12 @@ namespace CobraCompiler.Assemble
         {
             Type type = GetType(cobraType);
 
+            if (type.ContainsGenericParameters && type.Module != _moduleBuilder)
+                return type.GetGenericTypeDefinition().GetMember(memberName).FirstOrDefault();
+
+            if (type.Module != _moduleBuilder && type.IsConstructedGenericType)
+                return type.GetGenericTypeDefinition().GetMember(memberName).FirstOrDefault();
+
             if (type.Module != _moduleBuilder)
                 return type.GetMember(memberName).FirstOrDefault();
 

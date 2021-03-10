@@ -11,6 +11,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Assemble.ExpressionAssemblyContexts;
+using CobraCompiler.Parse;
 using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
@@ -127,128 +128,145 @@ namespace CobraCompiler.Assemble
         {
             _typeStore.PushCurrentGenerics(_funcGenerics);
 
-            IEnumerator<CFGNode> nodes = _funcScope.CFGraph.CFGNodes.GetEnumerator();
-            
-            while (nodes.MoveNext())
+            ListNibbler<CFGNode> nodes = new ListNibbler<CFGNode>(_funcScope.CFGraph.CFGNodes);
+
+            do
             {
+                nodes.Pop();
                 AssembleNode(nodes, _typeBuilder);
-            }
 
-            nodes.Dispose();
+            } while (nodes.HasNext());
 
-            if(_funcScope.FuncDeclaration is InitDeclarationStatement || !_funcScope.Returns)
+            //TODO: track more efficiently
+            bool explicitReturn = false;
+            foreach (CFGNode node in _funcScope.CFGraph.Terminal.Previous)
+                explicitReturn = node.Statements.Any(x => x is ReturnStatement);
+
+            if(_funcScope.FuncDeclaration is InitDeclarationStatement || !explicitReturn)
                 _il.Emit(OpCodes.Ret);
 
             _typeStore.PopGenerics(_funcGenerics);
         }
 
-        private void AssembleNode(IEnumerator<CFGNode> cfgNodes, TypeBuilder typeBuilder)
+        private void AssembleNode(ListNibbler<CFGNode> cfgNodes, TypeBuilder typeBuilder)
         {
-            if (cfgNodes.Current is null)
+            if (!cfgNodes.HasNext())
                 return;
 
-            foreach (Statement statement in cfgNodes.Current.Statements)
+            foreach (Statement statement in cfgNodes.Peek().Statements)
             {
                 AssembleStatement(statement, cfgNodes, typeBuilder);
             }
         }
 
-        private void AssembleStatement(Statement statement, IEnumerator<CFGNode> cfgNodes, TypeBuilder typeBuilder)
+        private void AssembleStatement(Statement statement, ListNibbler<CFGNode> cfgNodes, TypeBuilder typeBuilder)
         {
-            if (cfgNodes.Current is null)
+            if (!cfgNodes.HasNext())
                 return;
 
             switch (statement)
             {
                 case BlockStatement block:
-                    //foreach (Statement stmt in block.Body)
-                    //    AssembleStatement(stmt, typeBuilder);
                     break;
                 case ExpressionStatement exprStmt:
-                    exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
+                    exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
                     break;
                 case VarDeclarationStatement varDeclaration:
-                    CobraType varType = cfgNodes.Current.Scope.GetVar(varDeclaration.Name.Lexeme).Type;
-                    _localManager.DeclareVar(cfgNodes.Current.Scope, varDeclaration.Name.Lexeme, _typeStore.GetType(varType));
-                    varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
+                    CobraType varType = cfgNodes.Peek().Scope.GetVar(varDeclaration.Name.Lexeme).Type;
+                    _localManager.DeclareVar(cfgNodes.Peek().Scope, varDeclaration.Name.Lexeme, _typeStore.GetType(varType));
+                    varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
                     break;
                 case ReturnStatement returnStatement:
-                    returnStatement.Value.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
-                    ReturnStatement(cfgNodes.Current.Scope);
+                    returnStatement.Value.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
+                    ReturnStatement(cfgNodes.Peek().Scope);
                     break;
                 case IfStatement ifStatement:
-                {
-                    ifStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
-
-                    Label elseLabel = _il.DefineLabel();
-                    Label endElseLabel = _il.DefineLabel();
-
-                    _il.Emit(OpCodes.Brfalse, elseLabel);
-
-                    if(!cfgNodes.MoveNext())
-                        throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
-
-                    AssembleNode(cfgNodes, typeBuilder);
-
-                    bool ifReturns = cfgNodes.Current.FulfilledByChildren(node => node.Next.OnlyOrDefault()?.IsTerminal ?? false);
-
-                    if(!ifReturns)
-                        _il.Emit(OpCodes.Br, endElseLabel);
-
-                
-                    _il.MarkLabel(elseLabel);
-                    if (ifStatement.Else != null)
-                    {
-                        if (!cfgNodes.MoveNext())
-                            throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
-
-                        AssembleNode(cfgNodes, typeBuilder);
-                    }
-
-                    if (!ifReturns)
-                    {
-                        _il.MarkLabel(endElseLabel);
-                        _il.Emit(OpCodes.Nop);
-                    }
-
+                    AssembleIfStatement(ifStatement, cfgNodes, typeBuilder);
                     break;
-                }   
                 case WhileStatement whileStatement:
-                {
-                    Label elseLabel = _il.DefineLabel();
-                    Label endElseLabel = _il.DefineLabel();
-                    Label whileLabel = _il.DefineLabel();
-                    Label bodyLabel = _il.DefineLabel();
-
-                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
-
-                    _il.Emit(OpCodes.Brfalse, elseLabel); // If condition fails the first time go to else
-                    _il.Emit(OpCodes.Br, bodyLabel); // Else go to body
-                    _il.MarkLabel(whileLabel); // Return here on subsequent loop
-                    whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Current.Scope));
-                    _il.Emit(OpCodes.Brfalse, endElseLabel);
-                    _il.MarkLabel(bodyLabel); // Beginning of body
-
-                    if (!cfgNodes.MoveNext())
-                        throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
-
-                    AssembleNode(cfgNodes, typeBuilder);
-                    
-                    _il.Emit(OpCodes.Br, whileLabel); // Return to condition
-                    _il.MarkLabel(elseLabel);
-                    if (whileStatement.Else != null)
-                    {
-                        if (!cfgNodes.MoveNext())
-                            throw new ArgumentException("Cfgnodes does not contain enough nodes!", nameof(cfgNodes));
-
-                        AssembleNode(cfgNodes, typeBuilder);
-                    }
-                    _il.MarkLabel(endElseLabel);
-                    _il.Emit(OpCodes.Nop);
+                    AssembleWhileStatement(whileStatement, cfgNodes, typeBuilder);
                     break;
-                }
                 default:
                     throw new NotImplementedException();
+            }
+        }
+
+        private void AssembleIfStatement(IfStatement ifStatement, ListNibbler<CFGNode> cfgNodes, TypeBuilder typeBuilder)
+        {
+            ifStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
+
+            Label elseLabel = _il.DefineLabel();
+            Label endElseLabel = _il.DefineLabel();
+
+            _il.Emit(OpCodes.Brfalse, elseLabel);
+            cfgNodes.Pop();
+            AssembleNodesInScope(cfgNodes, typeBuilder);
+
+            bool ifReturns = cfgNodes.Peek().FulfilledByChildren(node => node.Scope == cfgNodes.Peek().Scope && (node.Next.OnlyOrDefault()?.IsTerminal ?? false));
+
+            if (!ifReturns)
+                _il.Emit(OpCodes.Br, endElseLabel);
+
+
+            _il.MarkLabel(elseLabel);
+            if (ifStatement.Else != null)
+            {
+                cfgNodes.Pop();
+                AssembleNodesInScope(cfgNodes, typeBuilder);
+            }
+
+            if (!ifReturns)
+            {
+                _il.MarkLabel(endElseLabel);
+                _il.Emit(OpCodes.Nop);
+            }
+        }
+
+        private void AssembleWhileStatement(WhileStatement whileStatement, ListNibbler<CFGNode> cfgNodes, TypeBuilder typeBuilder)
+        {
+            Label elseLabel = _il.DefineLabel();
+            Label endElseLabel = _il.DefineLabel();
+            Label whileLabel = _il.DefineLabel();
+            Label bodyLabel = _il.DefineLabel();
+
+            whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
+
+            _il.Emit(OpCodes.Brfalse, elseLabel); // If condition fails the first time go to else
+            _il.Emit(OpCodes.Br, bodyLabel); // Else go to body
+            _il.MarkLabel(whileLabel); // Return here on subsequent loop
+
+            whileStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
+
+            _il.Emit(OpCodes.Brfalse, endElseLabel);
+            _il.MarkLabel(bodyLabel); // Beginning of body
+
+            cfgNodes.Pop();
+            AssembleNodesInScope(cfgNodes, typeBuilder);
+
+            _il.Emit(OpCodes.Br, whileLabel); // Return to condition
+            _il.MarkLabel(elseLabel);
+            if (whileStatement.Else != null)
+            {
+                cfgNodes.Pop();
+                AssembleNodesInScope(cfgNodes, typeBuilder);
+            }
+            _il.MarkLabel(endElseLabel);
+            _il.Emit(OpCodes.Nop);
+        }
+
+        private void AssembleNodesInScope(ListNibbler<CFGNode> nodes, TypeBuilder typeBuilder)
+        {
+            Scope scope = nodes.Peek().Scope;
+
+            if (!nodes.HasNext())
+                throw new ArgumentException("nodes does not contain enough nodes!", nameof(nodes));
+
+            AssembleNode(nodes, typeBuilder);
+
+            while (nodes.Peek(1).Scope.IsContainedBy(scope))
+            {
+                nodes.Pop();
+                AssembleNode(nodes, typeBuilder);
             }
         }
 
@@ -272,8 +290,11 @@ namespace CobraCompiler.Assemble
             if(expr.Target is VarExpression varExpr)
                 _localManager.StoreVar(context.Scope, varExpr.Name.Lexeme);
 
-            if (targetContext.AssigningToField)
+            else if (targetContext.AssigningToField)
                 _il.Emit(OpCodes.Stfld, targetContext.AssignToField);
+
+            else if(targetContext.AssigningToIndex)
+                _il.Emit(OpCodes.Callvirt, targetContext.AssignToIndex);
 
             return new ExpressionAssemblyContext(targetContext.Type);
         }
@@ -351,6 +372,7 @@ namespace CobraCompiler.Assemble
         {
             ExpressionAssemblyContext collectionContext = expr.Collection.Accept(this, new ParentExpressionAssemblyContext(context.Scope, expected: expr.Collection.Type, calling:context.ImmediatelyCalling));
 
+            // If this is specifying type args to a function or constructor
             if (expr.Type is CobraGenericInstance genericInstance && collectionContext is MethodBuilderExpressionAssemblyContext methodContext)
             {
                 MethodBase genericMethodInfo = methodContext.Method;
@@ -368,38 +390,24 @@ namespace CobraCompiler.Assemble
 
                 return new MethodBuilderExpressionAssemblyContext(expr.Type, genericMethodInfo);
             }
-            else
-                throw new NotImplementedException();
-            
-            /*
-            List<CobraType> indexTypes = new List<CobraType>();
 
-            foreach (Expression index in expr.Indicies)
-            {
-                indexTypes.Add(index.Accept(this, new ParentExpressionAssemblyContext()).Type);
-            }
+            // If this is an index into a collection
+            List<CobraType> indexTypes = expr.Indicies.Select((x) => x.Accept(this, context).Type).ToList();
+
+            string methodName = context.Assigning ? "set_Item" : "get_Item";
+
+            Symbol symbol = collectionContext.Type.GetSymbol(methodName);
+
+            Type collectionType = _typeStore.GetType(collectionContext.Type);
+
+            MethodInfo indexMethod = ResolveGenericMethodInfo(collectionType, collectionType.GetGenericTypeDefinition().GetMethod(methodName));
 
             if (context.Assigning)
-            {
-                throw new NotImplementedException();
-            }
+                return new ExpressionAssemblyContext(DotNetCobraType.Unit, indexMethod);
 
-            BinaryOperator getOp = CurrentScope.GetGenericBinaryOperator(Operation.Add, collectionContext.Type, DotNetCobraType.Int) ?? throw new NotImplementedException();
+            _il.Emit(OpCodes.Callvirt, indexMethod);
 
-            MethodInfo get = _methodStore.GetMethodInfo(getOp) as MethodInfo;
-
-            if (collectionContext.Type is CobraGenericInstance genericCollection)
-            {
-                get = get.DeclaringType.MakeGenericType(genericCollection.TypeParams.Select(_typeStore.GetType).ToArray()).GetMethod(get.Name,
-                    get.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
-            }
-
-            _il.Emit(OpCodes.Callvirt, get);
-
-            CobraType returnType = CurrentScope.GetOperator(Operation.Add, collectionContext.Type, DotNetCobraType.Int).ResultType;
-
-            return new ExpressionAssemblyContext(returnType);
-            */
+            return new ExpressionAssemblyContext(symbol.Type.CallReturn(indexTypes));
         }
 
         public ExpressionAssemblyContext Visit(ListLiteralExpression expr, ParentExpressionAssemblyContext context)
@@ -409,24 +417,12 @@ namespace CobraCompiler.Assemble
             Type listType = _typeStore.GetType(type);
 
             CobraType elementType = (type as CobraGenericInstance).OrderedTypeParams[0];
-            ConstructorInfo listCtor;
-            MethodInfo addMethod;
 
-            if (listType.GetGenericArguments()[0] is TypeBuilder)
-            {
-                listCtor = TypeBuilder.GetConstructor(listType, listType.GetGenericTypeDefinition().GetConstructor(new[] {typeof(int)}) ?? throw new InvalidOperationException());
-                addMethod = TypeBuilder.GetMethod(listType, listType.GetGenericTypeDefinition().GetMethod("Add") ?? throw new InvalidOperationException());
-            }
-            else
-            {
-                listCtor = listType.GetConstructor(new[] { typeof(int) }) ?? throw new InvalidOperationException();
-                addMethod = listType.GetMethod("Add") ?? throw new InvalidOperationException();
-            }
-                
+            ConstructorInfo listCtor = ResolveGenericConstructorInfo(listType, new[] {typeof(int)});
+            MethodInfo addMethod = ResolveGenericMethodInfo(listType, listType.GetGenericTypeDefinition().GetMethod("Add"));
+
             _localManager.LoadLiteral(expr.Elements.Count);
             _il.Emit(OpCodes.Newobj, listCtor);
-
-
 
             foreach (Expression element in expr.Elements)
             {
@@ -501,7 +497,9 @@ namespace CobraCompiler.Assemble
                 }
 
                 Type[] types = { typeof(object), typeof(IntPtr) };
-                _il.Emit(OpCodes.Newobj, _typeStore.GetType(mbContext.Type).GetConstructor(types) ?? throw new InvalidOperationException());
+                ConstructorInfo ctor = ResolveGenericConstructorInfo(_typeStore.GetType(mbContext.Type), types);
+
+                _il.Emit(OpCodes.Newobj, ctor);
             }
             else if (!context.Assigning)
             {
@@ -569,11 +567,32 @@ namespace CobraCompiler.Assemble
                 includesTypeBuilder = includesTypeBuilder || genericArgument is TypeBuilder || genericArgument is GenericTypeParameterBuilder;
             }
 
-
-            if(includesTypeBuilder || !methodInfo.DeclaringType.IsConstructedGenericType)
+            if(includesTypeBuilder || (!methodInfo.DeclaringType.IsConstructedGenericType && type.Assembly == _assemblyBuilder))
                 return TypeBuilder.GetMethod(type, methodInfo);
 
+            if (!methodInfo.DeclaringType.IsConstructedGenericType)
+                return type.GetMethod(methodInfo.Name);
+
             return methodInfo;
+        }
+
+        private ConstructorInfo ResolveGenericConstructorInfo(Type type, Type[] ctorArgs)
+        {
+            if (!type.IsConstructedGenericType)
+                return type.GetConstructor(ctorArgs);
+
+            bool includesTypeBuilder = false;
+            foreach (Type genericArgument in type.GetGenericArguments())
+            {
+                includesTypeBuilder = includesTypeBuilder || genericArgument is TypeBuilder || genericArgument is GenericTypeParameterBuilder;
+            }
+
+            ConstructorInfo genericConstructorInfo = type.GetGenericTypeDefinition().GetConstructor(ctorArgs);
+
+            if (includesTypeBuilder)
+                return TypeBuilder.GetConstructor(type, genericConstructorInfo);
+
+            return type.GetConstructor(ctorArgs);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
+using CobraCompiler.Util;
 
 namespace CobraCompiler.TypeCheck
 {
@@ -18,20 +20,26 @@ namespace CobraCompiler.TypeCheck
         public class ExpressionCheckContext
         {
             public readonly CFGNode CfgNode;
-            public readonly bool IsAssigning;
+            public readonly CobraType Assigning;
+            public readonly CobraType Expected;
+            public readonly bool IsInitialPass;
 
-            public ExpressionCheckContext(CFGNode cfgNode, bool isAssigning = false)
+            public ExpressionCheckContext(CFGNode cfgNode, CobraType expected = null, CobraType assigning = null, bool isInitialPass = false)
             {
                 CfgNode = cfgNode;
-                IsAssigning = isAssigning;
+                Assigning = assigning;
+                Expected = expected;
+                IsInitialPass = isInitialPass;
             }
         }
 
         public ExpressionType Visit(AssignExpression expr, ExpressionCheckContext context)
         {
-            ExpressionType var = expr.Target.Accept(this, new ExpressionCheckContext(context.CfgNode, isAssigning:true));
+            ExpressionType initialVar = expr.Target.Accept(this, new ExpressionCheckContext(context.CfgNode, isInitialPass: true));
 
-            ExpressionType value = expr.Value.Accept(this, context);
+            ExpressionType value = expr.Value.Accept(this, new ExpressionCheckContext(context.CfgNode, expected: initialVar.Type));
+
+            ExpressionType var = expr.Target.Accept(this, new ExpressionCheckContext(context.CfgNode, assigning: value.Type));
 
             if (!value.Type.CanCastTo(var.Type))
                 throw new InvalidAssignmentException(expr);
@@ -47,7 +55,8 @@ namespace CobraCompiler.TypeCheck
 
             expr.Type = var.Type;
 
-            context.CfgNode.AddAssignment(var.Symbol, expr);
+            if (var.Symbol != null) 
+                context.CfgNode.AddAssignment(var.Symbol, expr);
 
             return new ExpressionType(var.Type, MutabilityUtils.GetResultMutability(var.Mutability, value.Mutability),
                 null);
@@ -101,11 +110,10 @@ namespace CobraCompiler.TypeCheck
             throw new InvalidCallException(expr);
         }
 
-        public ExpressionType Visit(IndexExpression expr, ExpressionCheckContext context)
+        private ExpressionType VisitTypeDeclaration(IndexExpression expr, CobraType collectionType, ExpressionCheckContext context)
         {
-            CobraType collectionType = expr.Collection.Accept(this, context).Type;
-
             List<CobraType> typeParams = new List<CobraType>();
+
             foreach (Expression expression in expr.Indicies)
             {
                 CobraType exprType = expression.Accept(this, context).Type;
@@ -115,7 +123,7 @@ namespace CobraCompiler.TypeCheck
                     throw new InvalidGenericArgumentException(expression);
             }
 
-            if (collectionType is CobraGenericInstance genericInstance)
+            if (collectionType is CobraGenericInstance genericInstance && genericInstance.HasPlaceholders())
             {
                 expr.Type = genericInstance.ReplacePlaceholders(typeParams);
                 return new ExpressionType(expr.Type, Mutability.Result, null);
@@ -128,22 +136,46 @@ namespace CobraCompiler.TypeCheck
             }
 
             throw new NotImplementedException();
+        }
 
-            /*
-            CobraType collectionType = expr.Collection.Accept(this);
-            List<CobraType> indexTypes = expr.Indicies.Select(index => index.Accept(this)).ToList();
+        public ExpressionType Visit(IndexExpression expr, ExpressionCheckContext context)
+        {
+            CobraType collectionType = expr.Collection.Accept(this, context).Type;
 
+            bool couldBeTypeDeclaration =
+                (collectionType is CobraGenericInstance genericInstance && genericInstance.HasPlaceholders()) ||
+                (collectionType is CobraTypeCobraType metaType && metaType.CobraType is CobraGeneric generic);
 
-            IOperator getOperator = CurrentcfgNode.Scope.GetOperator(Operation.Get, collectionType, DotNetCobraType.Int);
+            // It is not a type declaration
+            List<CobraType> indexTypes = expr.Indicies.Select((x) => x.Accept(this, context).Type).ToList();
 
-            expr.Type = getOperator.ResultType;
+            if(context.Assigning != null)
+                indexTypes.Add(context.Assigning);
 
-            return getOperator.ResultType;
-            */
+            string symbolName = context.Assigning != null ? "set_Item" : "get_Item";
+
+            Symbol symbol = collectionType.GetSymbol(symbolName);
+
+            if(symbol == null)
+                return couldBeTypeDeclaration ? VisitTypeDeclaration(expr, collectionType, context) : throw new InvalidIndexException(expr);
+
+            CobraType valueType = symbol.Type.CallReturn(indexTypes);
+
+            if(valueType == null)
+                return couldBeTypeDeclaration ? VisitTypeDeclaration(expr, collectionType, context) : throw new InvalidIndexException(expr);
+
+            expr.Type = valueType;
+
+            return new ExpressionType(context.Assigning ?? valueType, context.Assigning != null ? Mutability.Mutable : Mutability.Result, null);
         }
 
         public ExpressionType Visit(ListLiteralExpression expr, ExpressionCheckContext context)
         {
+            if (expr.Elements.Empty())
+            {
+                return new ExpressionType(context.Expected, Mutability.Result, null);
+            }
+
             ExpressionType firstElement = expr.Elements[0].Accept(this, context);
             CobraType elementsCommonType = firstElement.Type;
             Mutability elementsMutability = firstElement.Mutability;
@@ -234,7 +266,7 @@ namespace CobraCompiler.TypeCheck
             Symbol var = context.CfgNode.Scope.GetVar(expr.Name.Lexeme);
             expr.Type = var.Type;
 
-            if (context.CfgNode.Graph != null && !context.IsAssigning && !context.CfgNode.FulfilledByAncestors(ControlFlowCheck.IsAssigned(var)))
+            if (!context.IsInitialPass && context.CfgNode.Graph != null && context.Assigning == null && !context.CfgNode.FulfilledByAncestors(ControlFlowCheck.IsAssigned(var)))
                 throw new UnassignedVarException(expr);
 
             return new ExpressionType(var);

@@ -33,5 +33,15 @@ namespace CobraCompiler.Util
         {
             return !enumerable.Any();
         }
+
+        public static IEnumerable<(T, int)> WithIndex<T>(this IEnumerable<T> enumerable)
+        {
+            int i = 0;
+            foreach (T value in enumerable)
+            {
+                yield return (value, i);
+                i += 1;
+            }
+        }
     }
 }

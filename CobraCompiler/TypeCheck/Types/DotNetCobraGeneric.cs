@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using CobraCompiler.TypeCheck.Symbols;
+using CobraCompiler.Util;
 
 namespace CobraCompiler.TypeCheck.Types
 {
@@ -42,6 +43,14 @@ namespace CobraCompiler.TypeCheck.Types
 
         private void DefineSymbols()
         {
+            Type[] typeArguments = _type.GetGenericArguments();
+            Dictionary<Type, CobraType> typeArgs = new Dictionary<Type, CobraType>();
+            
+            foreach ((Type typeArgument, int i) in typeArguments.WithIndex())
+            {
+                typeArgs[typeArgument] = new GenericTypeParamPlaceholder(typeArgument.Name, i);
+            }
+
             PropertyInfo[] properties = _type.GetProperties();
 
             foreach (PropertyInfo property in properties)
@@ -51,6 +60,43 @@ namespace CobraCompiler.TypeCheck.Types
                 DotNetCobraType propertyType = DotNetCobraType.FromType(property.PropertyType);
                 if (propertyType != null)
                     DefineSymbol(property.Name, new Symbol(null, propertyType, SymbolKind.Member, propertyMutability, property.Name));
+            }
+
+            MethodInfo[] methods = _type.GetMethods();
+
+            foreach (MethodInfo method in methods)
+            {
+                ParameterInfo[] parameters = method.GetParameters();
+                CobraType[] callSignature = new CobraType[parameters.Length + 1];
+
+                foreach ((ParameterInfo parameter, int i) in parameters.WithIndex())
+                {
+                    CobraType parameterType = parameter.ParameterType.IsGenericParameter
+                        ? typeArgs[parameter.ParameterType]
+                        : DotNetCobraType.FromType(parameter.ParameterType);
+
+                    if(parameterType == null)
+                        goto nextMethod;
+
+                    callSignature[i] = parameterType;
+                }
+
+                CobraType returnType = method.ReturnType.IsGenericParameter
+                    ? typeArgs[method.ReturnType]
+                    : DotNetCobraType.FromType(method.ReturnType);
+
+                if(returnType == null)
+                    goto nextMethod;
+
+                callSignature[parameters.Length] = returnType;
+
+                CobraType funcType = DotNetCobraGeneric.FuncType.CreateGenericInstance(callSignature);
+
+                Symbol symbol = new Symbol(null, funcType, SymbolKind.Member, Mutability.ReadOnly, method.Name);
+
+                DefineSymbol(method.Name, symbol, true);
+
+                nextMethod: ;
             }
         }
 

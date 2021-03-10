@@ -55,6 +55,20 @@ namespace CobraCompiler.Parse.Scopes
             _subScopes = new List<Scope>();
         }
 
+        public bool IsContainedBy(Scope scope)
+        {
+            if (this == scope)
+                return true;
+
+            if (Parent == scope)
+                return true;
+
+            if (Parent == null)
+                return false;
+
+            return Parent.IsContainedBy(scope);
+        }
+
         public virtual CobraType GetType(TypeInitExpression typeInit, CobraType selfHint=null)
         {
             if (!typeInit.IsGenericInstance)

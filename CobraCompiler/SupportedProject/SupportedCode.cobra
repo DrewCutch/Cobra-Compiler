@@ -443,6 +443,10 @@ func main(): int{
 
 	var squares: [int] = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 	var size: int = squares.Count
+	squares.Add(121)
+	val first: int = squares[0]
+
+	squares[0] = 0
 
 	var smallest: int = ListTools.minInt(squares)
 	printInt(smallest)
@@ -455,7 +459,7 @@ func main(): int{
 		i = i + 1
 	}
 
-	var boolList: [bool] = [true, true, false]
+	var boolList: [bool] = []
 	var strList: [str] = ["hello", "world"]
 
 	var strListItem: str = strList[0]

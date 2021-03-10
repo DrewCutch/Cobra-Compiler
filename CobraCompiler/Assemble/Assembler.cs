@@ -71,12 +71,10 @@ namespace CobraCompiler.Assemble
 
             MethodInfo printStrInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(string) });
             MethodInfo printIntInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(int) });
-            MethodInfo listGetInfo = typeof(List<>).GetMethod("get_Item");
 
             _methodStore.AddMethodInfo("printStr", DotNetCobraGeneric.FuncType.CreateGenericInstance(DotNetCobraType.Str, DotNetCobraType.Unit ), printStrInfo);
             _methodStore.AddMethodInfo("printInt", DotNetCobraGeneric.FuncType.CreateGenericInstance(DotNetCobraType.Int, DotNetCobraType.Unit ), printIntInfo);
-            //_methodStore.AddMethodInfo("get_Item", GenericOperator.DotNetGenericOperators[0].GetGenericFuncType(), listGetInfo);
-
+            
             foreach (DefinedModule module in definedModules)
             {
                 foreach (IAssemble assembler in module.ToAssemble)
