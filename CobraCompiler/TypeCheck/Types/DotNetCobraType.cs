@@ -36,6 +36,9 @@ namespace CobraCompiler.TypeCheck.Types
 
         public override bool CanCastTo(CobraType other)
         {
+            if (other.IsNullable && this == Null)
+                return true;
+
             if (other is DotNetCobraType dotNetCobraType)
                 return dotNetCobraType.Type.IsAssignableFrom(Type);
 

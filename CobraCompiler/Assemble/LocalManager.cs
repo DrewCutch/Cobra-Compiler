@@ -177,7 +177,10 @@ namespace CobraCompiler.Assemble
         public void LoadLiteral(object value)
         {
             if (value == null)
+            {
+                _il.Emit(OpCodes.Ldnull);
                 return;
+            }
 
             switch (value)
             {
@@ -192,6 +195,8 @@ namespace CobraCompiler.Assemble
                     break;
                 case bool boolVal:
                     _il.Emit(boolVal ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                    break;
+                case object unit:
                     break;
                 default:
                     throw new NotImplementedException();

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Expressions;
+using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck.CFG;
 using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
@@ -201,6 +202,28 @@ namespace CobraCompiler.TypeCheck
             return new ExpressionType(expr.LiteralType, Mutability.CompileTimeConstantResult, null);
         }
 
+        public ExpressionType Visit(NullableAccessExpression expr, ExpressionCheckContext context)
+        {
+            //If is actually a nullable expression
+            if (expr.Name == null)
+            {
+                ExpressionType exprType = expr.Obj.Accept(this, context);
+
+                if (exprType.Type is CobraTypeCobraType metaType)
+                {
+                    CobraTypeCobraType nullableType = new CobraTypeCobraType(CobraType.Nullable(metaType.CobraType));
+                    expr.Type = nullableType;
+                    return new ExpressionType(nullableType,  Mutability.CompileTimeConstantResult, null);
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            return VisitMemberAccessExpression(expr, true, context);
+        }
+
         public ExpressionType Visit(TypeInitExpression expr, ExpressionCheckContext context)
         {
             throw new NotImplementedException();
@@ -222,7 +245,15 @@ namespace CobraCompiler.TypeCheck
 
         public ExpressionType Visit(GetExpression expr, ExpressionCheckContext context)
         {
+            return VisitMemberAccessExpression(expr, false, context);
+        }
+
+        private ExpressionType VisitMemberAccessExpression(MemberAccessExpression expr, bool nullSafe, ExpressionCheckContext context)
+        {
             var obj = expr.Obj.Accept(this, context);
+
+            if (!obj.Type.IsNullable && nullSafe)
+                throw new InvalidNullableAccessException(expr);
 
             if (obj.Type is NamespaceType namespaceType)
             {
@@ -244,16 +275,23 @@ namespace CobraCompiler.TypeCheck
                 return new ExpressionType(var.Type, Mutability.CompileTimeConstantResult, var);
             }
 
-            if(obj.Type.IsNullable)
+            CobraType objType = obj.Type;
+
+            if (objType.IsNullable && nullSafe)
+                objType = objType.NullableBase;
+
+            if (objType.IsNullable)
                 throw new InvalidMemberAccessOnNullableException(expr);
 
-            if (!obj.Type.HasSymbol(expr.Name.Lexeme))
+            if (!objType.HasSymbol(expr.Name.Lexeme))
                 throw new InvalidMemberException(expr);
 
-            Symbol symbol = obj.Type.GetSymbol(expr.Name.Lexeme);
+            Symbol symbol = objType.GetSymbol(expr.Name.Lexeme);
 
-            expr.Type = symbol.Type;
-            return new ExpressionType(symbol);
+            CobraType exprType = objType.IsNullable ? CobraType.Nullable(symbol.Type) : symbol.Type;
+
+            expr.Type = exprType;
+            return new ExpressionType(exprType, nullSafe ? Mutability.Result : symbol.Mutability, symbol);
         }
 
         public ExpressionType Visit(GroupingExpression expr, ExpressionCheckContext context)

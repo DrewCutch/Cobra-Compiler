@@ -12,9 +12,10 @@ namespace CobraCompiler.Assemble.ExpressionAssemblyContexts
     class MethodBuilderExpressionAssemblyContext: MethodExpressionAssemblyContext
     {
         public readonly MethodBase Method;
-        public MethodBuilderExpressionAssemblyContext(CobraType type, MethodBase method) : base(type)
+        public MethodBuilderExpressionAssemblyContext(CobraType type, MethodBase method, Label? nullCheckEndLabel = null) : base(type)
         {
             Method = method;
+            NullCheckEndLabel = nullCheckEndLabel;
         }
     }
 }

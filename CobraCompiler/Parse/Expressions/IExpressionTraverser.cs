@@ -8,6 +8,7 @@
         void Visit(IndexExpression expr, T arg);
         void Visit(ListLiteralExpression expr, T arg);
         void Visit(LiteralExpression expr, T arg);
+        void Visit(NullableAccessExpression expr, T arg);
         void Visit(TypeInitExpression expr, T arg);
         void Visit(UnaryExpression expr, T arg);
         void Visit(GetExpression expr, T arg);

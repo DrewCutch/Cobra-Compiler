@@ -15,10 +15,10 @@ namespace CobraCompiler.TypeCheck.Exceptions
             LastToken = varExpression.Name;
         }
 
-        public VarNotDefinedException(GetExpression getExpression, string resolvedName) : base($"{resolvedName} is not defined")
+        public VarNotDefinedException(MemberAccessExpression expr, string resolvedName) : base($"{resolvedName} is not defined")
         {
-            FirstToken = getExpression.FirstToken;
-            LastToken = getExpression.LastToken;
+            FirstToken = expr.FirstToken;
+            LastToken = expr.LastToken;
         }
     }
 }

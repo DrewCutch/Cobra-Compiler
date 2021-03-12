@@ -100,6 +100,8 @@
     <Compile Include="ErrorLogging\ErrorLogger.cs" />
     <Compile Include="ErrorLogging\ParsingException.cs" />
     <Compile Include="ErrorLogging\ScanningException.cs" />
+    <Compile Include="Parse\Expressions\MemberAccessExpression.cs" />
+    <Compile Include="Parse\Expressions\NullableAccessExpression.cs" />
     <Compile Include="TypeCheck\CFG\BitMatrix.cs" />
     <Compile Include="TypeCheck\CFG\CFGraph.cs" />
     <Compile Include="TypeCheck\CFG\CFGNode.cs" />
@@ -114,6 +116,8 @@
     <Compile Include="TypeCheck\Exceptions\AssignToParamException.cs" />
     <Compile Include="TypeCheck\Exceptions\IncompleteMemberAssignmentException.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidIndexException.cs" />
+    <Compile Include="TypeCheck\Exceptions\InvalidMemberAccessOnNullableException.cs" />
+    <Compile Include="TypeCheck\Exceptions\InvalidNullableAccessException.cs" />
     <Compile Include="TypeCheck\Exceptions\UnassignedVarException.cs" />
     <Compile Include="TypeCheck\Exceptions\WriteToReadOnlySymbolException.cs" />
     <Compile Include="TypeCheck\ExpressionChecker.cs" />

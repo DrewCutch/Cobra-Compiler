@@ -182,6 +182,22 @@ namespace CobraCompiler.Parse.PrettyPrint
             _printer.AddLeaf($"Literal: {expr.Value}", onLast);
         }
 
+        public void Visit(NullableAccessExpression expr, bool onLast)
+        {
+            if (expr.Name != null)
+            {
+                _printer.AddNode($"?.{expr.Name.Lexeme}", onLast);
+                expr.Obj.Accept(this, true);
+            }
+            else
+            {
+                _printer.AddNode("?", onLast);
+                expr.Obj.Accept(this, true);
+            }
+
+            _printer.ExitNode();
+        }
+
         public void Visit(TypeInitExpression expr, bool onLast)
         {
             throw new NotImplementedException();

@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Compiler;
 using CobraCompiler.ErrorLogging;
+using CobraCompiler.Parse;
 using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;

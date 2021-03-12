@@ -498,7 +498,7 @@ namespace CobraCompiler.Parse
         private Statement Return()
         {
             Token keyword = _tokens.Previous();
-            Expression expr = Expression() ?? new LiteralExpression(null, DotNetCobraType.Unit, keyword);
+            Expression expr = Expression() ?? new LiteralExpression(new object(), DotNetCobraType.Unit, keyword);
             // Expect(TokenType.NewLine, "Expect newline after return statement");
             return new ReturnStatement(keyword, expr);
         }
@@ -676,8 +676,20 @@ namespace CobraCompiler.Parse
                 }
                 else if (Match(TokenType.Dot))
                 {
-                    Token name = Expect(TokenType.Identifier, "Expect property name after '.'");
+                    Token name = Expect(TokenType.Identifier, $"Expect property name after '.'");
                     expr = new GetExpression(expr, name);
+                }
+                else if (Match(TokenType.QuestionMark))
+                {
+                    if (Match(TokenType.Dot))
+                    {
+                        Token name = Expect(TokenType.Identifier, $"Expect property name after '?.'");
+                        expr = new NullableAccessExpression(expr, name);
+                    }
+                    else
+                    {
+                        expr = new NullableAccessExpression(expr, null);
+                    }
                 }
                 else if (Match(TokenType.LeftBracket))
                 {

@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CobraCompiler.Parse.PrettyPrint;
 using CobraCompiler.Scanning;
 
 namespace CobraCompiler.Parse.Expressions
 {
-    class GetExpression: MemberAccessExpression
+    class NullableAccessExpression: MemberAccessExpression
     {
         public override Token FirstToken => Obj.FirstToken;
         public override Token LastToken => Name;
+
         public override Expression Obj { get; }
         public override Token Name { get; }
 
-        public GetExpression(Expression obj, Token name)
+        public NullableAccessExpression(Expression obj, Token name)
         {
             Obj = obj;
             Name = name;

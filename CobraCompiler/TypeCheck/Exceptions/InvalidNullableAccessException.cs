@@ -8,13 +8,13 @@ using CobraCompiler.Scanning;
 
 namespace CobraCompiler.TypeCheck.Exceptions
 {
-    class InvalidMemberAccessOnNullableException: TypingException
+    class InvalidNullableAccessException: TypingException
     {
         public override Token FirstToken { get; }
         public override Token LastToken { get; }
         public override bool isWarning => false;
 
-        public InvalidMemberAccessOnNullableException(MemberAccessExpression expr) : base($"Cannot access member {expr.Name.Lexeme} on nullable type {expr.Obj.Type.Identifier}")
+        public InvalidNullableAccessException(MemberAccessExpression expr) : base($"Invalid null safe member access on non nullable type {expr.Obj.Type}.")
         {
             FirstToken = expr.FirstToken;
             LastToken = expr.LastToken;

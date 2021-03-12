@@ -8,10 +8,10 @@ namespace CobraCompiler.TypeCheck.Exceptions
         public override Token FirstToken { get; }
         public override Token LastToken { get; }
         public override bool isWarning => false;
-        public InvalidMemberException(GetExpression getExpression) : base($"{getExpression.Obj.Type} does not have member {getExpression.Name.Lexeme}")
+        public InvalidMemberException(MemberAccessExpression expr) : base($"{expr.Obj.Type} does not have member {expr.Name.Lexeme}")
         {
-            FirstToken = getExpression.Obj.FirstToken;
-            LastToken = getExpression.Name;
+            FirstToken = expr.Obj.FirstToken;
+            LastToken = expr.Name;
         }
     }
 }

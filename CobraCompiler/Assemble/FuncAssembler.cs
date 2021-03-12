@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using CobraCompiler.Assemble.ExpressionAssemblyContexts;
 using CobraCompiler.Parse;
 using CobraCompiler.Parse.CFG;
@@ -22,6 +23,7 @@ using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Types;
 using CobraCompiler.Util;
 using InvalidOperationException = System.InvalidOperationException;
+using Label = System.Reflection.Emit.Label;
 
 namespace CobraCompiler.Assemble
 {
@@ -170,6 +172,10 @@ namespace CobraCompiler.Assemble
                     break;
                 case ExpressionStatement exprStmt:
                     exprStmt.Expression.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
+
+                    //If the expression leaves a value on the stack, pop it
+                    if (!(exprStmt.Expression is AssignExpression) && exprStmt.Expression.Type != DotNetCobraType.Unit)
+                        _il.Emit(OpCodes.Pop);
                     break;
                 case VarDeclarationStatement varDeclaration:
                     CobraType varType = cfgNodes.Peek().Scope.GetVar(varDeclaration.Name.Lexeme).Type;
@@ -360,10 +366,20 @@ namespace CobraCompiler.Assemble
                 MethodInfo methodInfo = type.ContainsGenericParameters ?  TypeBuilder.GetMethod(type, type.GetGenericTypeDefinition().GetMethod("Invoke")): type.GetMethod("Invoke");
                 _il.Emit(OpCodes.Callvirt, methodInfo);
             }
-            
 
             if (calleeContext.Type.IsConstructedGeneric)
                 returnType = calleeContext.Type.OrderedTypeArguments.Last();
+
+            if (calleeContext.InNullCheck && calleeContext.NullCheckEndLabel is Label label)
+            {
+                _il.MarkLabel(label);
+                _il.Emit(OpCodes.Nop);
+
+                if(!returnType.IsNullable)
+                    returnType = CobraType.Nullable(returnType);
+
+                expr.Type = returnType;
+            }
 
             return new ExpressionAssemblyContext(returnType);
         }
@@ -441,6 +457,11 @@ namespace CobraCompiler.Assemble
             return new ExpressionAssemblyContext(expr.LiteralType);
         }
 
+        public ExpressionAssemblyContext Visit(NullableAccessExpression expr, ParentExpressionAssemblyContext context)
+        {
+            return VisitMemberAccessExpression(expr, true, context);
+        }
+
         public ExpressionAssemblyContext Visit(TypeInitExpression expr, ParentExpressionAssemblyContext context)
         {
             throw new NotImplementedException();
@@ -516,10 +537,16 @@ namespace CobraCompiler.Assemble
 
         public ExpressionAssemblyContext Visit(GetExpression expr, ParentExpressionAssemblyContext context)
         {
-            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext(context.Scope, callingMember:context.ImmediatelyCalling));
+            return VisitMemberAccessExpression(expr, false, context);
+        }
+
+        private ExpressionAssemblyContext VisitMemberAccessExpression(MemberAccessExpression expr, bool nullSafe,
+            ParentExpressionAssemblyContext context)
+        {
+            ExpressionAssemblyContext exprContext = expr.Obj.Accept(this, new ParentExpressionAssemblyContext(context.Scope, callingMember: context.ImmediatelyCalling));
             if (exprContext.Type is NamespaceType _namespace)
             {
-                if(_namespace.HasType(expr.Name.Lexeme))
+                if (_namespace.HasType(expr.Name.Lexeme))
                     return new ExpressionAssemblyContext(_namespace.GetType(expr.Name.Lexeme));
 
                 Token resolvedToken = new Token(TokenType.Identifier, _namespace.ResolveName(expr.Name.Lexeme), null,
@@ -531,29 +558,54 @@ namespace CobraCompiler.Assemble
             //TODO implement class method overloading
             Type varType = _typeStore.GetType(exprContext.Type);
             MemberInfo member = _typeStore.GetMemberInfo(exprContext.Type, expr.Name.Lexeme, context.ExpectedType);
+            CobraType contextType = exprContext.Type;
+
+            Label? nullCheckEnd = null;
+
+            if (nullSafe)
+            {
+                contextType = contextType.NullableBase;
+
+                nullCheckEnd = _il.DefineLabel();
+                _il.Emit(OpCodes.Dup);
+                _il.Emit(OpCodes.Brfalse, (Label) nullCheckEnd);
+                _il.Emit(OpCodes.Dup);
+            }
 
             switch (member)
             {
                 case PropertyInfo prop:
                     MethodInfo get = ResolveGenericMethodInfo(varType, prop.GetGetMethod());
                     _il.Emit(OpCodes.Callvirt, get);
+                    if (nullCheckEnd is Label label1)
+                    {
+                        _il.MarkLabel(label1);
+                        _il.Emit(OpCodes.Nop);
+                    }
                     break;
                 case FieldInfo field:
-                    if(!context.Assigning)
+                    if (!context.Assigning)
+                    {
                         _il.Emit(OpCodes.Ldfld, field);
-                    else 
-                        return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme).Type, field);
+                        if (nullCheckEnd is Label label2)
+                        {
+                            _il.MarkLabel(label2);
+                            _il.Emit(OpCodes.Nop);
+                        }
+                    }
+                    else
+                        return new ExpressionAssemblyContext(contextType.GetSymbol(expr.Name.Lexeme).Type, field);
                     break;
                 case MethodInfo method:
                     method = ResolveGenericMethodInfo(varType, method);
                     if (context.ImmediatelyCalling)
-                        return new MethodBuilderExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme).Type, method);
+                        return new MethodBuilderExpressionAssemblyContext(contextType.GetSymbol(expr.Name.Lexeme).Type, method, nullCheckEnd);
                     break;
                 default:
                     throw new NotImplementedException();
             }
 
-            return new ExpressionAssemblyContext(exprContext.Type.GetSymbol(expr.Name.Lexeme).Type);
+            return new ExpressionAssemblyContext(contextType.GetSymbol(expr.Name.Lexeme).Type, nullCheckEnd);
         }
 
         private MethodInfo ResolveGenericMethodInfo(Type type, MethodInfo methodInfo)

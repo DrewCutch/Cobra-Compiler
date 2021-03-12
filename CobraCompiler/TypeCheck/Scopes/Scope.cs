@@ -5,6 +5,7 @@ using System.Windows.Forms.VisualStyles;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.TypeCheck;
+using CobraCompiler.TypeCheck.Assertion;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Symbols;
 using CobraCompiler.TypeCheck.Types;
@@ -170,6 +171,11 @@ namespace CobraCompiler.Parse.Scopes
         public void Declare(FuncDeclarationStatement funcDeclaration, CobraType funcType)
         {
             Declare(funcDeclaration, funcDeclaration.Name.Lexeme, funcType, SymbolKind.Global, Mutability.ReadOnly, true);
+        }
+
+        public void Declare(TypeAssertion typeAssertion)
+        {
+            Declare(typeAssertion.Symbol.Declaration, typeAssertion.Symbol.Lexeme, typeAssertion.Type, SymbolKind.Local, Mutability.ReadOnly);
         }
 
         protected internal virtual void Declare(Statement expr, string var, CobraType type, SymbolKind kind, Mutability mutability, bool overload = false)
