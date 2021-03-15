@@ -25,7 +25,7 @@ namespace CobraCompiler
         Identifier, String, Integer, Decimal,
 
         // Keywords.                                     
-        And, Class, Else, False, Func, For, If, Import,
+        And, Class, Else, False, Func, For, Guard, If, Import,
         In, Init, Null, Or, Op, Return, Super, True,
         Type, Var, Val, While,
 

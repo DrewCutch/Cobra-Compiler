@@ -190,6 +190,10 @@ namespace CobraCompiler.Scanning
                     if (!isAlphanumeric(next))
                         return TokenType.If;
                     return null;
+                case "guard":
+                    if (!isAlphanumeric(next))
+                        return TokenType.Guard;
+                    return null;
                 case "import":
                     if (!isAlphanumeric(next))
                         return TokenType.Import;

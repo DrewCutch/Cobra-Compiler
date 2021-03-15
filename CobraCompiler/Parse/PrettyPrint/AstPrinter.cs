@@ -79,6 +79,9 @@ namespace CobraCompiler.Parse.PrettyPrint
                         varDeclarationStatement.Assignment?.Accept(this, true);
                         _printer.ExitNode();
                         break;
+                    case GuardStatement guardStatement:
+                        PrintGuardStatement(guardStatement, onLast);
+                        break;
                     case IConditionalExpression conditional:
                         PrintConditional(conditional, onLast);
                         break;
@@ -102,6 +105,21 @@ namespace CobraCompiler.Parse.PrettyPrint
                         throw new NotImplementedException();
                 }
             }
+        }
+
+        private void PrintGuardStatement(GuardStatement guard, bool onLast)
+        {
+            _printer.AddNode("Guard", onLast);
+
+            _printer.AddNode("Condition", false);
+            guard.Condition.Accept(this, true);
+            _printer.ExitNode();
+
+            _printer.AddNode("Else", true);
+            GenerateTree(guard.Else);
+            _printer.ExitNode();
+
+            _printer.ExitNode();
         }
 
         private void PrintConditional(IConditionalExpression conditional, bool onLast)

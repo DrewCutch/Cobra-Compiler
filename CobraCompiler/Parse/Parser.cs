@@ -471,6 +471,9 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.Return))
                 return Return();
 
+            if (Match(TokenType.Guard))
+                return GuardStatement();
+
             if (Match(TokenType.If))
                 return IfStatement();
 
@@ -547,6 +550,20 @@ namespace CobraCompiler.Parse
             }
 
             return new WhileStatement(condition, bodyStatement, elseStatement);
+        }
+
+        private Statement GuardStatement()
+        {
+            Expect(TokenType.LeftParen, "Expect '(' after 'guard'.", ignoreNewline: true);
+            Expression condition = Expression();
+            Expect(TokenType.RightParen, "Expect ')' after 'guard' condition.", ignoreNewline: true);
+            Expect(TokenType.Else, "Expect 'else' after 'guard'.", ignoreNewline: true);
+
+            IgnoreNewlines();
+
+            Statement elseStatement = Statement();
+
+            return new GuardStatement(condition, elseStatement);
         }
 
         private Statement IfStatement()
