@@ -200,6 +200,8 @@ func printIntLL(llist: linkedList[int]){
 
 type box[T] {
 	value: T
+
+	setValue: f[T, unit]
 }
 
 class Box[T]: box[T]{
@@ -208,8 +210,23 @@ class Box[T]: box[T]{
 	init(value: T){
 		this.value = value
 	}
+
+	func setValue(value: T){
+		this.value = value
+	}
 }
 
+
+func testNullBox(){
+	val box1: box[vec2D?] = Box[vec2D?](null)
+	val unboxed: vec2D? = box1.value
+
+	if(unboxed !: null){
+		val child: int = 5
+
+		printInt(unboxed.x)
+	}
+}
 
 func boxvalue[T](value: T): box[T]{
 	return Box[T](value)
@@ -383,7 +400,14 @@ func main(): int{
 	var drew: person = Person("drew", 20)
 	var briti: sperson = Person("briti", 19)
 
+	var n: person? = null
+
+	n?.setBest(drew)
+	n?.callBestie()
+
 	var printable: Istr = briti
+
+	printable.toStr()
 
 	var dum: str = "dum"
 

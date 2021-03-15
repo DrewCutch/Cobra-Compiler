@@ -42,6 +42,41 @@ func map[T, U](vals: [T], f: f[T, U]): [U]{
 	return mapped
 }
 
+func apply[T](vals: [T], f: f[T, unit]){
+	var i: int = 0
+
+	while(i < vals.Count){
+		f(vals[i])
+	}
+}
+
+func filter[T](vals: [T], f: f[T, bool]): [T]{
+	val filtered: [T] = []
+	var i: int = 0
+
+	while(i < vals.Count){
+		if(f(vals[i])){
+			filtered.Add(vals[i])
+		}
+	}
+
+	return filtered
+}
+
+func filterNull[T](vals: [T?]): [T]{
+	val filtered: [T] = []
+	var i: int = 0
+
+	while(i < vals.Count){
+		val next: T? = vals[i]
+		if(next !: null){
+			filtered.Add(next)
+		}
+	}
+
+	return filtered
+}
+
 func doTwice[X](arg: X, f: f[X, X], g: f[X, X]): X{
 	return compose[X, X, X](arg, f, g)
 }

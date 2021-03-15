@@ -6,4 +6,8 @@
         <Module name="ListTools" path="ListTools.cobra"/>
       </System>
   </SystemSet>
+  <Dependencies>
+    <Reference include="System" />
+    <Reference include="System.Core" />
+  </Dependencies>
 </Project>
