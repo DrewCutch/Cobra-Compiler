@@ -154,36 +154,41 @@ namespace CobraCompiler.Parse.Scopes
             _types[identifier] = cobraType;
         }
 
-        public void Declare(ImportStatement importStatement, CobraType importType)
+        public Symbol Declare(ImportStatement importStatement, CobraType importType)
         {
-            Declare(importStatement, ((GetExpression)importStatement.Import).Name.Lexeme, importType, SymbolKind.Global, Mutability.CompileTimeConstant);
+            return Declare(importStatement, ((GetExpression)importStatement.Import).Name.Lexeme, importType, SymbolKind.Global, Mutability.CompileTimeConstant);
         }
-        public void Declare(ParamDeclarationStatement paramDeclaration)
+        public Symbol Declare(ParamDeclarationStatement paramDeclaration)
         {
-            Declare(paramDeclaration, paramDeclaration.Name.Lexeme, GetType(paramDeclaration.TypeInit), SymbolKind.Param, Mutability.ReadOnly);
-        }
-
-        public void Declare(VarDeclarationStatement varDeclaration)
-        {
-            Declare(varDeclaration, varDeclaration.Name.Lexeme, GetType(varDeclaration.TypeInit), SymbolKind.Local, varDeclaration.IsVal ? Mutability.AssignOnce : Mutability.Mutable);
+            return Declare(paramDeclaration, paramDeclaration.Name.Lexeme, GetType(paramDeclaration.TypeInit), SymbolKind.Param, Mutability.ReadOnly);
         }
 
-        public void Declare(FuncDeclarationStatement funcDeclaration, CobraType funcType)
+        public Symbol Declare(VarDeclarationStatement varDeclaration)
         {
-            Declare(funcDeclaration, funcDeclaration.Name.Lexeme, funcType, SymbolKind.Global, Mutability.ReadOnly, true);
+            return Declare(varDeclaration, varDeclaration.Name.Lexeme, GetType(varDeclaration.TypeInit), SymbolKind.Local, varDeclaration.IsVal ? Mutability.AssignOnce : Mutability.Mutable);
         }
 
-        public void Declare(TypeAssertion typeAssertion)
+        public Symbol Declare(FuncDeclarationStatement funcDeclaration, CobraType funcType)
         {
-            Declare(typeAssertion.Symbol.Declaration, typeAssertion.Symbol.Lexeme, typeAssertion.Type, SymbolKind.Local, Mutability.ReadOnly);
+            return Declare(funcDeclaration, funcDeclaration.Name.Lexeme, funcType, SymbolKind.Global, Mutability.ReadOnly, true);
         }
 
-        protected internal virtual void Declare(Statement expr, string var, CobraType type, SymbolKind kind, Mutability mutability, bool overload = false)
+        public Symbol Declare(TypeAssertion typeAssertion)
         {
+            return Declare(typeAssertion.Symbol.Declaration, typeAssertion.Symbol.Lexeme, typeAssertion.Type, SymbolKind.Local, Mutability.ReadOnly, false, typeAssertion.Symbol);
+        }
+
+        protected internal virtual Symbol Declare(Statement expr, string var, CobraType type, SymbolKind kind, Mutability mutability, bool overload = false, Symbol aliasOf = null)
+        {
+            if(IsDeclared(var) && !overload)
+                throw new NotImplementedException("Cannot redeclare symbol");
+
             if(IsDefined(var) && overload) 
-                _vars[var] = new Symbol(expr, IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(GetVar(var).Type, type), kind, mutability, var);
+                _vars[var] = new Symbol(expr, IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(GetVar(var).Type, type), kind, mutability, var, aliasOf);
             else
-                _vars[var] = new Symbol(expr, type, kind, mutability, var);
+                _vars[var] = new Symbol(expr, type, kind, mutability, var, aliasOf);
+
+            return _vars[var];
         }
 
         public bool IsDefined(string var)

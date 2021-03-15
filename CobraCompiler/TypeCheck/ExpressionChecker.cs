@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Scanning;
+using CobraCompiler.TypeCheck.Assertion;
 using CobraCompiler.TypeCheck.CFG;
 using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
@@ -227,6 +228,34 @@ namespace CobraCompiler.TypeCheck
         public ExpressionType Visit(TypeInitExpression expr, ExpressionCheckContext context)
         {
             throw new NotImplementedException();
+        }
+
+        public ExpressionType Visit(TypeAssertionExpression expr, ExpressionCheckContext context)
+        {
+            ExpressionType left = expr.Left.Accept(this, context);
+            ExpressionType right = expr.Right.Accept(this, context);
+
+            if(!(right.Type is CobraTypeCobraType) && right.Type != DotNetCobraType.Null)
+                throw new NotImplementedException("type assertions must be against a type");
+
+            CobraType assertType = (right.Type as CobraTypeCobraType)?.CobraType ?? DotNetCobraType.Null;
+
+            if (expr.NotType)
+                assertType = left.Type.NullableBase;
+
+            // Types can only be asserted for non member readonly variables
+            bool canAssert = expr.Left is VarExpression && left.Mutability != Mutability.Mutable;
+
+            expr.Type = DotNetCobraType.Bool;
+
+            TypeAssertion typeAssertion = null;
+
+            if (canAssert)
+            {
+                typeAssertion = new TypeAssertion(expr, left.Symbol, assertType);
+            }
+
+            return new ExpressionType(DotNetCobraType.Bool, Mutability.Result, null, typeAssertion != null ? new List<TypeAssertion>{typeAssertion} : new List<TypeAssertion>());
         }
 
         public ExpressionType Visit(UnaryExpression expr, ExpressionCheckContext context)

@@ -13,6 +13,7 @@ using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Scanning;
 using CobraCompiler.SupportedProject;
+using CobraCompiler.TypeCheck.Assertion;
 using CobraCompiler.TypeCheck.CFG;
 using CobraCompiler.TypeCheck.Definers;
 using CobraCompiler.TypeCheck.Exceptions;
@@ -325,8 +326,8 @@ namespace CobraCompiler.TypeCheck
                     CurrentScope.Declare(importStatement, importType);
                     break;
                 case IConditionalExpression conditionalExpression:
-                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(moduleNode)).Type;
-                    if (!conditionType.CanCastTo(DotNetCobraType.Bool))
+                    ExpressionType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(moduleNode));
+                    if (!conditionType.Type.CanCastTo(DotNetCobraType.Bool))
                         throw new InvalidConditionTypeException(conditionalExpression.Condition);
                     break;
                 //default:

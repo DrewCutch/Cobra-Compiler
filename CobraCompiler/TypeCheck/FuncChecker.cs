@@ -10,6 +10,7 @@ using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Scanning;
+using CobraCompiler.TypeCheck.Assertion;
 using CobraCompiler.TypeCheck.Exceptions;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Types;
@@ -218,9 +219,19 @@ namespace CobraCompiler.TypeCheck
                     scope.Declare(importStatement, importType);
                     break;
                 case IConditionalExpression conditionalExpression:
-                    CobraType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode)).Type;
-                    if (!conditionType.CanCastTo(DotNetCobraType.Bool))
+                    ExpressionType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode));
+                    if (!conditionType.Type.CanCastTo(DotNetCobraType.Bool))
                         throw new InvalidConditionTypeException(conditionalExpression.Condition);
+
+                    CFGNode thenNode = cfgNode.Next.First();
+                    CFGNode elseNode = conditionalExpression.Else != null ? cfgNode.Next.Skip(1).First() : null;
+
+                    foreach (TypeAssertion typeAssertion in conditionType.TypeAssertions)
+                    {
+                        // first next is then node
+                        thenNode.AddAssignment(thenNode.Scope.Declare(typeAssertion), typeAssertion.Expression);
+                        elseNode?.AddAssignment(elseNode?.Scope.Declare(typeAssertion.Inverted()), typeAssertion.Expression);
+                    }
                     break;
                 default:
                     throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");

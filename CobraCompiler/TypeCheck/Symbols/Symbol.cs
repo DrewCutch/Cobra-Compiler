@@ -18,17 +18,22 @@ namespace CobraCompiler.TypeCheck
         public readonly SymbolKind Kind;
         public readonly Mutability Mutability;
         public readonly Statement Declaration;
+
+        public readonly Symbol AliasOf;
+        public bool IsAlias => AliasOf != null;
         public IReadOnlyList<Expression> References => _references;
 
         private readonly List<Expression> _references;
 
-        public Symbol(Statement declaration, CobraType type, SymbolKind kind, Mutability mutability, string lexeme)
+        public Symbol(Statement declaration, CobraType type, SymbolKind kind, Mutability mutability, string lexeme, Symbol aliasOf = null)
         {
             Declaration = declaration;
             Type = type;
             Kind = kind;
             Mutability = mutability;
             Lexeme = lexeme;
+            AliasOf = aliasOf;
+
             _references = new List<Expression>();
         }
 

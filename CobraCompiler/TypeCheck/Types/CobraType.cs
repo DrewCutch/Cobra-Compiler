@@ -163,7 +163,7 @@ namespace CobraCompiler.TypeCheck.Types
         public virtual void DefineSymbol(string symbolName, Symbol symbol, bool overload = false)
         {
             if (DeclaresSymbol(symbolName) && overload)
-                _symbols[symbolName] = new Symbol(symbol.Declaration, IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(_symbols[symbolName].Type, symbol.Type), symbol.Kind, Mutability.CompileTimeConstant, symbolName);
+                _symbols[symbolName] = new Symbol(symbol.Declaration, IntersectionLangCobraGeneric.IntersectGeneric.CreateGenericInstance(_symbols[symbolName].Type, symbol.Type), symbol.Kind, Mutability.CompileTimeConstant, symbolName, symbol.AliasOf);
             else
                 _symbols[symbolName] = symbol;
         }
