@@ -178,8 +178,9 @@ namespace CobraCompiler.Assemble
                         _il.Emit(OpCodes.Pop);
                     break;
                 case VarDeclarationStatement varDeclaration:
-                    CobraType varType = cfgNodes.Peek().Scope.GetVar(varDeclaration.Name.Lexeme).Type;
-                    _localManager.DeclareVar(cfgNodes.Peek().Scope, varDeclaration.Name.Lexeme, _typeStore.GetType(varType));
+                    Symbol var = cfgNodes.Peek().Scope.GetVar(varDeclaration.Name.Lexeme);
+                    if(!var.IsAlias)
+                        _localManager.DeclareVar(cfgNodes.Peek().Scope, varDeclaration.Name.Lexeme, _typeStore.GetType(var.Type));
                     varDeclaration.Assignment?.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
                     break;
                 case ReturnStatement returnStatement:
@@ -462,6 +463,28 @@ namespace CobraCompiler.Assemble
             return VisitMemberAccessExpression(expr, true, context);
         }
 
+        public ExpressionAssemblyContext Visit(TypeAssertionExpression expr, ParentExpressionAssemblyContext context)
+        {
+            ExpressionAssemblyContext left = expr.Left.Accept(this, context);
+            //ExpressionAssemblyContext right = expr.Right.Accept(this, context);
+
+            Type type = _typeStore.GetType((expr.Right.Type as CobraTypeCobraType)?.CobraType ?? DotNetCobraType.Null);
+
+            if(expr.Right.Type != DotNetCobraType.Null)
+                _il.Emit(OpCodes.Isinst, type);
+
+            // Compares result to null (if not instance null is returned)
+            _il.Emit(OpCodes.Ldnull);
+            
+
+            if (expr.NotType)
+                _il.Emit(OpCodes.Cgt);
+            else
+                _il.Emit(OpCodes.Ceq);
+
+            return new ExpressionAssemblyContext(expr.Type);
+        }
+
         public ExpressionAssemblyContext Visit(TypeInitExpression expr, ParentExpressionAssemblyContext context)
         {
             throw new NotImplementedException();
@@ -527,6 +550,7 @@ namespace CobraCompiler.Assemble
                 if (context.CallingMember && _typeStore.GetType(varType).IsValueType)
                     _localManager.LoadVarAddress(context.Scope, expr.Name.Lexeme);
                 else
+                    
                     _localManager.LoadVar(context.Scope, expr.Name.Lexeme);
             }
             else
