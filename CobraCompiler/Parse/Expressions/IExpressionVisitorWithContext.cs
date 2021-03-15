@@ -15,6 +15,7 @@ namespace CobraCompiler.Parse.Expressions
         T Visit(ListLiteralExpression expr, TU arg);
         T Visit(LiteralExpression expr, TU arg);
         T Visit(NullableAccessExpression expr, TU arg);
+        T Visit(TypeAssertionExpression expr, TU arg);
         T Visit(TypeInitExpression expr, TU arg);
         T Visit(UnaryExpression expr, TU arg);
         T Visit(GetExpression expr, TU arg);

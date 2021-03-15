@@ -9,6 +9,7 @@
         T Visit(ListLiteralExpression expr);
         T Visit(LiteralExpression expr);
         T Visit(NullableAccessExpression expr);
+        T Visit(TypeAssertionExpression expr);
         T Visit(TypeInitExpression expr);
         T Visit(UnaryExpression expr);
         T Visit(GetExpression expr);

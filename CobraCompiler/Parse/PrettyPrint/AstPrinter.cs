@@ -203,6 +203,14 @@ namespace CobraCompiler.Parse.PrettyPrint
             throw new NotImplementedException();
         }
 
+        public void Visit(TypeAssertionExpression expr, bool onLast)
+        {
+            _printer.AddNode($"Assert {(expr.NotType ? "!:" : "::")}", onLast);
+            expr.Left.Accept(this, false);
+            expr.Right.Accept(this, true);
+            _printer.ExitNode();
+        }
+
         public void Visit(UnaryExpression expr, bool onLast)
         {
             _printer.AddNode($"Op {expr.Op.Lexeme}", onLast);

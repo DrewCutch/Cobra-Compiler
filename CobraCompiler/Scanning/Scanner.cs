@@ -122,8 +122,6 @@ namespace CobraCompiler.Scanning
                     return TokenType.Minus;
                 case "+":
                     return TokenType.Plus;
-                case ":":
-                    return TokenType.Colon;
                 case "*":
                     return TokenType.Star;
                 case "?":
@@ -132,12 +130,20 @@ namespace CobraCompiler.Scanning
                     if(next != '/')
                         return TokenType.Slash;
                     return null;
+                case ":":
+                    if(next != ':')
+                        return TokenType.Colon;
+                    return null;
+                case "::":
+                    return TokenType.ColonColon;
                 case "!":
-                    if (next != '=')
+                    if (next != '=' && next != ':')
                         return TokenType.Bang;
                     return null;
                 case "!=":
                     return TokenType.BangEqual;
+                case "!:":
+                    return TokenType.BangColon;
                 case "=":
                     if (next != '=')
                         return TokenType.Equal;

@@ -583,7 +583,7 @@ namespace CobraCompiler.Parse
 
         private Expression Assignment()
         {
-            Expression expr = Equality();
+            Expression expr = Assertion();
 
             if (Match(TokenType.Equal))
             {
@@ -591,6 +591,20 @@ namespace CobraCompiler.Parse
                 Expression value = Assignment();
 
                 return new AssignExpression(expr, value);
+            }
+
+            return expr;
+        }
+
+        private Expression Assertion()
+        {
+            Expression expr = Equality();
+
+            if (Match(TokenType.ColonColon, TokenType.BangColon))
+            {
+                bool isNot = _tokens.Previous().Type == TokenType.BangColon;
+                Expression right = Equality();
+                expr = new TypeAssertionExpression(expr, right, isNot);
             }
 
             return expr;

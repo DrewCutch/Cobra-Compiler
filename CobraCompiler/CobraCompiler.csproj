@@ -102,6 +102,8 @@
     <Compile Include="ErrorLogging\ScanningException.cs" />
     <Compile Include="Parse\Expressions\MemberAccessExpression.cs" />
     <Compile Include="Parse\Expressions\NullableAccessExpression.cs" />
+    <Compile Include="Parse\Expressions\TypeAssertionExpression.cs" />
+    <Compile Include="TypeCheck\Assertion\TypeAssertion.cs" />
     <Compile Include="TypeCheck\CFG\BitMatrix.cs" />
     <Compile Include="TypeCheck\CFG\CFGraph.cs" />
     <Compile Include="TypeCheck\CFG\CFGNode.cs" />

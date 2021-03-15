@@ -12,10 +12,11 @@ namespace CobraCompiler
         Ampersand, Bar,
         LeftParen, RightParen, LeftBrace, RightBrace,
         LeftBracket, RightBracket, Comma, Dot, Minus,
-        Plus, Colon, Slash, Star, QuestionMark,
+        Plus, Slash, Star, QuestionMark,
 
         // One or two character tokens.                  
-        Bang, BangEqual,
+        Bang, BangEqual, BangColon,
+        Colon, ColonColon,
         Equal, EqualEqual,
         Greater, GreaterEqual,
         Less, LessEqual,
