@@ -41,9 +41,11 @@ namespace CobraCompiler.Parse.Scopes
             if(var == "init" && type.IsConstructedGeneric && type.GenericBase == FuncCobraGeneric.FuncType)
                 Parent.Declare(statement, ClassDeclaration.Name.Lexeme, type, SymbolKind.Global, mutability, overload, aliasOf);
 
+            Symbol scopeSymbol = base.Declare(statement, var, type, SymbolKind.ThisMember, mutability, overload, aliasOf);
 
-            ThisType.DefineSymbol(var, new Symbol(statement, type, kind, mutability, var, aliasOf), type is FuncGenericInstance);
-            return base.Declare(statement, var, type, SymbolKind.ThisMember, mutability, overload, aliasOf);
+            ThisType.DefineSymbol(var, scopeSymbol, type is FuncGenericInstance);
+
+            return scopeSymbol;
         }
     }
 }
