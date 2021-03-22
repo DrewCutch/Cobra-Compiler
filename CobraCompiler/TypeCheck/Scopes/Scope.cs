@@ -78,8 +78,9 @@ namespace CobraCompiler.Parse.Scopes
 
             List<CobraType> paramTypes = typeInit.GenericParams.Select(param => GetType(param)).ToList();
             CobraType generic = GetSimpleType(typeInit.IdentifierStrWithoutParams);
+            CobraType genericInstance = generic.CreateGenericInstance(paramTypes);
 
-            return generic.CreateGenericInstance(paramTypes);
+            return typeInit.IsNullable ? CobraType.Nullable(genericInstance) : genericInstance;
         }
 
         protected virtual CobraType GetSimpleType(TypeInitExpression typeInit, CobraType selfHint = null)
