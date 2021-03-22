@@ -37,6 +37,14 @@ namespace CobraCompiler.Parse
             return default;
         }
 
+        public IEnumerable<T> PopRemaining()
+        {
+            while (_position < _list.Count)
+            {
+                yield return _list[_position++];
+            }
+        }
+
         public bool HasPrevious(int lookBehind = 1)
         {
             return (_position - lookBehind) >= 0;
