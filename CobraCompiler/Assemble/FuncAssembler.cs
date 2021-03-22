@@ -19,6 +19,7 @@ using CobraCompiler.Parse.Scopes;
 using CobraCompiler.Parse.Statements;
 using CobraCompiler.Scanning;
 using CobraCompiler.TypeCheck;
+using CobraCompiler.TypeCheck.CFG;
 using CobraCompiler.TypeCheck.Operators;
 using CobraCompiler.TypeCheck.Types;
 using CobraCompiler.Util;
@@ -187,6 +188,9 @@ namespace CobraCompiler.Assemble
                     returnStatement.Value.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
                     ReturnStatement(cfgNodes.Peek().Scope);
                     break;
+                case GuardStatement guardStatement:
+                    AssembleGuardStatement(guardStatement, cfgNodes, typeBuilder);
+                    break;
                 case IfStatement ifStatement:
                     AssembleIfStatement(ifStatement, cfgNodes, typeBuilder);
                     break;
@@ -196,6 +200,19 @@ namespace CobraCompiler.Assemble
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private void AssembleGuardStatement(GuardStatement guardStatement, ListNibbler<CFGNode> cfgNodes, TypeBuilder typeBuilder)
+        {
+            guardStatement.Condition.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
+
+            Label passLabel = _il.DefineLabel();
+
+            _il.Emit(OpCodes.Brtrue, passLabel);
+            cfgNodes.Pop();
+            AssembleNodesInScope(cfgNodes, typeBuilder);
+
+            _il.MarkLabel(passLabel);
         }
 
         private void AssembleIfStatement(IfStatement ifStatement, ListNibbler<CFGNode> cfgNodes, TypeBuilder typeBuilder)
@@ -209,7 +226,7 @@ namespace CobraCompiler.Assemble
             cfgNodes.Pop();
             AssembleNodesInScope(cfgNodes, typeBuilder);
 
-            bool ifReturns = cfgNodes.Peek().FulfilledByChildren(node => node.Scope == cfgNodes.Peek().Scope && (node.Next.OnlyOrDefault()?.IsTerminal ?? false));
+            bool ifReturns = cfgNodes.Peek().FulfilledByChildren(ControlFlowCheck.ReturnsUnderScope(cfgNodes.Peek().Scope));
 
             if (!ifReturns)
                 _il.Emit(OpCodes.Br, endElseLabel);
@@ -270,7 +287,7 @@ namespace CobraCompiler.Assemble
 
             AssembleNode(nodes, typeBuilder);
 
-            while (nodes.Peek(1).Scope.IsContainedBy(scope))
+            while (nodes.HasNext(1) && nodes.Peek(1).Scope.IsContainedBy(scope))
             {
                 nodes.Pop();
                 AssembleNode(nodes, typeBuilder);
