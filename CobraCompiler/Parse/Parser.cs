@@ -554,16 +554,17 @@ namespace CobraCompiler.Parse
 
         private Statement GuardStatement()
         {
+            Token keyWord = _tokens.Previous();
             Expect(TokenType.LeftParen, "Expect '(' after 'guard'.", ignoreNewline: true);
             Expression condition = Expression();
             Expect(TokenType.RightParen, "Expect ')' after 'guard' condition.", ignoreNewline: true);
-            Expect(TokenType.Else, "Expect 'else' after 'guard'.", ignoreNewline: true);
+            Token elseKeyword = Expect(TokenType.Else, "Expect 'else' after 'guard'.", ignoreNewline: true);
 
             IgnoreNewlines();
 
             Statement elseStatement = Statement();
 
-            return new GuardStatement(condition, elseStatement);
+            return new GuardStatement(keyWord, condition, elseKeyword, elseStatement);
         }
 
         private Statement IfStatement()
