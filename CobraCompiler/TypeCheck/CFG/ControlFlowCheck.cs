@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Scopes;
 using CobraCompiler.TypeCheck.Symbols;
+using CobraCompiler.Util;
 
 namespace CobraCompiler.TypeCheck.CFG
 {
@@ -25,6 +26,11 @@ namespace CobraCompiler.TypeCheck.CFG
 
                 return node.Assignments.ContainsKey(symbol);
             };
+        }
+
+        public static Func<CFGNode, bool> ReturnsUnderScope(Scope scope)
+        {
+            return (node) => node.Scope.IsContainedBy(scope) && (node.Next.OnlyOrDefault()?.IsTerminal ?? false);
         }
     }
 }
