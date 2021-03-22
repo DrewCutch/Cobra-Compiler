@@ -1,10 +1,12 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CobraCompiler.Assemble;
 using CobraCompiler.ErrorLogging;
+using CobraCompiler.Parse;
 using CobraCompiler.Parse.CFG;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Scopes;
@@ -63,8 +65,10 @@ namespace CobraCompiler.TypeCheck
             if (funcDeclaration.TypeArguments.Count > 0)
                 scope = scope.Parent;
 
-            CFGNode lastNode = BuildCFG(funcScope, funcScope.CFGraph.Root); 
-            lastNode.Link(funcScope.CFGraph.Terminal);
+            CFGNode lastNode = BuildCFG(funcScope, funcScope.CFGraph.Root);
+
+            if(lastNode != funcScope.CFGraph.Terminal)
+                lastNode.Link(funcScope.CFGraph.Terminal);
 
             return funcScope;
         }
@@ -87,9 +91,11 @@ namespace CobraCompiler.TypeCheck
         private static CFGNode BuildCFG(Scope scope, CFGNode root)
         {
             CFGNode previous = root;
-
-            foreach (Statement statement in scope.Body)
+            ListNibbler<Statement> statements = new ListNibbler<Statement>(scope.Body);
+            while(statements.HasNext())
             {
+                Statement statement = statements.Pop();
+
                 if (statement is BlockStatement block)
                 {
                     Scope blockScope = new Scope(scope, block.Body.ToArray());
@@ -131,13 +137,50 @@ namespace CobraCompiler.TypeCheck
                         elseEnd = BuildCFG(elseScope, elseNode);
                     }
 
-                    CFGNode conditionalEnd = thenEnd.CreateNext(scope);
-                    if(elseEnd != null)
-                        elseEnd.Link(conditionalEnd);
-                    else
-                        previous.Link(conditionalEnd);
+                    CFGNode conditionalEnd = null;
 
-                    previous = conditionalEnd;
+                    if (thenEnd != thenEnd.Graph.Terminal)
+                        conditionalEnd = thenEnd.CreateNext(scope);
+                    if (elseEnd != null && elseEnd != elseEnd.Graph.Terminal)
+                    {
+                        if (conditionalEnd == null)
+                            conditionalEnd = elseEnd.CreateNext(scope);
+                        else
+                            elseEnd.Link(conditionalEnd);
+                    }
+                    else if (elseEnd == null && conditionalEnd == null)
+                    {
+                        conditionalEnd = previous.CreateNext(scope);
+                    }
+                    else if (elseEnd == null)
+                    {
+                        previous.Link(conditionalEnd);
+                    }
+
+                    previous = conditionalEnd ?? thenEnd.Graph.Terminal;
+                }
+
+                if (statement is GuardStatement guardStatement)
+                {
+                    Scope elseScope = new Scope(scope, guardStatement.Else);
+                    scope.AddSubScope(elseScope);
+                    CFGNode elseNode = previous.CreateNext(elseScope);
+                    CFGNode elseEnd = BuildCFG(elseScope, elseNode);
+
+                    if(elseEnd != elseEnd.Graph.Terminal)
+                        throw new MissingGuardElseReturnException(guardStatement);
+
+                    Scope passScope = new Scope(scope, new BlockStatement(statements.PopRemaining()));
+                    scope.AddSubScope(passScope);
+                    CFGNode passNode = previous.CreateNext(passScope);
+
+                    previous = BuildCFG(passScope, passNode);
+                }
+
+                if (statement is ReturnStatement returnStatement)
+                {
+                    previous.SetNext(previous.Graph.Terminal);
+                    previous = previous.Graph.Terminal;
                 }
             }
 
@@ -208,8 +251,6 @@ namespace CobraCompiler.TypeCheck
                     CobraType returnStatementType = returnStatement.Value.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode)).Type;
                     if (!returnStatementType.CanCastTo(scope.GetReturnType()))
                         throw new InvalidReturnTypeException(returnStatement.Value, scope.GetReturnType());
-
-                    cfgNode.SetNext(funcScope.CFGraph.Terminal);
                     break;
                 case ImportStatement importStatement:
                     CobraType importType = importStatement.Import.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode)).Type;
@@ -217,6 +258,21 @@ namespace CobraCompiler.TypeCheck
                         throw new InvalidImportException(importStatement);
 
                     scope.Declare(importStatement, importType);
+                    break;
+                case GuardStatement guardStatement:
+                    ExpressionType guardCondition = guardStatement.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode));
+                    if (!guardCondition.Type.CanCastTo(DotNetCobraType.Bool))
+                        throw new InvalidConditionTypeException(guardStatement.Condition);
+
+                    CFGNode guardElseNode = cfgNode.Next.First();
+                    CFGNode guardPassNode = cfgNode.Next.Skip(1).First();
+
+                    foreach (TypeAssertion typeAssertion in guardCondition.TypeAssertions)
+                    {
+                        // first next is then node
+                        guardElseNode.AddAssignment(guardElseNode.Scope.Declare(typeAssertion.Inverted()), typeAssertion.Expression);
+                        guardPassNode.AddAssignment(guardPassNode.Scope.Declare(typeAssertion), typeAssertion.Expression);
+                    }
                     break;
                 case IConditionalExpression conditionalExpression:
                     ExpressionType conditionType = conditionalExpression.Condition.Accept(_expressionChecker, new ExpressionChecker.ExpressionCheckContext(cfgNode));

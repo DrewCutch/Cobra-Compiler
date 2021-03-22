@@ -230,8 +230,11 @@ namespace CobraCompiler.TypeCheck
         {
             foreach (Symbol symbol in classScope.ThisType.Symbols.Values)
             {
-                if (symbol.Mutability != Mutability.AssignOnce)
-                        continue;
+                if (symbol.Mutability == Mutability.Mutable && symbol.Type.IsNullable)
+                    continue;
+
+                if (symbol.Mutability == Mutability.ReadOnly)
+                    continue;
 
                 if (!funcScope.CFGraph.Terminal.FulfilledByAncestors(ControlFlowCheck.IsAssigned(symbol)))
                 {
