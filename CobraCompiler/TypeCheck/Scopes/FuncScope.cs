@@ -18,7 +18,17 @@ namespace CobraCompiler.Parse.Scopes
 
         public readonly CFGraph CFGraph;
 
-        public bool Returns => CFGraph.Root.FulfilledByChildren(node => node.Next.OnlyOrDefault()?.IsTerminal ?? false);
+        private bool? _returns;
+        public bool Returns
+        {
+            get
+            {
+                if(_returns == null)
+                    _returns = CFGraph.Root.FulfilledByChildren(ControlFlowCheck.ReturnsUnderScope(this));
+
+                return (bool) _returns;
+            }
+        }
 
         public bool IsInit => Parent is ClassScope && FuncDeclaration.Name.Lexeme == "init";
 
