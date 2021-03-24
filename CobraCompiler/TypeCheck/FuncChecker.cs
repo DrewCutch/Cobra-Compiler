@@ -182,6 +182,12 @@ namespace CobraCompiler.TypeCheck
                     previous.SetNext(previous.Graph.Terminal);
                     previous = previous.Graph.Terminal;
                 }
+
+                if (statement is PanicStatement panicStatement)
+                {
+                    previous.SetNext(previous.Graph.Terminal);
+                    previous = previous.Graph.Terminal;
+                }
             }
 
             return previous;
@@ -288,6 +294,12 @@ namespace CobraCompiler.TypeCheck
                         thenNode.AddAssignment(thenNode.Scope.Declare(typeAssertion), typeAssertion.Expression);
                         elseNode?.AddAssignment(elseNode?.Scope.Declare(typeAssertion.Inverted()), typeAssertion.Expression);
                     }
+                    break;
+                case PanicStatement panicStatement:
+                    ExpressionType argType = panicStatement.Argument.Accept(_expressionChecker,
+                        new ExpressionChecker.ExpressionCheckContext(cfgNode));
+                    if(!argType.Type.Equals(DotNetCobraType.Str))
+                        throw new InvalidPanicTypeException(panicStatement);
                     break;
                 default:
                     throw new NotImplementedException($"Type checking not defined for statement of {statement.GetType()}");

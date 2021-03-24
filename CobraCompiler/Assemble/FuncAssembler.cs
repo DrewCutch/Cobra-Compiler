@@ -197,6 +197,9 @@ namespace CobraCompiler.Assemble
                 case WhileStatement whileStatement:
                     AssembleWhileStatement(whileStatement, cfgNodes, typeBuilder);
                     break;
+                case PanicStatement panicStatement:
+                    AssemblePanicStatement(panicStatement, cfgNodes, typeBuilder);
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -213,6 +216,14 @@ namespace CobraCompiler.Assemble
             AssembleNodesInScope(cfgNodes, typeBuilder);
 
             _il.MarkLabel(passLabel);
+        }
+
+        private void AssemblePanicStatement(PanicStatement panicStatement, ListNibbler<CFGNode> cfgNodes,
+            TypeBuilder typeBuilder)
+        {
+            panicStatement.Argument.Accept(this, new ParentExpressionAssemblyContext(cfgNodes.Peek().Scope));
+            _il.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor(new []{typeof(string)}));
+            _il.Emit(OpCodes.Throw);
         }
 
         private void AssembleIfStatement(IfStatement ifStatement, ListNibbler<CFGNode> cfgNodes, TypeBuilder typeBuilder)

@@ -218,6 +218,10 @@ namespace CobraCompiler.Scanning
                     if (!isAlphanumeric(next))
                         return TokenType.Op;
                     return null;
+                case "panic":
+                    if (!isAlphanumeric(next))
+                        return TokenType.Panic;
+                    return null;
                 case "return":
                     if (!isAlphanumeric(next))
                         return TokenType.Return;

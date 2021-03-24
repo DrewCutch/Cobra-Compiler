@@ -233,7 +233,7 @@ namespace CobraCompiler.TypeCheck
                 if (symbol.Mutability == Mutability.Mutable && symbol.Type.IsNullable)
                     continue;
 
-                if (symbol.Mutability == Mutability.ReadOnly)
+                if (symbol.Mutability == Mutability.ReadOnly || symbol.Mutability == Mutability.CompileTimeConstant)
                     continue;
 
                 if (!funcScope.CFGraph.Terminal.FulfilledByAncestors(ControlFlowCheck.IsAssigned(symbol)))

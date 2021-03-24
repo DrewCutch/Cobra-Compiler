@@ -17,8 +17,7 @@ namespace CobraCompiler.TypeCheck.CFG
             return (node) =>
             {
                 bool isInit = node.Scope is FuncScope funcScope && funcScope.FuncDeclaration.Name.Lexeme == "init";
-
-                if (symbol.Mutability != Mutability.Mutable && node.Scope.Parent is ClassScope containingClass && !isInit)
+                if (symbol.Mutability != Mutability.Mutable && node.Scope.Parent is ClassScope containingClass && !isInit && symbol.Kind == SymbolKind.ThisMember)
                     return true;
 
                 if (node.IsRoot && node.Scope.Parent.IsDefined(symbol.Lexeme) && !isInit)

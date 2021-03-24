@@ -104,6 +104,7 @@
     <Compile Include="Parse\Expressions\NullableAccessExpression.cs" />
     <Compile Include="Parse\Expressions\TypeAssertionExpression.cs" />
     <Compile Include="Parse\Statements\GuardStatement.cs" />
+    <Compile Include="Parse\Statements\PanicStatement.cs" />
     <Compile Include="TypeCheck\Assertion\TypeAssertion.cs" />
     <Compile Include="TypeCheck\CFG\BitMatrix.cs" />
     <Compile Include="TypeCheck\CFG\CFGraph.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="TypeCheck\Exceptions\InvalidIndexException.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidMemberAccessOnNullableException.cs" />
     <Compile Include="TypeCheck\Exceptions\InvalidNullableAccessException.cs" />
+    <Compile Include="TypeCheck\Exceptions\InvalidPanicTypeException.cs" />
     <Compile Include="TypeCheck\Exceptions\MissingGuardElseReturnException.cs" />
     <Compile Include="TypeCheck\Exceptions\UnassignedVarException.cs" />
     <Compile Include="TypeCheck\Exceptions\WriteToReadOnlySymbolException.cs" />

@@ -1,5 +1,18 @@
 ﻿import SupportedProject.default.ListTools
 
+//enum result[T]{
+//	case Ok(value: T){}
+//	case Error(error: err){}
+
+//	func forceUnwrap(): T{
+//		guard(this !: .Error) else {
+//			panic "force unwrapped error value"
+//		}
+
+//		return value
+//	}
+//}
+
 func testVal(): int{
 	val a: int = 10
 	val b: int = a + a
@@ -65,7 +78,7 @@ type node[T] {
 
 class Node[T]: node[T]{
 	val value: T
-	var next: node[T]
+	var next: node[T]?
 
 	init(value: T){
 		this.value = value
@@ -84,40 +97,40 @@ type linkedList[T] {
 }
 
 
-type iterable[T] {
-	done: bool
-	getNext: f[T]
-}
+//type iterable[T] {
+//	done: bool
+//	getNext: f[T]
+//}
 
-class Iterator[T]: iterable[T]{
-	var done: bool
+//class Iterator[T]: iterable[T]{
+//	var done: bool
 
-	var getter: f[T, T]
-	var current: T
-	var i: int
-	var count: int
+//	var getter: f[T, T]
+//	var current: T
+//	var i: int
+//	var count: int
 
-	init(getter: f[T, T], count: int){
-		this.getter = getter
-		this.count = count
-		done = false
-	}
+//	init(getter: f[T, T], count: int){
+//		this.getter = getter
+//		this.count = count
+//		this.done = false
+//	}
 
-	func getNext(): T{
-		var next: T = getter(this.current)
-		current = next
+//	func getNext(): T{
+//		var next: T = getter(this.current)
+//		current = next
 		
-		i = i + 1
-		done = i > count - 1
+//		i = i + 1
+//		done = i > count - 1
 
-		return next
-	}
-}
+//		return next
+//	}
+//}
 
 class LinkedList[T]: linkedList[T]{
 	var count: int
-	var head: node[T]
-	var root: node[T]
+	var head: node[T]?
+	var root: node[T]?
 
 	init(){
 		count = 0
@@ -125,14 +138,30 @@ class LinkedList[T]: linkedList[T]{
 
 	func get(i: int): T{
 		if(i > count - 1){
-			return root.value
+			panic "index out of range"
+		}
+
+		if(i < 0){
+			panic "index out of range"
 		}
 
 		var counter: int = 0
-		var found: node[T] = root
+		val first: node[T]? = root
+
+		guard(first !: null) else{
+			panic "index out of range"
+		}
+
+		var found: node[T] = first
 
 		while(counter < i){
-			found = found.next
+			val next: node[T]? = found.next
+
+			guard(next !: null) else{
+				panic "broken list"
+			}
+
+			found = next
 
 			counter = counter + 1
 		}
@@ -143,15 +172,15 @@ class LinkedList[T]: linkedList[T]{
 	func add(value: T){
 		var newNode: node[T] = Node[T](value)
 
-		if(count == 0){
+		if(head :: null){
 			root = newNode
-			head = newNode
 		}
 		else{
-			head.setNext(newNode)
+			head?.setNext(newNode)
 		}
 
 		head = newNode
+
 		count = count + 1
 	}
 }
@@ -216,16 +245,16 @@ class Box[T]: box[T]{
 	}
 }
 
+func testNullBox(boxedVec: box[vec2D?]){
+	val unboxed: vec2D? = boxedVec.value
 
-func testNullBox(){
-	val box1: box[vec2D?] = Box[vec2D?](null)
-	val unboxed: vec2D? = box1.value
-
-	if(unboxed !: null){
-		val child: int = 5
-
-		printInt(unboxed.x)
+	guard(unboxed !: null) else{
+		return
 	}
+
+	val child: int = 5
+
+	printInt(unboxed.x)
 }
 
 func boxvalue[T](value: T): box[T]{
@@ -279,7 +308,7 @@ func noReturn(thing: int){
 type person {
 	name: str
 	age: int
-	bestFriend: person
+	bestFriend: person?
 
 	greet: f[str, unit]
 	meet: f[person, unit]
@@ -293,12 +322,13 @@ type Istr {
 }
 
 
+
 type sperson: person, Istr
 
 class Person: sperson {
 	val name: str
 	val age: int
-	var bestFriend: person
+	var bestFriend: person?
 
 	init(name: str, age: int){
 		this.name = name
@@ -311,7 +341,14 @@ class Person: sperson {
 
 	func callBestie(){
 		printStr("calling: ")
-		printStr(this.bestFriend.name)
+		val bf: person? = this.bestFriend
+
+		if(bf !: null){
+			printStr(bf.name)
+		}
+		else{
+			printStr("nobody!")
+		}
 	}
 
 	func greet(greeting: str){

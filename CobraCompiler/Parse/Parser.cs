@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
+using System.Windows.Forms;
 using CobraCompiler.ErrorLogging;
 using CobraCompiler.Parse.Expressions;
 using CobraCompiler.Parse.Statements;
@@ -471,6 +472,9 @@ namespace CobraCompiler.Parse
             if (Match(TokenType.Return))
                 return Return();
 
+            if (Match(TokenType.Panic))
+                return Panic();
+
             if (Match(TokenType.Guard))
                 return GuardStatement();
 
@@ -504,6 +508,15 @@ namespace CobraCompiler.Parse
             Expression expr = Expression() ?? new LiteralExpression(new object(), DotNetCobraType.Unit, keyword);
             // Expect(TokenType.NewLine, "Expect newline after return statement");
             return new ReturnStatement(keyword, expr);
+        }
+
+        private Statement Panic()
+        {
+            Token keyword = _tokens.Previous();
+
+            Expression arg = Expression();
+
+            return new PanicStatement(keyword, arg);
         }
 
         /*

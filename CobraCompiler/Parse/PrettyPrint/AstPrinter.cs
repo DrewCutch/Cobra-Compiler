@@ -101,6 +101,11 @@ namespace CobraCompiler.Parse.PrettyPrint
                         GenerateTree(classDeclaration.Body);
                         _printer.ExitNode();
                         break;
+                    case PanicStatement panicStatement:
+                        _printer.AddNode("Panic", onLast);
+                        panicStatement.Argument.Accept(this, true);
+                        _printer.ExitNode();
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
